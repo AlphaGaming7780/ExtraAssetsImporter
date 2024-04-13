@@ -14,6 +14,7 @@ using System.Collections;
 using Colossal.Json;
 using UnityEngine.Rendering;
 using Unity.Entities;
+using Colossal.Entities;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -284,17 +285,21 @@ internal class SurfacesImporter
 
         ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
 
-		Entity entity = ExtraLib.m_PrefabSystem.GetEntity(surfacePrefab);
-		var stuff = ExtraLib.m_EntityManager.GetBuffer<PlaceableInfoviewItem>(entity);
+        Entity entity = ExtraLib.m_PrefabSystem.GetEntity(surfacePrefab);
+
+		DynamicBuffer<PlaceableInfoviewItem> stuff;
+
+        stuff = ExtraLib.m_EntityManager.TryGetBuffer(entity, false, out stuff) ? stuff : ExtraLib.m_EntityManager.AddBuffer<PlaceableInfoviewItem>(entity);
         PlaceableInfoviewItem placeableInfoviewItem = new()
         {
             m_Item = Entity.Null,
             m_Priority = 0
         };
-        stuff.Add(placeableInfoviewItem);
+        stuff.Add(placeableInfoviewItem);	
 	}
 
 	internal static int GetRendererPriorityByCat(string cat)
+
 	{
 		return cat switch
 		{
