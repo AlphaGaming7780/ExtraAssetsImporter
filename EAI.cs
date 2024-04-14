@@ -20,8 +20,8 @@ namespace ExtraAssetsImporter
 	{
 		private static ILog log = LogManager.GetLogger($"{nameof(ExtraAssetsImporter)}").SetShowsErrorsInUI(false);
 		internal static Logger Logger { get; private set; } = new(log, true);
-		static internal readonly string ELTGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\ELT"; //: $"{EnvPath.kUserDataPath}\\Mods\\ELT"; Settings.settings.UseGameFolderForCache ? 
-		//static internal readonly string ELTUserDataPath = $"{EnvPath.kUserDataPath}\\Mods\\ELT"; //: $"{EnvPath.kUserDataPath}\\Mods\\ELT"; Settings.settings.UseGameFolderForCache ? 
+		static internal readonly string ELTGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI"; //: $"{EnvPath.kUserDataPath}\\Mods\\ELT"; Settings.settings.UseGameFolderForCache ? 
+		//static internal readonly string ELTUserDataPath = $"{EnvPath.kUserDataPath}\\Mods\\EAI"; //: $"{EnvPath.kUserDataPath}\\Mods\\ELT"; Settings.settings.UseGameFolderForCache ? 
 
 		internal static string ResourcesIcons { get; private set; }
 		public void OnLoad(UpdateSystem updateSystem)
@@ -45,6 +45,8 @@ namespace ExtraAssetsImporter
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
 
             ExtraLib.AddOnMainMenu(OnMainMenu);
+
+			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 
         }
 

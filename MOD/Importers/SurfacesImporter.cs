@@ -28,8 +28,6 @@ public class JSONSurfacesMaterail
 
 internal class SurfacesImporter
 {
-	internal static Dictionary<PrefabBase, string> SurfacesDataBase = [];
-
 	internal static List<string> FolderToLoadSurface = [];
 
 	private static bool SurfacesLoaded = false;
@@ -283,19 +281,7 @@ internal class SurfacesImporter
 		//surfacePrefab.AddComponent<CustomSurface>();
 
 
-        ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
-
-        Entity entity = ExtraLib.m_PrefabSystem.GetEntity(surfacePrefab);
-
-		DynamicBuffer<PlaceableInfoviewItem> stuff;
-
-        stuff = ExtraLib.m_EntityManager.TryGetBuffer(entity, false, out stuff) ? stuff : ExtraLib.m_EntityManager.AddBuffer<PlaceableInfoviewItem>(entity);
-        PlaceableInfoviewItem placeableInfoviewItem = new()
-        {
-            m_Item = Entity.Null,
-            m_Priority = 0
-        };
-        stuff.Add(placeableInfoviewItem);	
+		ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
 	}
 
 	internal static int GetRendererPriorityByCat(string cat)
@@ -328,4 +314,9 @@ internal class SurfacesImporter
         return material;
     }
 
+}
+internal class CustomSurface : ComponentBase
+{
+    public override void GetArchetypeComponents(HashSet<ComponentType> components) { }
+    public override void GetPrefabComponents(HashSet<ComponentType> components) { }
 }

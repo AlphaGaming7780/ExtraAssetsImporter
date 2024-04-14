@@ -14,6 +14,7 @@ using Extra.Lib.UI;
 using System.Collections;
 using Colossal.PSI.Common;
 using Colossal.Json;
+using Unity.Entities;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -187,7 +188,6 @@ internal class DecalsImporter
 				obsoleteIdentifiers.m_PrefabIdentifiers = [.. jSONMaterail.prefabIdentifierInfos];
 			}
 		}
-		decalSurface.ToUnityMaterial();
 
 		// if(!decalSurface.floats.ContainsKey("_DrawOrder")) decalSurface.AddProperty("_DrawOrder", 0f);
 
@@ -209,7 +209,7 @@ internal class DecalsImporter
 		texture2D_BaseColorMap.Apply();
 		if (!File.Exists(folderPath + "\\icon.png")) texture2D_BaseColorMap.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png");//ELT.ResizeTexture(texture2D_BaseColorMap_Temp, 128, folderPath + "\\icon.png");
 		TextureImporter.Texture textureImporterBaseColorMap = new($"{decalName}_BaseColorMap", folderPath + "\\" + "_BaseColorMap.png", texture2D_BaseColorMap);
-		textureImporterBaseColorMap.CompressBC(1);
+		//textureImporterBaseColorMap.CompressBC(1);
 
 		decalSurface.AddProperty("_BaseColorMap", textureImporterBaseColorMap);
 
@@ -256,7 +256,7 @@ internal class DecalsImporter
 				}
 				texture2D_MaskMap.Apply();
 				TextureImporter.Texture textureImporterMaskMap = new($"{decalName}_MaskMap", folderPath + "\\" + "_MaskMap.png", texture2D_MaskMap);
-				textureImporterMaskMap.CompressBC(1);
+				//textureImporterMaskMap.CompressBC(1);
 				decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
 
 			};
@@ -444,4 +444,9 @@ internal class DecalsImporter
 
 		return mesh;
 	}
+}
+internal class CustomDecal : ComponentBase
+{
+    public override void GetArchetypeComponents(HashSet<ComponentType> components) { }
+    public override void GetPrefabComponents(HashSet<ComponentType> components) { }
 }
