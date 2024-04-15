@@ -15,6 +15,8 @@ using Colossal.Json;
 using UnityEngine.Rendering;
 using Unity.Entities;
 using Colossal.Entities;
+using Colossal.Localization;
+using Game.SceneFlow;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -45,45 +47,41 @@ internal class SurfacesImporter
 		Icons.LoadIcons(new DirectoryInfo(path).Parent.FullName);
 	}
 
-	//internal static void LoadLocalization()
-	//{
+	internal static void LoadLocalization()
+	{
 
-	//    Dictionary<string, string> csLocalisation = [];
+		Dictionary<string, string> csLocalisation = [];
 
-	//    foreach (string folder in FolderToLoadSurface)
-	//    {
-	//        foreach (string surfacesCat in Directory.GetDirectories(folder))
-	//        {
+		foreach (string folder in FolderToLoadSurface)
+		{
+			foreach (string surfacesCat in Directory.GetDirectories(folder))
+			{
 
-	//            if (!csLocalisation.ContainsKey($"SubServices.NAME[{new DirectoryInfo(surfacesCat).Name} Surfaces]"))
-	//            {
-	//                csLocalisation.Add($"SubServices.NAME[{new DirectoryInfo(surfacesCat).Name} Surfaces]", $"{new DirectoryInfo(surfacesCat).Name} Surfaces");
-	//            }
+				//if (!csLocalisation.ContainsKey($"SubServices.NAME[{new DirectoryInfo(surfacesCat).Name} Surfaces]"))
+				//{
+				//	csLocalisation.Add($"SubServices.NAME[{new DirectoryInfo(surfacesCat).Name} Surfaces]", $"{new DirectoryInfo(surfacesCat).Name} Surfaces");
+				//}
 
-	//            if (!csLocalisation.ContainsKey($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(surfacesCat).Name} Surfaces]"))
-	//            {
-	//                csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(surfacesCat).Name} Surfaces]", $"{new DirectoryInfo(surfacesCat).Name} Surfaces");
-	//            }
+				//if (!csLocalisation.ContainsKey($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(surfacesCat).Name} Surfaces]"))
+				//{
+				//	csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(surfacesCat).Name} Surfaces]", $"{new DirectoryInfo(surfacesCat).Name} Surfaces");
+				//}
 
-	//            foreach (string filePath in Directory.GetDirectories(surfacesCat))
-	//            {
-	//                string surfaceName = $"{new DirectoryInfo(folder).Parent.Name}_{new DirectoryInfo(surfacesCat).Name}_{new DirectoryInfo(filePath).Name}";
+				foreach (string filePath in Directory.GetDirectories(surfacesCat))
+				{
+					string surfaceName = $"{new DirectoryInfo(folder).Parent.Name} {new DirectoryInfo(surfacesCat).Name} {new DirectoryInfo(filePath).Name} Surface";
 
-	//                if (!csLocalisation.ContainsKey($"Assets.NAME[{surfaceName}]")) csLocalisation.Add($"Assets.NAME[{surfaceName}]", new DirectoryInfo(filePath).Name);
-	//                if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{surfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{surfaceName}]", new DirectoryInfo(filePath).Name);
-	//            }
-	//        }
-	//    }
+					if (!csLocalisation.ContainsKey($"Assets.NAME[{surfaceName}]")) csLocalisation.Add($"Assets.NAME[{surfaceName}]", new DirectoryInfo(filePath).Name);
+					if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{surfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{surfaceName}]", new DirectoryInfo(filePath).Name);
+				}
+			}
+		}
 
-	//    foreach (string key in Localization.localization.Keys)
-	//    {
-
-	//        foreach (string s in csLocalisation.Keys)
-	//        {
-	//            if (!Localization.localization[key].ContainsKey(s)) Localization.localization[key].Add(s, csLocalisation[s]);
-	//        }
-	//    }
-	//}
+        foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+        {
+            GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
+        }
+    }
 
 	internal static IEnumerator CreateCustomSurfaces()
 	{
@@ -122,7 +120,8 @@ internal class SurfacesImporter
 					notificationInfo.text = $"Loading : {new DirectoryInfo(surfaceFolder).Name}";
 					try
 					{
-						CreateCustomSurface(surfaceFolder, new DirectoryInfo(surfaceFolder).Name, new DirectoryInfo(surfacesCat).Name, new DirectoryInfo(folder).Parent.Name, assetCat);
+                        string modName = new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                        CreateCustomSurface(surfaceFolder, new DirectoryInfo(surfaceFolder).Name, new DirectoryInfo(surfacesCat).Name, modName, assetCat);
 					}
 					catch (Exception e)
 					{
@@ -142,6 +141,8 @@ internal class SurfacesImporter
 			progressState: ProgressState.Complete,
 			progress: 100
 		);
+
+		LoadLocalization();
     }
 
 	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, ExtraAssetsMenu.AssetCat assetCat)

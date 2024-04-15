@@ -15,6 +15,8 @@ using System.Collections;
 using Colossal.PSI.Common;
 using Colossal.Json;
 using Unity.Entities;
+using Game.SceneFlow;
+using Colossal.Localization;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -47,54 +49,41 @@ internal class DecalsImporter
 	//    }
 	//}
 
-	//internal static void LoadLocalization()
-	//{
+	internal static void LoadLocalization()
+	{
 
-	//    Dictionary<string, string> csLocalisation = [];
+		Dictionary<string, string> csLocalisation = [];
 
-	//    csLocalisation.Add($"SubServices.NAME[Parking Decals]", "Parking Decals");
-	//    csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[Parking Decals]", "Parking Decals");
+		foreach (string folder in FolderToLoadDecals)
+		{
+			foreach (string decalsCat in Directory.GetDirectories(folder))
+			{
 
-	//    csLocalisation.Add($"SubServices.NAME[RoadMarkings Decals]", "RoadMarkings Decals");
-	//    csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[RoadMarkings Decals]", "RoadMarkings Decals");
+				//if (!csLocalisation.ContainsKey($"SubServices.NAME[{new DirectoryInfo(decalsCat).Name} Decals]"))
+				//{
+				//	csLocalisation.Add($"SubServices.NAME[{new DirectoryInfo(decalsCat).Name} Decals]", $"{new DirectoryInfo(decalsCat).Name} Decals");
+				//}
 
-	//    csLocalisation.Add($"SubServices.NAME[Misc Decals]", "Misc Decals");
-	//    csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[Misc Decals]", "Misc Decals");
+				//if (!csLocalisation.ContainsKey($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(decalsCat).Name} Decals]"))
+				//{
+				//	csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(decalsCat).Name} Decals]", $"{new DirectoryInfo(decalsCat).Name} Decals");
+				//}
 
-	//    foreach (string folder in FolderToLoadDecals)
-	//    {
-	//        foreach (string decalsCat in Directory.GetDirectories(folder))
-	//        {
+				foreach (string filePath in Directory.GetDirectories(decalsCat))
+				{
+					string decalName = $"{new DirectoryInfo(folder).Parent.Name} {new DirectoryInfo(decalsCat).Name} {new DirectoryInfo(filePath).Name} Decal";
 
-	//            if (!csLocalisation.ContainsKey($"SubServices.NAME[{new DirectoryInfo(decalsCat).Name} Decals]"))
-	//            {
-	//                csLocalisation.Add($"SubServices.NAME[{new DirectoryInfo(decalsCat).Name} Decals]", $"{new DirectoryInfo(decalsCat).Name} Decals");
-	//            }
+					if (!csLocalisation.ContainsKey($"Assets.NAME[{decalName}]")) csLocalisation.Add($"Assets.NAME[{decalName}]", new DirectoryInfo(filePath).Name);
+					if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{decalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{decalName}]", new DirectoryInfo(filePath).Name);
+				}
+			}
+		}
 
-	//            if (!csLocalisation.ContainsKey($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(decalsCat).Name} Decals]"))
-	//            {
-	//                csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(decalsCat).Name} Decals]", $"{new DirectoryInfo(decalsCat).Name} Decals");
-	//            }
-
-	//            foreach (string filePath in Directory.GetDirectories(decalsCat))
-	//            {
-	//                string decalName = $"{new DirectoryInfo(folder).Parent.Name}_{new DirectoryInfo(decalsCat).Name}_{new DirectoryInfo(filePath).Name}";
-
-	//                if (!csLocalisation.ContainsKey($"Assets.NAME[{decalName}]")) csLocalisation.Add($"Assets.NAME[{decalName}]", new DirectoryInfo(filePath).Name);
-	//                if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{decalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{decalName}]", new DirectoryInfo(filePath).Name);
-	//            }
-	//        }
-	//    }
-
-	//    foreach (string key in Localization.localization.Keys)
-	//    {
-
-	//        foreach (string s in csLocalisation.Keys)
-	//        {
-	//            if (!Localization.localization[key].ContainsKey(s)) Localization.localization[key].Add(s, csLocalisation[s]);
-	//        }
-	//    }
-	//}
+		foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+		{
+            GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
+        }
+	}
 
 	public static void AddCustomDecalsFolder(string path)
 	{
@@ -141,7 +130,8 @@ internal class DecalsImporter
                     notificationInfo.text = $"Loading : {new DirectoryInfo(decalsFolder).Name}";
 					try
 					{
-						CreateCustomDecal(decalsFolder, new DirectoryInfo(decalsFolder).Name, new DirectoryInfo(catFolder).Name, new DirectoryInfo(folder).Parent.Name, assetCat);
+						string modName = new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                        CreateCustomDecal(decalsFolder, new DirectoryInfo(decalsFolder).Name, new DirectoryInfo(catFolder).Name, modName, assetCat);
 					}
 					catch (Exception e)
 					{
@@ -161,6 +151,8 @@ internal class DecalsImporter
 			progressState: ProgressState.Complete,
 			progress: 100
 		);
+
+		LoadLocalization();
 	}
 
 	public static void CreateCustomDecal(string folderPath, string decalName, string catName, string modName, ExtraAssetsMenu.AssetCat assetCat)
