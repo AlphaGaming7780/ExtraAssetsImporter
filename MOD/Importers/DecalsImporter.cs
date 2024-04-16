@@ -269,7 +269,7 @@ internal class DecalsImporter
 
 		}
 
-		AssetDataPath assetDataPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", "SurfaceAsset");
+        AssetDataPath assetDataPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", "SurfaceAsset");
 		SurfaceAsset surfaceAsset = new()
 		{
 			guid = Guid.NewGuid(), //DecalRenderPrefab.surfaceAssets.ToArray()[0].guid, //
