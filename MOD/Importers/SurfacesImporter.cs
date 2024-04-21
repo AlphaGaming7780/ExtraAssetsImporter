@@ -120,7 +120,8 @@ internal class SurfacesImporter
 					notificationInfo.text = $"Loading : {new DirectoryInfo(surfaceFolder).Name}";
 					try
 					{
-                        string modName = new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                        FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
+                        string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
                         CreateCustomSurface(surfaceFolder, new DirectoryInfo(surfaceFolder).Name, new DirectoryInfo(surfacesCat).Name, modName, assetCat);
 					}
 					catch (Exception e)

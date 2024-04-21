@@ -130,7 +130,8 @@ internal class DecalsImporter
                     notificationInfo.text = $"Loading : {new DirectoryInfo(decalsFolder).Name}";
 					try
 					{
-						string modName = new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
+						string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
                         CreateCustomDecal(decalsFolder, new DirectoryInfo(decalsFolder).Name, new DirectoryInfo(catFolder).Name, modName, assetCat);
 					}
 					catch (Exception e)
