@@ -33,12 +33,7 @@ namespace ExtraAssetsImporter
             }
             else if (prefab is UIAssetMenuPrefab)
             {
-
                 return Extra.Lib.UI.Icons.Placeholder;
-            }
-            else if (prefab.name.ToLower().Contains("decal") || prefab.name.ToLower().Contains("roadarrow") || prefab.name.ToLower().Contains("lanemarkings"))
-            {
-                return DecalPlaceholder;
             }
 
             return Extra.Lib.UI.Icons.Placeholder;

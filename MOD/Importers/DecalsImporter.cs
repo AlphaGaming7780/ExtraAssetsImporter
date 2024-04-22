@@ -130,7 +130,8 @@ internal class DecalsImporter
                     notificationInfo.text = $"Loading : {new DirectoryInfo(decalsFolder).Name}";
 					try
 					{
-						string modName = new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
+						string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
                         CreateCustomDecal(decalsFolder, new DirectoryInfo(decalsFolder).Name, new DirectoryInfo(catFolder).Name, modName, assetCat);
 					}
 					catch (Exception e)
@@ -329,7 +330,7 @@ internal class DecalsImporter
 
 		UIObject decalPrefabUI = decalPrefab.AddComponent<UIObject>();
 		decalPrefabUI.m_IsDebugObject = false;
-		decalPrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/{decalName}/icon.png" : Icons.GetIcon(decalPrefab);
+		decalPrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/{decalName}/icon.png" : Icons.DecalPlaceholder;
 		decalPrefabUI.m_Priority = (int)(decalSurface.HasProperty("UiPriority") ? decalSurface.GetFloatProperty("UiPriority") : -1);
 		decalPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
