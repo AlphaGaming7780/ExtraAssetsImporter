@@ -47,6 +47,13 @@ internal class SurfacesImporter
 		Icons.LoadIcons(new DirectoryInfo(path).Parent.FullName);
 	}
 
+	public static void RemoveCustomSurfacesFolder(string folder)
+	{
+        if (!FolderToLoadSurface.Contains(folder)) return;
+        FolderToLoadSurface.Remove(folder);
+        Icons.UnLoadIcons(new DirectoryInfo(folder).Parent.FullName);
+    }
+
 	internal static void LoadLocalization()
 	{
 

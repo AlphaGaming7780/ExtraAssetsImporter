@@ -15,6 +15,11 @@ namespace ExtraAssetsImporter
             Extra.Lib.UI.Icons.LoadIconsFolder(IconsResourceKey, path);
         }
 
+        internal static void UnLoadIcons(string path)
+        {
+            Extra.Lib.UI.Icons.UnLoadIconsFolder(IconsResourceKey, path);
+        }
+
         public static string GetIcon(PrefabBase prefab)
         {
 

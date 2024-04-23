@@ -87,14 +87,19 @@ internal class DecalsImporter
 
 	public static void AddCustomDecalsFolder(string path)
 	{
-		if (!FolderToLoadDecals.Contains(path))
-		{
-			FolderToLoadDecals.Add(path);
-			Icons.LoadIcons(new DirectoryInfo(path).Parent.FullName);
-		}
+		if (FolderToLoadDecals.Contains(path)) return;
+		FolderToLoadDecals.Add(path);
+		Icons.LoadIcons(new DirectoryInfo(path).Parent.FullName);
 	}
 
-	internal static IEnumerator CreateCustomDecals()
+    public static void RemoveCustomDecalsFolder(string path)
+    {
+        if (!FolderToLoadDecals.Contains(path)) return;
+        FolderToLoadDecals.Remove(path);
+        Icons.UnLoadIcons(new DirectoryInfo(path).Parent.FullName);
+    }
+
+    internal static IEnumerator CreateCustomDecals()
 	{
 		if (DecalsLoaded || FolderToLoadDecals.Count <= 0) yield break;
 

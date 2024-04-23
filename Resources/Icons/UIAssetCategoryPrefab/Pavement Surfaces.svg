@@ -1,39 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 26.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns:serif="http://www.serif.com/"
-	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 256 256"
-	 style="enable-background:new 0 0 256 256;" xml:space="preserve">
-<style type="text/css">
-	.st0{display:none;}
-	.st1{display:inline;fill-rule:evenodd;clip-rule:evenodd;fill:#C2BDBD;}
-	.st2{fill:#292E36;}
-	.st3{fill:#F5D53C;}
-	.st4{fill-rule:evenodd;clip-rule:evenodd;fill:#D1F8FD;}
-	.st5{display:inline;fill:#292E36;}
-	.st6{display:inline;fill:#F5D53C;}
-</style>
-<g id="grey" class="st0">
-	<path class="st1" d="M196.3,50c1.1,4.8,4.9,8.5,9.7,9.7v136.7c-4.8,1.1-8.5,4.9-9.7,9.7H59.7c-1.1-4.8-4.9-8.5-9.7-9.7V59.7
-		c4.8-1.1,8.5-4.9,9.7-9.7H196.3z"/>
-</g>
-<g id="blue">
-	<g>
-		<rect x="36.4" y="44.3" class="st2" width="165.3" height="164.5"/>
-		<rect x="112.3" y="48.2" class="st3" width="13.2" height="35.2"/>
-		<rect x="112.2" y="92" class="st3" width="13.2" height="35.2"/>
-		<rect x="112.3" y="135.4" class="st3" width="13.2" height="32.6"/>
-		<rect x="112.1" y="176.1" class="st3" width="13.2" height="32.6"/>
-	</g>
-	<path class="st4" d="M32,54.4c-3.6-2.3-6-6.4-6-11c0-7.2,5.8-13,13-13c4.6,0,8.6,2.4,11,6H190c2.3-3.6,6.4-6,11-6
-		c7.2,0,13,5.8,13,13c0,4.6-2.4,8.6-6,11v140.1c3.6,2.3,6,6.4,6,11c0,7.2-5.8,13-13,13c-4.6,0-8.6-2.4-11-6H50c-2.3,3.6-6.4,6-11,6
-		c-7.2,0-13-5.8-13-13c0-4.6,2.4-8.6,6-11V54.4z M188.3,46.4H51.7c-1.1,4.8-4.9,8.5-9.7,9.7v136.7c4.8,1.1,8.5,4.9,9.7,9.7h136.7
-		c1.1-4.8,4.9-8.5,9.7-9.7V56.1C193.2,55,189.5,51.2,188.3,46.4z"/>
-</g>
-<g class="st0">
-	<rect x="38.2" y="42.1" class="st5" width="166.7" height="165.8"/>
-	<rect x="114.7" y="46" class="st6" width="13.3" height="35.5"/>
-	<rect x="114.6" y="90.1" class="st6" width="13.3" height="35.5"/>
-	<rect x="114.7" y="133.9" class="st6" width="13.3" height="32.9"/>
-	<rect x="114.5" y="174.9" class="st6" width="13.3" height="32.9"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" clip-rule="evenodd" viewBox="0 0 64 64">
+  <g id="grey">
+    <path fill="#292e36" d="M49.454 12.085a3.32 3.32 0 0 0 2.461 2.461v34.908a3.32 3.32 0 0 0-2.461 2.461H14.546a3.32 3.32 0 0 0-2.461-2.461V14.546a3.32 3.32 0 0 0 2.461-2.461h34.908Z"/>
+  </g>
+  <g id="yellow">
+    <path fill="#f5d53c" d="M29.978 51.915v-7.016h3.401v7.016h-3.401Zm3.452-39.83v8.875h-3.401v-8.875h3.401Zm-.031 11.101v9.08h-3.401v-9.08h3.401ZM33.42 34.4v8.426h-3.401V34.4h3.401Z"/>
+  </g>
+  <g id="blue">
+    <path fill="#d1f8fd" d="M9.532 14.117A3.326 3.326 0 0 1 8 11.319 3.325 3.325 0 0 1 11.319 8c1.175 0 2.206.613 2.798 1.532h35.766A3.326 3.326 0 0 1 52.681 8 3.325 3.325 0 0 1 56 11.319a3.326 3.326 0 0 1-1.532 2.798v35.766A3.326 3.326 0 0 1 56 52.681 3.325 3.325 0 0 1 52.681 56a3.326 3.326 0 0 1-2.798-1.532H14.117A3.326 3.326 0 0 1 11.319 56 3.325 3.325 0 0 1 8 52.681c0-1.175.613-2.206 1.532-2.798V14.117Zm39.922-2.032H14.546a3.32 3.32 0 0 1-2.461 2.461v34.908a3.32 3.32 0 0 1 2.461 2.461h34.908a3.32 3.32 0 0 1 2.461-2.461V14.546a3.32 3.32 0 0 1-2.461-2.461Z"/>
+  </g>
 </svg>

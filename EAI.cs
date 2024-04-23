@@ -8,6 +8,7 @@ using Game;
 using Game.Modding;
 using Game.Prefabs;
 using Game.SceneFlow;
+using System.Drawing;
 using System.IO;
 using Unity.Collections;
 using Unity.Entities;
@@ -73,6 +74,18 @@ namespace ExtraAssetsImporter
 			//	Directory.Delete(ELTUserDataPath, true);
 			//}
 		}
+
+		public static void LoadCustomAssets(string modPath)
+		{
+			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.AddCustomSurfacesFolder(modPath + "\\CustomSurfaces");
+			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.AddCustomDecalsFolder(modPath + "\\CustomDecals");
+        }
+
+		public static void UnLoadCustomAssets(string modPath)
+		{
+            if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.RemoveCustomSurfacesFolder(modPath + "\\CustomSurfaces");
+            if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.RemoveCustomDecalsFolder(modPath + "\\CustomDecals");
+        }
 
     }
 }
