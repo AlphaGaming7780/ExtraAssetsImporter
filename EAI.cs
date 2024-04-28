@@ -11,6 +11,8 @@ using Game.Modding;
 using Game.Prefabs;
 using Game.SceneFlow;
 using Game.Settings;
+using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -74,7 +76,17 @@ namespace ExtraAssetsImporter
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
 		}
 
-		internal static void ClearData()
+		private IEnumerator WaitForCustomStuffToFinish()
+		{
+			while(!DecalsImporter.DecalsLoaded || !SurfacesImporter.SurfacesIsLoaded) 
+			{
+				yield return null;
+			}
+			m_Setting.ResetCompatibility();
+		}
+
+
+        internal static void ClearData()
 		{
 			if (Directory.Exists(ELTGameDataPath))
 			{

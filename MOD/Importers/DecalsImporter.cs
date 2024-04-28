@@ -31,25 +31,26 @@ internal class DecalsImporter
 {
 	internal static List<string> FolderToLoadDecals = [];
 	internal static Dictionary<PrefabBase, string> DecalsDataBase = [];
-	private static bool DecalsLoaded = false;
+	private static bool DecalsLoading = false;
+	internal static bool DecalsLoaded = false;
 
-	//private static readonly List<string> validName = ["_BaseColorMap.png", "_NormalMap.png", "_MaskMap.png"];
+    //private static readonly List<string> validName = ["_BaseColorMap.png", "_NormalMap.png", "_MaskMap.png"];
 
-	//internal static void SearchForCustomDecalsFolder(string ModsFolderPath)
-	//{
-	//    foreach (DirectoryInfo directory in new DirectoryInfo(ModsFolderPath).GetDirectories())
-	//    {
-	//        if (File.Exists($"{directory.FullName}\\CustomDecals.zip"))
-	//        {
-	//            if (Directory.Exists($"{directory.FullName}\\CustomDecals")) Directory.Delete($"{directory.FullName}\\CustomDecals", true);
-	//            ZipFile.ExtractToDirectory($"{directory.FullName}\\CustomDecals.zip", directory.FullName);
-	//            File.Delete($"{directory.FullName}\\CustomDecals.zip");
-	//        }
-	//        if (Directory.Exists($"{directory.FullName}\\CustomDecals")) AddCustomDecalsFolder($"{directory.FullName}\\CustomDecals");
-	//    }
-	//}
+    //internal static void SearchForCustomDecalsFolder(string ModsFolderPath)
+    //{
+    //    foreach (DirectoryInfo directory in new DirectoryInfo(ModsFolderPath).GetDirectories())
+    //    {
+    //        if (File.Exists($"{directory.FullName}\\CustomDecals.zip"))
+    //        {
+    //            if (Directory.Exists($"{directory.FullName}\\CustomDecals")) Directory.Delete($"{directory.FullName}\\CustomDecals", true);
+    //            ZipFile.ExtractToDirectory($"{directory.FullName}\\CustomDecals.zip", directory.FullName);
+    //            File.Delete($"{directory.FullName}\\CustomDecals.zip");
+    //        }
+    //        if (Directory.Exists($"{directory.FullName}\\CustomDecals")) AddCustomDecalsFolder($"{directory.FullName}\\CustomDecals");
+    //    }
+    //}
 
-	internal static void LoadLocalization()
+    internal static void LoadLocalization()
 	{
 
 		Dictionary<string, string> csLocalisation = [];
@@ -101,9 +102,9 @@ internal class DecalsImporter
 
     internal static IEnumerator CreateCustomDecals()
 	{
-		if (DecalsLoaded || FolderToLoadDecals.Count <= 0) yield break;
+		if (DecalsLoading || FolderToLoadDecals.Count <= 0) yield break;
 
-		DecalsLoaded = true;
+        DecalsLoading = true;
 
 		int numberOfDecals = 0;
 		int ammoutOfDecalsloaded = 0;
@@ -159,7 +160,8 @@ internal class DecalsImporter
 		);
 
 		LoadLocalization();
-	}
+		DecalsLoaded = true;
+    }
 
 	public static void CreateCustomDecal(string folderPath, string decalName, string catName, string modName, ExtraAssetsMenu.AssetCat assetCat)
 	{

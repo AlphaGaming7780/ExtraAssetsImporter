@@ -32,15 +32,16 @@ internal class SurfacesImporter
 {
 	internal static List<string> FolderToLoadSurface = [];
 
-	private static bool SurfacesLoaded = false;
+	private static bool SurfacesIsLoading = false;
+	internal static bool SurfacesIsLoaded = false;
 
-	// internal static void ClearSurfacesCache() {
-	// 	if(Directory.Exists($"{GameManager_Awake.resourcesCache}/Surfaces")) {
-	// 		Directory.Delete($"{GameManager_Awake.resourcesCache}/Surfaces", true);
-	// 	}
-	// }
+    // internal static void ClearSurfacesCache() {
+    // 	if(Directory.Exists($"{GameManager_Awake.resourcesCache}/Surfaces")) {
+    // 		Directory.Delete($"{GameManager_Awake.resourcesCache}/Surfaces", true);
+    // 	}
+    // }
 
-	public static void AddCustomSurfacesFolder(string path)
+    public static void AddCustomSurfacesFolder(string path)
 	{
 		if (FolderToLoadSurface.Contains(path)) return;
 		FolderToLoadSurface.Add(path);
@@ -92,9 +93,9 @@ internal class SurfacesImporter
 
 	internal static IEnumerator CreateCustomSurfaces()
 	{
-		if (SurfacesLoaded || FolderToLoadSurface.Count <= 0) yield break;
+		if (SurfacesIsLoading || FolderToLoadSurface.Count <= 0) yield break;
 
-		SurfacesLoaded = true;
+		SurfacesIsLoading = true;
 
 		int numberOfSurfaces = 0;
 		int ammoutOfSurfacesloaded = 0;
@@ -151,6 +152,7 @@ internal class SurfacesImporter
 		);
 
 		LoadLocalization();
+		SurfacesIsLoaded = true;
     }
 
 	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, ExtraAssetsMenu.AssetCat assetCat)

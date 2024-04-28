@@ -34,4 +34,12 @@ public class Setting(IMod mod) : ModSetting(mod)
         ELT3Compatibility = false;
         LocalAssetCompatibility = false;
     }
+
+    internal void ResetCompatibility()
+    {
+        ELT2Compatibility = false;
+        ELT3Compatibility = false;
+        LocalAssetCompatibility = false;
+        ApplyAndSave();
+    }
 }
