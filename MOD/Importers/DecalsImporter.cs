@@ -182,7 +182,8 @@ internal class DecalsImporter
 			foreach (string key in jSONMaterail.Vector.Keys) { decalSurface.AddProperty(key, jSONMaterail.Vector[key]); }
 			if (jSONMaterail.prefabIdentifierInfos.Count > 0)
 			{
-				ObsoleteIdentifiers obsoleteIdentifiers = decalPrefab.AddComponent<ObsoleteIdentifiers>();
+				VersionCompatiblity(jSONMaterail, catName, decalName);
+                ObsoleteIdentifiers obsoleteIdentifiers = decalPrefab.AddComponent<ObsoleteIdentifiers>();
 				obsoleteIdentifiers.m_PrefabIdentifiers = [.. jSONMaterail.prefabIdentifierInfos];
 			}
 		}
@@ -442,6 +443,28 @@ internal class DecalsImporter
 
 		return mesh;
 	}
+
+    private static void VersionCompatiblity(JSONDecalsMaterail jSONDecalsMaterail, string catName, string decalName)
+    {
+		if (EAI.m_Setting.LocalAssetCompatibility)
+		{
+            PrefabIdentifierInfo prefabIdentifierInfo = new()
+            {
+                m_Name = $"ExtraAssetsImporter {catName} {decalName} Decal",
+                m_Type = "StaticObjectPrefab"
+            };
+            jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+        }
+        if (EAI.m_Setting.ELT3Compatibility)
+        {
+            PrefabIdentifierInfo prefabIdentifierInfo = new()
+            {
+                m_Name = $"ExtraLandscapingTools_mods_{catName}_{decalName}",
+                m_Type = "StaticObjectPrefab"
+            };
+            jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+        }
+    }
 }
 internal class CustomDecal : ComponentBase
 {

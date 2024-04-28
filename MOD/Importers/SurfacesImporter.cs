@@ -200,7 +200,8 @@ internal class SurfacesImporter
 
 			if (jSONMaterail.prefabIdentifierInfos.Count > 0)
 			{
-				ObsoleteIdentifiers obsoleteIdentifiers = surfacePrefab.AddComponent<ObsoleteIdentifiers>();
+				VersionCompatiblity(jSONMaterail, catName, surfaceName);
+                ObsoleteIdentifiers obsoleteIdentifiers = surfacePrefab.AddComponent<ObsoleteIdentifiers>();
 				obsoleteIdentifiers.m_PrefabIdentifiers = [.. jSONMaterail.prefabIdentifierInfos];
 			}
 		}
@@ -323,6 +324,36 @@ internal class SurfacesImporter
         return material;
     }
 
+	private static void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName)
+	{
+        if (EAI.m_Setting.LocalAssetCompatibility)
+        {
+            PrefabIdentifierInfo prefabIdentifierInfo = new()
+            {
+                m_Name = $"ExtraAssetsImporter {catName} {surfaceName} Surface",
+                m_Type = "StaticObjectPrefab"
+            };
+            jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+        }
+        if (EAI.m_Setting.ELT2Compatibility)
+        {
+            PrefabIdentifierInfo prefabIdentifierInfo = new()
+            {
+                m_Name = $"{surfaceName}",
+                m_Type = "SurfacePrefab"
+            };
+            jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+        }
+        if (EAI.m_Setting.ELT3Compatibility)
+        {
+            PrefabIdentifierInfo prefabIdentifierInfo = new()
+            {
+                m_Name = $"ExtraLandscapingTools_mods_{catName}_{surfaceName}",
+                m_Type = "SurfacePrefab"
+            };
+            jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+        }
+    }
 }
 internal class CustomSurface : ComponentBase
 {

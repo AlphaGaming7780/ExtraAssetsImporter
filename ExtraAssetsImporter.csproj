@@ -23,8 +23,12 @@
 		<!--The file where mod information which is required for publishing mod on PDX mods are stored-->
 		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
 	</PropertyGroup>
-	
-	<!--Imports must be after PropertyGroup block-->
+
+  <ItemGroup>
+    <EmbeddedResource Include="embedded\**\*.*" />
+  </ItemGroup>
+
+  <!--Imports must be after PropertyGroup block-->
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
 
@@ -36,6 +40,12 @@
     <Reference Include="$(LocalModsPath)\ExtraLib\ExtraLib.dll" Private="False" />
     <!--<Reference Include="$(UserDataPath)\.cache\Mods\mods_subscribed\75724_*\ExtraLib.dll" Private="False" />-->
   </ItemGroup>
+  
+  <!--<ItemGroup>
+    --><!--When EAI is released on PDX un commente this line under (remove the <!- ->) and delete the second Reference--><!--
+    --><!--<Reference Include="$(UserDataPath)\.cache\Mods\mods_subscribed\**\ExtraAssetsImporter.dll" Private="False" />--><!--
+    <Reference Include="$(LocalModsPath)\ExtraAssetsImporter\ExtraAssetsImporter.dll" Private="False" />
+  </ItemGroup>-->
 
   <ItemGroup>
     <!--<PackageReference Include="Lib.Harmony" Version="2.2.2" />-->

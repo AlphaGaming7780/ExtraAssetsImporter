@@ -1,15 +1,19 @@
-﻿using Colossal.Logging;
+﻿using Colossal.IO.AssetDatabase;
+using Colossal.Logging;
 using Colossal.PSI.Environment;
 using Extra.Lib;
 using Extra.Lib.Debugger;
+using Extra.Lib.Localization;
 using Extra.Lib.UI;
 using ExtraAssetsImporter.Importers;
 using Game;
 using Game.Modding;
 using Game.Prefabs;
 using Game.SceneFlow;
+using Game.Settings;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -21,8 +25,8 @@ namespace ExtraAssetsImporter
 	{
 		private static ILog log = LogManager.GetLogger($"{nameof(ExtraAssetsImporter)}").SetShowsErrorsInUI(false);
 		internal static Logger Logger { get; private set; } = new(log, true);
-		static internal readonly string ELTGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI"; //: $"{EnvPath.kUserDataPath}\\Mods\\ELT"; Settings.settings.UseGameFolderForCache ? 
-		//static internal readonly string ELTUserDataPath = $"{EnvPath.kUserDataPath}\\Mods\\EAI"; //: $"{EnvPath.kUserDataPath}\\Mods\\ELT"; Settings.settings.UseGameFolderForCache ? 
+		static internal readonly string ELTGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI";                                                                          
+		internal static Setting m_Setting;
 
 		internal static string ResourcesIcons { get; private set; }
 		public void OnLoad(UpdateSystem updateSystem)
@@ -30,7 +34,14 @@ namespace ExtraAssetsImporter
 			Logger.Info(nameof(OnLoad));
 			ClearData();
 
-            if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
+			ExtraLocalization.LoadLocalization(Logger, Assembly.GetExecutingAssembly(), false);
+
+			m_Setting = new Setting(this);
+			m_Setting.RegisterInOptionsUI();
+
+			AssetDatabase.global.LoadSettings("settings", m_Setting, new Setting(this));
+
+			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
 
 			FileInfo fileInfo = new(asset.path);
@@ -42,14 +53,14 @@ namespace ExtraAssetsImporter
 			string pathToDataCustomDecals = Path.Combine(pathToData, "CustomDecals");
 			string pathToDataCustomSurfaces = Path.Combine(pathToData, "CustomSurfaces");
 
-            if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+			if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
 
-            ExtraLib.AddOnMainMenu(OnMainMenu);
+			ExtraLib.AddOnMainMenu(OnMainMenu);
 
 			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 
-        }
+		}
 
 		public void OnDispose()
 		{
@@ -59,9 +70,9 @@ namespace ExtraAssetsImporter
 
 		private void OnMainMenu()
 		{
-			ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
-			ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-        }
+			if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+            if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+		}
 
 		internal static void ClearData()
 		{
@@ -79,13 +90,13 @@ namespace ExtraAssetsImporter
 		{
 			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.AddCustomSurfacesFolder(modPath + "\\CustomSurfaces");
 			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.AddCustomDecalsFolder(modPath + "\\CustomDecals");
-        }
+		}
 
 		public static void UnLoadCustomAssets(string modPath)
 		{
-            if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.RemoveCustomSurfacesFolder(modPath + "\\CustomSurfaces");
-            if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.RemoveCustomDecalsFolder(modPath + "\\CustomDecals");
-        }
+			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.RemoveCustomSurfacesFolder(modPath + "\\CustomSurfaces");
+			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.RemoveCustomDecalsFolder(modPath + "\\CustomDecals");
+		}
 
-    }
+	}
 }
