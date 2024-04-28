@@ -1,0 +1,16 @@
+{
+	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "ExtraAssetsImporter",
+	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Main",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "Importers",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Custom Surfaces",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Load the custom surfaces, take effect after restarting the game.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Custom Decals",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Load the custom decals, take effect after restarting the game.",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Missing Prefab Helper",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.ELT2Compatibility]": "ELT 2.0 Fix",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.ELT2Compatibility]": "These settings have for goal to try to fix missing prefab caused by mod update. To use it is simple, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart top avoid future conflict and issue.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.ELT3Compatibility]": "ELT 3.0 Fix",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.ELT3Compatibility]": "These settings have for goal to try to fix missing prefab caused by mod update. To use it is simple, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart top avoid future conflict and issue.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.LocalAssetCompatibility]": "Local Asset Fix",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.LocalAssetCompatibility]": "These settings have for goal to try to fix missing prefab caused by mod update. To use it is simple, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart top avoid future conflict and issue."
+}
