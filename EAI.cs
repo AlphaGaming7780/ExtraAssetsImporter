@@ -41,7 +41,7 @@ namespace ExtraAssetsImporter
 			m_Setting = new Setting(this);
 			m_Setting.RegisterInOptionsUI();
 
-			AssetDatabase.global.LoadSettings("settings", m_Setting, new Setting(this));
+			AssetDatabase.global.LoadSettings("ExtraAssetsImporter_Settings", m_Setting, new Setting(this));
 
 			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");

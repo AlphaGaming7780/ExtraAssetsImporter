@@ -30,6 +30,8 @@ public class Setting(IMod mod) : ModSetting(mod)
 
     public override void SetDefaults()
     {
+        Decals = true;
+        Surfaces = true;
         ELT2Compatibility = false;
         ELT3Compatibility = false;
         LocalAssetCompatibility = false;
