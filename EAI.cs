@@ -36,17 +36,19 @@ namespace ExtraAssetsImporter
 			Logger.Info(nameof(OnLoad));
 			ClearData();
 
-			ExtraLocalization.LoadLocalization(Logger, Assembly.GetExecutingAssembly(), false);
-
-			m_Setting = new Setting(this);
-			m_Setting.RegisterInOptionsUI();
-
-			AssetDatabase.global.LoadSettings("ExtraAssetsImporter_Settings", m_Setting, new Setting(this));
-
 			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
 
-			FileInfo fileInfo = new(asset.path);
+            ExtraLocalization.LoadLocalization(Logger, Assembly.GetExecutingAssembly(), false);
+
+            m_Setting = new Setting(this);
+            m_Setting.RegisterInOptionsUI();
+            AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
+
+			m_Setting.dummySettingsToAvoidSettingsBugThanksCO = true;
+			m_Setting.ApplyAndSave();
+
+            FileInfo fileInfo = new(asset.path);
 
 			ResourcesIcons = Path.Combine(fileInfo.DirectoryName, "Icons");
 			Icons.LoadIcons(fileInfo.DirectoryName);
@@ -74,15 +76,17 @@ namespace ExtraAssetsImporter
 		{
 			if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+			ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
 		}
 
 		private IEnumerator WaitForCustomStuffToFinish()
 		{
-			while(!DecalsImporter.DecalsLoaded || !SurfacesImporter.SurfacesIsLoaded) 
+			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded)) 
 			{
 				yield return null;
 			}
 			m_Setting.ResetCompatibility();
+			yield break;
 		}
 
 

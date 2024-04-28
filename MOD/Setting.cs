@@ -28,6 +28,8 @@ public class Setting(IMod mod) : ModSetting(mod)
     [SettingsUISection(kSection, kMPHGroup)]
     public bool LocalAssetCompatibility { get; set; } = false;
 
+    public bool dummySettingsToAvoidSettingsBugThanksCO = false;
+
     public override void SetDefaults()
     {
         Decals = true;
@@ -35,6 +37,7 @@ public class Setting(IMod mod) : ModSetting(mod)
         ELT2Compatibility = false;
         ELT3Compatibility = false;
         LocalAssetCompatibility = false;
+        dummySettingsToAvoidSettingsBugThanksCO = false;
     }
 
     internal void ResetCompatibility()
