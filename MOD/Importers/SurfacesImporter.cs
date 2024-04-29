@@ -162,7 +162,7 @@ internal class SurfacesImporter
 
 		string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
 
-		Dictionary<string, object> SurfaceInformation = [];
+		Dictionary<string, float> SurfaceInformation = [];
 
 		SurfacePrefab surfacePrefab = (SurfacePrefab)ScriptableObject.CreateInstance("SurfacePrefab");
 		surfacePrefab.name = fullSurfaceName;
