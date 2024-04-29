@@ -1,5 +1,5 @@
 {
-	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "ExtraAssetsImporter",
+	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Main",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "Importers",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Custom Surfaces",
