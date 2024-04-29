@@ -20,13 +20,16 @@ public class Setting(IMod mod) : ModSetting(mod)
     public bool Decals { get; set; } = true;
 
     [SettingsUISection(kSection, kMPHGroup)]
-    public bool ELT2Compatibility { get; set; } = false;
+    public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
 
-    [SettingsUISection(kSection, kMPHGroup)]
-    public bool ELT3Compatibility { get; set; } = false;
+    //[SettingsUISection(kSection, kMPHGroup)]
+    //public bool ELT2Compatibility { get; set; } = false;
 
-    [SettingsUISection(kSection, kMPHGroup)]
-    public bool LocalAssetCompatibility { get; set; } = false;
+    //[SettingsUISection(kSection, kMPHGroup)]
+    //public bool ELT3Compatibility { get; set; } = false;
+
+    //[SettingsUISection(kSection, kMPHGroup)]
+    //public bool LocalAssetCompatibility { get; set; } = false;
 
     public bool dummySettingsToAvoidSettingsBugThanksCO = false;
 
@@ -34,17 +37,27 @@ public class Setting(IMod mod) : ModSetting(mod)
     {
         Decals = true;
         Surfaces = true;
-        ELT2Compatibility = false;
-        ELT3Compatibility = false;
-        LocalAssetCompatibility = false;
+        //ELT2Compatibility = false;
+        //ELT3Compatibility = false;
+        //LocalAssetCompatibility = false;
+        CompatibilityDropDown = EAICompatibility.None;
         dummySettingsToAvoidSettingsBugThanksCO = false;
     }
 
     internal void ResetCompatibility()
     {
-        ELT2Compatibility = false;
-        ELT3Compatibility = false;
-        LocalAssetCompatibility = false;
+        //ELT2Compatibility = false;
+        //ELT3Compatibility = false;
+        //LocalAssetCompatibility = false;
+        CompatibilityDropDown = EAICompatibility.None;
         ApplyAndSave();
     }
+}
+
+public enum EAICompatibility
+{
+    None,
+    ELT2,
+    ELT3,
+    LocalAsset,
 }

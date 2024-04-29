@@ -200,9 +200,9 @@ internal class SurfacesImporter
 			}
 			foreach (string key in jSONMaterail.Vector.Keys) { newMaterial.SetVector(key, jSONMaterail.Vector[key]); }
 
-			if (jSONMaterail.prefabIdentifierInfos.Count > 0)
+            VersionCompatiblity(jSONMaterail, catName, surfaceName);
+            if (jSONMaterail.prefabIdentifierInfos.Count > 0)
 			{
-				VersionCompatiblity(jSONMaterail, catName, surfaceName);
                 ObsoleteIdentifiers obsoleteIdentifiers = surfacePrefab.AddComponent<ObsoleteIdentifiers>();
 				obsoleteIdentifiers.m_PrefabIdentifiers = [.. jSONMaterail.prefabIdentifierInfos];
 			}
@@ -328,7 +328,7 @@ internal class SurfacesImporter
 
 	private static void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName)
 	{
-        if (EAI.m_Setting.LocalAssetCompatibility)
+        if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
         {
             PrefabIdentifierInfo prefabIdentifierInfo = new()
             {
@@ -337,7 +337,7 @@ internal class SurfacesImporter
             };
             jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
         }
-        if (EAI.m_Setting.ELT2Compatibility)
+        if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT2)
         {
             PrefabIdentifierInfo prefabIdentifierInfo = new()
             {
@@ -346,7 +346,7 @@ internal class SurfacesImporter
             };
             jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
         }
-        if (EAI.m_Setting.ELT3Compatibility)
+        if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT3)
         {
             PrefabIdentifierInfo prefabIdentifierInfo = new()
             {

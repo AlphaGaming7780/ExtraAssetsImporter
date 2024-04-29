@@ -182,9 +182,10 @@ internal class DecalsImporter
 			JSONDecalsMaterail jSONMaterail = Decoder.Decode(File.ReadAllText(folderPath + "\\decal.json")).Make<JSONDecalsMaterail>();
 			foreach (string key in jSONMaterail.Float.Keys) { decalSurface.AddProperty(key, jSONMaterail.Float[key]); }
 			foreach (string key in jSONMaterail.Vector.Keys) { decalSurface.AddProperty(key, jSONMaterail.Vector[key]); }
-			if (jSONMaterail.prefabIdentifierInfos.Count > 0)
+
+            VersionCompatiblity(jSONMaterail, catName, decalName);
+            if (jSONMaterail.prefabIdentifierInfos.Count > 0)
 			{
-				VersionCompatiblity(jSONMaterail, catName, decalName);
                 ObsoleteIdentifiers obsoleteIdentifiers = decalPrefab.AddComponent<ObsoleteIdentifiers>();
 				obsoleteIdentifiers.m_PrefabIdentifiers = [.. jSONMaterail.prefabIdentifierInfos];
 			}
@@ -448,7 +449,7 @@ internal class DecalsImporter
 
     private static void VersionCompatiblity(JSONDecalsMaterail jSONDecalsMaterail, string catName, string decalName)
     {
-		if (EAI.m_Setting.LocalAssetCompatibility)
+		if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
 		{
             PrefabIdentifierInfo prefabIdentifierInfo = new()
             {
@@ -457,7 +458,7 @@ internal class DecalsImporter
             };
             jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
         }
-        if (EAI.m_Setting.ELT3Compatibility)
+        if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT3)
         {
             PrefabIdentifierInfo prefabIdentifierInfo = new()
             {
