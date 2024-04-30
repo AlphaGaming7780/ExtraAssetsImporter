@@ -8,7 +8,20 @@
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-This is a long description
+# Translation
+| Language							| Progress	| Participants |
+| --------------------- | ---------	| ------------ |
+| French								| 0%				| |
+| Chinese Simplified		| 0%				| |
+| Chinese Traditional		| 0%				| |
+| German								| 0%				| |
+| Italian								| 0%				| |
+| Japanese							| 0%				| |
+| Korean								| 0%				| |
+| Polish								| 0%				| |
+| Portuguese, Brazilian | 0%				| |
+| Russian								| 0%				| |
+| Spanish								| 0%				| |
 	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/EAI.png" />
@@ -29,7 +42,7 @@ This is a long description
 	<!--ChangeLog>
 	</ChangeLog-->
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
-  <ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />
-  <ExternalLink Type="github" Url="https://github.com/AlphaGaming7780/ExtraAssetsImporter" />
-  <ExternalLink Type="paypal" Url="https://www.paypal.com/paypalme/TritonSupreme" />
+	<ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />
+	<ExternalLink Type="github" Url="https://github.com/AlphaGaming7780/ExtraAssetsImporter" />
+	<ExternalLink Type="paypal" Url="https://www.paypal.com/paypalme/TritonSupreme" />
 </Publish>

@@ -26,8 +26,12 @@ namespace ExtraAssetsImporter
 	public class EAI : IMod
 	{
 		private static ILog log = LogManager.GetLogger($"{nameof(ExtraAssetsImporter)}").SetShowsErrorsInUI(false);
-		internal static Logger Logger { get; private set; } = new(log, true);
-		static internal readonly string ELTGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI";                                                                          
+#if DEBUG
+		internal static Logger Logger = new(log, true);
+#else
+        internal static Logger Logger = new(log, false);
+#endif
+        static internal readonly string ELTGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI";                                                                          
 		internal static Setting m_Setting;
 
 		internal static string ResourcesIcons { get; private set; }
