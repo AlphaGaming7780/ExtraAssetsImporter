@@ -6,7 +6,7 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Wczytaj niestandardowe powierzchnie, zmiany zaczną obowiązywać po ponownym uruchomieniu gry.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Niestandardowe naklejki",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Wczytaj niestandardowe naklejki, zmiany zaczną obowiązywać po ponownym uruchomieniu gry.",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Missing Prefab Fixer",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Korektor brakujących prefabrykatów",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Poprawka zgodności",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "To ustawienie ma na celu naprawę brakującego prefabrykatu spowodowanego aktualizacją EAI. Aby z niego skorzystać, włącz ustawienie odpowiadające wersji moda, którego użyłeś w zapisie, uruchom ponownie grę, wczytaj zapis, sprawdź, czy brakujące prefabrykaty wróciły i czy wszystko jest w porządku. Jeśli wszystko jest w porządku, zapisz i uruchom ponownie grę, jeśli coś jest nie tak, wyjdź z gry bez zapisywania. To ustawienie wyłącza się automatycznie po ponownym uruchomieniu, aby uniknąć przyszłych konfliktów i problemów.",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Wył.",
