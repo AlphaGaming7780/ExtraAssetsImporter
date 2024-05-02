@@ -7,10 +7,10 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Custom Decals",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Load the custom decals, take effect after restarting the game.",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Missing Prefab Helper",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Compatibility Fix",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "This setting have for goal to try to fix missing prefab caused by EAI update. To use it is simple, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
-	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Disabled",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Poprawka zgodności",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "To ustawienie ma na celu naprawę brakującego prefabrykatu spowodowanego aktualizacją EAI. Aby z niego skorzystać, włącz ustawienie odpowiadające wersji moda, którego użyłeś w zapisie, uruchom ponownie grę, wczytaj zapis, sprawdź, czy brakujące prefabrykaty wróciły i czy wszystko jest w porządku. Jeśli wszystko jest w porządku, zapisz i uruchom ponownie grę, jeśli coś jest nie tak, wyjdź z gry bez zapisywania. To ustawienie wyłącza się automatycznie po ponownym uruchomieniu, aby uniknąć przyszłych konfliktów i problemów.",
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Wył.",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT2]": "ELT 2.0",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT3]": "ELT 3.0",
-	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[LocalAsset]": "Local Assets"
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[LocalAsset]": "Zasoby lokalne"
 }
