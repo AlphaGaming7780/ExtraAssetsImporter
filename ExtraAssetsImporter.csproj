@@ -32,7 +32,7 @@
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
 
-    <ItemGroup>
+   <ItemGroup>
     <Reference Include="$(CustomManagedPath)\Colossal.*.dll" Private="False" />
     <Reference Include="$(CustomManagedPath)\Game*.dll" Private="False" />
     <Reference Include="$(CustomManagedPath)\Unity.*.dll" Private="False" />

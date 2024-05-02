@@ -4,22 +4,13 @@ using Colossal.PSI.Environment;
 using Extra.Lib;
 using Extra.Lib.Debugger;
 using Extra.Lib.Localization;
-using Extra.Lib.UI;
 using ExtraAssetsImporter.Importers;
 using Game;
 using Game.Modding;
-using Game.Prefabs;
 using Game.SceneFlow;
-using Game.Settings;
 using System.Collections;
-using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Reflection;
-using Unity.Collections;
-using Unity.Entities;
-using UnityEngine;
-using Logger = Extra.Lib.Debugger.Logger;
 
 namespace ExtraAssetsImporter
 {

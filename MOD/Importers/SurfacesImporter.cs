@@ -77,7 +77,9 @@ internal class SurfacesImporter
 
 				foreach (string filePath in Directory.GetDirectories(surfacesCat))
 				{
-					string surfaceName = $"{new DirectoryInfo(folder).Parent.Name} {new DirectoryInfo(surfacesCat).Name} {new DirectoryInfo(filePath).Name} Surface";
+                    FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
+                    string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                    string surfaceName = $"{modName} {new DirectoryInfo(surfacesCat).Name} {new DirectoryInfo(filePath).Name} Surface";
 
 					if (!csLocalisation.ContainsKey($"Assets.NAME[{surfaceName}]")) csLocalisation.Add($"Assets.NAME[{surfaceName}]", new DirectoryInfo(filePath).Name);
 					if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{surfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{surfaceName}]", new DirectoryInfo(filePath).Name);
@@ -116,22 +118,28 @@ internal class SurfacesImporter
 
 		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("Surfaces", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/Surfaces.svg");
 
+        Dictionary<string, string> csLocalisation = [];
 
-		foreach (string folder in FolderToLoadSurface)
+        foreach (string folder in FolderToLoadSurface)
 		{
 			foreach (string surfacesCat in Directory.GetDirectories(folder))
 			{
 				foreach (string surfaceFolder in Directory.GetDirectories(surfacesCat))
 				{
-					notificationInfo.progressState = ProgressState.Progressing;
+                    string surfaceName = new DirectoryInfo(surfaceFolder).Name;
+                    notificationInfo.progressState = ProgressState.Progressing;
 					notificationInfo.progress = (int)(ammoutOfSurfacesloaded / (float)numberOfSurfaces * 100);
-					notificationInfo.text = $"Loading : {new DirectoryInfo(surfaceFolder).Name}";
+					notificationInfo.text = $"Loading : {surfaceName}";
 					try
 					{
+                        string catName = new DirectoryInfo(surfacesCat).Name;
                         FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
                         string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-                        CreateCustomSurface(surfaceFolder, new DirectoryInfo(surfaceFolder).Name, new DirectoryInfo(surfacesCat).Name, modName, assetCat);
-					}
+                        string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
+                        CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat);
+                        if (!csLocalisation.ContainsKey($"Assets.NAME[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullSurfaceName}]")) csLocalisation.Add($"Assets.NAME[{fullSurfaceName}]", surfaceName);
+                        if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullSurfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullSurfaceName}]", surfaceName);
+                    }
 					catch (Exception e)
 					{
 						failedSurfaces++;
@@ -143,6 +151,11 @@ internal class SurfacesImporter
 			}
 		}
 
+        foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+        {
+            GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
+        }
+
         ExtraLib.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
@@ -151,16 +164,16 @@ internal class SurfacesImporter
 			progress: 100
 		);
 
-		LoadLocalization();
+		//LoadLocalization();
 		SurfacesIsLoaded = true;
     }
 
-	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, ExtraAssetsMenu.AssetCat assetCat)
+	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, ExtraAssetsMenu.AssetCat assetCat)
 	{
 
 		if (!File.Exists(folderPath + "\\" + "_BaseColorMap.png")) { EAI.Logger.Error($"No _BaseColorMap.png file for the {new DirectoryInfo(folderPath).Name} surface in {catName} category in {modName}."); return; }
 
-		string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
+		//string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
 
 		Dictionary<string, float> SurfaceInformation = [];
 
