@@ -293,7 +293,6 @@ internal class DecalsImporter
 					texture2D_Icon.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png");
 				}
 			}
-
 		}
 
         AssetDataPath assetDataPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", "SurfaceAsset");
