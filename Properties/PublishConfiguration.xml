@@ -8,21 +8,23 @@
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
+# CUSTOM ASSETS AREN'T SUPPORTED BY THE GAME YET.
+If you use any kind of custom asset in your save, it's going to break at some point, one day or another. If you want to play with fire and use these custom assets in your save, you are responsible for what you are going to do and lose.
+
 # Translation
-| Language							| Progress	| Participants |
-| --------------------- | ---------	| ------------ |
-| French								| 0%				| |
-| Chinese Simplified		| 0%				| |
-| Chinese Traditional		| 0%				| |
-| German								| 0%				| |
-| Italian								| 0%				| |
-| Japanese							| 0%				| |
-| Korean								| 0%				| |
-| Polish								| 100%			| Lisek |
-| Portuguese, Brazilian | 0%				| |
-| Russian								| 0%				| |
-| Spanish								| 0%				| |
-	</LongDescription>
+⚠️ I DON'T CHECK THE TRANSLATION, I DON'T TAKE THE RESPONSIBILITY FOR WHAT YOU ARE GOING TO READ. ⚠️
+- ⚠️French 0%
+- ⚠️Chinese Simplified 9% : RilkeXS(无手文) (RilkeXS)
+- ❌Chinese Traditional 0%
+- ✔️German 100% : Konsi
+- ❌Italian 0%
+- ❌Japanese 0%
+- ✔️Korean 100% : Hinanchovo
+- ✔️Polish 100% : Lisek
+- ❌Portuguese, Brazilian 0%
+- ❌Russian 0%
+- ❌Spanish 0%
+  </LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/EAI.png" />
 	<!--Screenshot, can be set multiple times-->

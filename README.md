@@ -1,4 +1,4 @@
-# ExtraAssetsImporter
+﻿# ExtraAssetsImporter
 
 ## Features
 
@@ -10,12 +10,12 @@
 | Language				| Progress	| Participants |
 | --------------------- | ---------	| ------------ |
 | French				| 0%		| |
-| Chinese Simplified	| 0%		| |
+| Chinese Simplified	| 9%		| RilkeXS(无手文) (RilkeXS) |
 | Chinese Traditional	| 0%		| |
-| German				| 0%		| |
+| German				| 100%		| Konsi |
 | Italian				| 0%		| |
 | Japanese				| 0%		| |
-| Korean				| 0%		| |
+| Korean				| 100%		| Hinanchovo |
 | Polish				| 100%		| Lisek |
 | Portuguese, Brazilian | 0%		| |
 | Russian				| 0%		| |
