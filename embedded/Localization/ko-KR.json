@@ -1,16 +1,16 @@
 {
-	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
-	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Main",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "Importers",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Custom Surfaces",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Load the custom surfaces, take effect after restarting the game.",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Custom Decals",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Load the custom decals, take effect after restarting the game.",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Missing Prefab Fixer",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Compatibility Fix",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "This setting have for goal to try to fix missing prefab caused by EAI update. To use it is simple, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
-	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Disabled",
+	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "추가 에셋 가져오기 도구",
+	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "메인",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "가져오기 도구",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "커스텀 지형",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "커스텀 지형을 불러오려면 게임을 다시 시작한 후에 적용됩니다.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "커스텀 데칼",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "커스텀 데칼을 불러오려면 게임을 다시 시작한 후에 적용됩니다.",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "누락된 프리팹 수정 도구",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "호환성 패치",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "이 설정은 EAI 업데이트로 인한 누락된 프리팹을 수정하려는 목표를 가지고 있습니다. 사용 방법은 간단합니다. 저장된 모드 버전에 해당하는 설정을 활성화하고, 게임을 다시 시작한 후에 저장된 파일을 불러와 누락된 프리팹이 복구되었는지 확인하고, 문제가 없는 경우 저장한 후 게임을 다시 시작하십시오. 만약 문제가 발생하면 저장하지 않고 게임을 종료하십시오. 이 설정은 자동으로 재시작 후에 자체적으로 비활성화되어 향후 충돌과 문제를 방지합니다.",
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "비활성화됨",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT2]": "ELT 2.0",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT3]": "ELT 3.0",
-	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[LocalAsset]": "Local Assets"
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[LocalAsset]": "로컬 에셋"
 }
