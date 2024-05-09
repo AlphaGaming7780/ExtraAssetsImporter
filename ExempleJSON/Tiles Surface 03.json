@@ -1,0 +1,197 @@
+{
+    "Float": {
+        "_Metallic": 0,
+        "_Smoothness": 0.5,
+        "colossal_DecalLayerMask": 0,
+        "_AffectAlbedo": 1,
+        "_AffectMetal": 1,
+        "_AffectNormal": 1,
+        "_AffectSmoothness": 1,
+        "_DecalColorMask0": 15,
+        "_DecalColorMask1": 15,
+        "_DecalColorMask2": 11,
+        "_DecalColorMask3": 8,
+        "_DecalMeshBiasType": 0,
+        "_DecalMeshDepthBias": 0,
+        "_DecalMeshViewBias": 0,
+        "_DecalStencilRef": 16,
+        "_DecalStencilWriteMask": 16,
+        "_DrawOrder": -95,
+        "_MetallicAlphaSource": 0,
+        "_MetallicOpacity": 1,
+        "_NormalAlphaSource": 0,
+        "_NormalOpacity": 1,
+        "colossal_EdgeNormal": 0.3,
+        "colossal_UVScale": 0.2
+    },
+    "Vector": {
+        "_BaseColor": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "_BaseColorMap_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_BaseColorMap_TexelSize": {
+            "x": 0.0004882813,
+            "y": 0.0004882813,
+            "z": 2048,
+            "w": 2048
+        },
+        "_BaseColorMap_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_MaskMap_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_MaskMap_TexelSize": {
+            "x": 0.0004882813,
+            "y": 0.0004882813,
+            "z": 2048,
+            "w": 2048
+        },
+        "_MaskMap_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_NormalMap_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_NormalMap_TexelSize": {
+            "x": 0.0004882813,
+            "y": 0.0004882813,
+            "z": 2048,
+            "w": 2048
+        },
+        "_NormalMap_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_Lightmaps_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_Lightmaps_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "unity_Lightmaps_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_LightmapsInd_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_LightmapsInd_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "unity_LightmapsInd_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_ShadowMasks_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_ShadowMasks_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "unity_ShadowMasks_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_VTUVs0": {
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "w": 0
+        },
+        "_VTUVs1": {
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "w": 0
+        },
+        "DefaultPVTStack_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "DefaultPVTStack_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "DefaultPVTStack_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "Vector2_a453d92aee7242ae912e8d91edfd2c50": {
+            "x": 0.7,
+            "y": 0.5,
+            "z": 0,
+            "w": 0
+        },
+        "colossal_AreaParameters": {
+            "x": 0.5,
+            "y": 4,
+            "z": 0,
+            "w": 0
+        },
+        "colossal_EdgeFadeRange": {
+            "x": 0.55,
+            "y": 0.45,
+            "z": 0,
+            "w": 0
+        },
+        "colossal_EdgeNoise": {
+            "x": 0.1,
+            "y": 0.2,
+            "z": 0,
+            "w": 0
+        }
+    }
+}

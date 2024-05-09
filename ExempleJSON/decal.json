@@ -1,0 +1,185 @@
+{
+    "Float": {
+        "_Metallic": 1,
+        "_Smoothness": 1,
+        "colossal_DecalLayerMask": 0,
+        "colossal_LodDistanceFactor": 1,
+        "_AffectAlbedo": 1,
+        "_AffectMetal": 1,
+        "_AffectNormal": 1,
+        "_AffectSmoothness": 1,
+        "_DecalColorMask0": 15,
+        "_DecalColorMask1": 15,
+        "_DecalColorMask2": 11,
+        "_DecalColorMask3": 8,
+        "_DecalMeshBiasType": 0,
+        "_DecalMeshDepthBias": 0,
+        "_DecalMeshViewBias": 0,
+        "_DecalStencilRef": 16,
+        "_DecalStencilWriteMask": 16,
+        "_DrawOrder": 0,
+        "_MetallicAlphaSource": 0,
+        "_MetallicOpacity": 1,
+        "_NormalAlphaSource": 0,
+        "_NormalOpacity": 1,
+        "UiPriority": -1
+    },
+    "Vector": {
+        "_BaseColor": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "_BaseColorMap_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_BaseColorMap_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "_BaseColorMap_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_MaskMap_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_MaskMap_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "_MaskMap_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_NormalMap_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_NormalMap_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "_NormalMap_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_Lightmaps_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_Lightmaps_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "unity_Lightmaps_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_LightmapsInd_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_LightmapsInd_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "unity_LightmapsInd_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_ShadowMasks_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "unity_ShadowMasks_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "unity_ShadowMasks_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "_VTUVs0": {
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "w": 0
+        },
+        "_VTUVs1": {
+            "x": 0,
+            "y": 0,
+            "z": 0,
+            "w": 0
+        },
+        "colossal_MeshSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 0
+        },
+        "colossal_TextureArea": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "w": 1
+        },
+        "DefaultPVTStack_ST": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        },
+        "DefaultPVTStack_TexelSize": {
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "w": 1
+        },
+        "DefaultPVTStack_HDR": {
+            "x": 1,
+            "y": 1,
+            "z": 0,
+            "w": 0
+        }
+    }
+}
