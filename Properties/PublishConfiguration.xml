@@ -4,16 +4,45 @@
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="ExtraAssetsImporter" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="This is a short description" />
+	<ShortDescription Value="This mod let you import custom surfaces and custom decals." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
+#ExtraAssetsImporter
+This mod let you import custom surfaces and custom decals.
+
 # CUSTOM ASSETS AREN'T SUPPORTED BY THE GAME YET.
 The assets are safe and stable to use, and won't cause any crashes or bugs. Whilst we don't expect our asset mods to break on official asset support, all modding (and unofficial modding) will always have some risk associated with it. We will do our best to ensure the transition is as smooth as possible when editor is released. When editor is released I will depcreciate this mod (but keep active for a while) and republish the assets using official pipeline.
 
 ### I'm recommending you to read this page on the website not in game, the game doesn't support all the formatting the web page does.
 
 You can see the [trailer video](https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE) made by Sully in the "MORE ABOUT THIS MOD" section.
+
+# Recommended Assets Pack
+## By Sully:
+- [Golden Sand Beaches 4k Texture Pack](),
+- [Riverbeds 4k Texture Pack](),
+- [White Sand Beaches 4k Texture Pack](),
+- [Cracks and Damage Decal Pack](),
+- [Epic Graffiti Decal Pack](),
+- [Sea Foam Decal Pack](),
+- [Stains and Leakage Decal Pack](),
+## By Tigon:
+- [Tigons Music Medley Poster Pack](),
+- [Road Markings - Words and Symbols Decal Pack](),
+- [Road Markings - Lines and Arrows Decal Pack](),
+- [Letters and Numbers Decal Pack](),
+- [Ground Texture Decal Pack](),
+- [Extra Team Graffiti](),
+- [Autobahn Letters and Numbers](),
+## By Dome:
+- [Italian Posters By Dome](),
+- [Billboard Ads By Dome](),
+## By Triton Supreme:
+- [Content Creator Poster Pack](),
+- [EAI - Surface Pack](),
+## By Bruceyboy24804:
+- [BritishBrandsPack01](),
 
 # About the screenshot
 - FewCandy's farm, you can find the full video about this build [here]().
@@ -45,7 +74,7 @@ You can see the [trailer video](https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.0.*" />
 	<!--Dependency for the mod, can be set multiple times-->
-	<Dependency Id="75724" />
+  <Dependency Id="75724" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<ChangeLog Value="" />
 	<!--ChangeLog>
