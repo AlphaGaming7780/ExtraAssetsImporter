@@ -9,10 +9,17 @@
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
 # CUSTOM ASSETS AREN'T SUPPORTED BY THE GAME YET.
-If you use any kind of custom asset in your save, it's going to break at some point, one day or another. If you want to play with fire and use these custom assets in your save, you are responsible for what you are going to do and lose.
+The assets are safe and stable to use, and won't cause any crashes or bugs. Whilst we don't expect our asset mods to break on official asset support, all modding (and unofficial modding) will always have some risk associated with it. We will do our best to ensure the transition is as smooth as possible when editor is released. When editor is released I will depcreciate this mod (but keep active for a while) and republish the assets using official pipeline.
+
+### I'm recommending you to read this page on the website not in game, the game doesn't support all the formatting the web page does.
+
+You can see the [trailer video](https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE) made by Sully in the "MORE ABOUT THIS MOD" section.
+
+# About the screenshot
+- FewCandy's farm, you can find the full video about this build [here]().
 
 # Translation
-⚠️ I DON'T CHECK THE TRANSLATION, I DON'T TAKE THE RESPONSIBILITY FOR WHAT YOU ARE GOING TO READ. ⚠️
+⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
 - ⚠️French 0%
 - ⚠️Chinese Simplified 9% : RilkeXS(无手文) (RilkeXS)
 - ❌Chinese Traditional 0%
@@ -44,6 +51,8 @@ If you use any kind of custom asset in your save, it's going to break at some po
 	<!--ChangeLog>
 	</ChangeLog-->
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
+	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
+	<ExternalLink Type="crowdin" Url="https://crowdin.com/project/extraassetsimporter" />
 	<ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />
 	<ExternalLink Type="github" Url="https://github.com/AlphaGaming7780/ExtraAssetsImporter" />
 	<ExternalLink Type="paypal" Url="https://www.paypal.com/paypalme/TritonSupreme" />
