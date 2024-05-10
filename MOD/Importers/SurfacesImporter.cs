@@ -133,8 +133,8 @@ internal class SurfacesImporter
 					try
 					{
                         string catName = new DirectoryInfo(surfacesCat).Name;
-                        FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
-                        string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                        FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+                        string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
                         string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
                         CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat);
                         if (!csLocalisation.ContainsKey($"Assets.NAME[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullSurfaceName}]")) csLocalisation.Add($"Assets.NAME[{fullSurfaceName}]", surfaceName);

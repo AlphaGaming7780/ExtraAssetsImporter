@@ -39,7 +39,7 @@ You can see the [trailer video](https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ⚠️French 0%
+- ❌French 0%
 - ⚠️Chinese Simplified 9% : RilkeXS(无手文) (RilkeXS)
 - ❌Chinese Traditional 0%
 - ✔️German 100% : Konsi

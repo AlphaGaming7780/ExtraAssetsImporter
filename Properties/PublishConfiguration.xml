@@ -1,6 +1,6 @@
 ﻿<Publish>
 	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
-	<ModId Value="" />
+	<ModId Value="80529" />
 	<!--Name of the mod to display to players-->
 	<DisplayName Value="ExtraAssetsImporter" />
 	<!--Short description of the mod-->
@@ -11,14 +11,17 @@
 #ExtraAssetsImporter
 This mod let you import custom surfaces and custom decals.
 
-### I'm recommending you to read this page on the website not in game, the game doesn't support all the formatting the web page does.
+#### I'm recommending you to read this page on the website not in game, the game doesn't support all the formatting the web page does.
 
 # CUSTOM ASSETS AREN'T SUPPORTED BY THE GAME YET.
 The assets are safe and stable to use, and won't cause any crashes or bugs. Whilst we don't expect our asset mods to break on official asset support, all modding (and unofficial modding) will always have some risk associated with it. We will do our best to ensure the transition is as smooth as possible when editor is released. When editor is released I will depcreciate this mod (but keep active for a while) and republish the assets using official pipeline.
 
 ### I'm recommending you to read this page on the website not in game, the game doesn't support all the formatting the web page does.
 
-You can see the [trailer video](https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE) made by Sully in the "MORE ABOUT THIS MOD" section.
+You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section.
+
+# About the screenshot
+- FewCandy's farm, you can find the full video about this build [here](https://www.youtube.com/watch?v=Z_Fp8JWzQXg).
 
 # Recommended Assets Pack
 ## By Sully:
@@ -31,27 +34,24 @@ You can see the [trailer video](https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE
 - [Stains and Leakage Decal Pack](),
 ## By Tigon:
 - [Tigons Music Medley Poster Pack](),
-- [Road Markings - Words and Symbols Decal Pack](),
-- [Road Markings - Lines and Arrows Decal Pack](),
-- [Letters and Numbers Decal Pack](),
-- [Ground Texture Decal Pack](),
-- [Extra Team Graffiti](),
-- [Autobahn Letters and Numbers](),
+- [Road Markings - Words and Symbols Decal Pack](https://mods.paradoxplaza.com/mods/80537/Windows),
+- [Road Markings - Lines and Arrows Decal Pack](https://mods.paradoxplaza.com/mods/80534/Windows),
+- [Letters and Numbers Decal Pack](https://mods.paradoxplaza.com/mods/80536/Windows),
+- [Ground Texture Decal Pack](https://mods.paradoxplaza.com/mods/80538/Windows),
+- [Extra Team Graffiti](https://mods.paradoxplaza.com/mods/80540/Windows),
+- [Autobahn Letters and Numbers](https://mods.paradoxplaza.com/mods/80539/Windows),
 ## By Dome:
 - [Italian Posters By Dome](),
 - [Billboard Ads By Dome](),
 ## By Triton Supreme:
-- [Content Creator Poster Pack](),
-- [EAI - Surface Pack](),
+- [Content Creator Poster Pack](https://mods.paradoxplaza.com/mods/80547/Windows),
+- [EAI - Surface Pack](https://mods.paradoxplaza.com/mods/80530/Windows),
 ## By Bruceyboy24804:
-- [BritishBrandsPack01](),
-
-# About the screenshot
-- FewCandy's farm, you can find the full video about this build [here]().
+- [BritishBrandsPack01](https://mods.paradoxplaza.com/mods/80541/Windows),
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ⚠️French 0%
+- ❌French 0%
 - ⚠️Chinese Simplified 9% : RilkeXS(无手文) (RilkeXS)
 - ❌Chinese Traditional 0%
 - ✔️German 100% : Konsi
@@ -66,7 +66,7 @@ You can see the [trailer video](https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/EAI.png" />
 	<!--Screenshot, can be set multiple times-->
-	<Screenshot Value="" />
+	<Screenshot Value="Properties/EAI_LONG.png" />
 	<!--Tag, can be set multiple times-->
 	<Tag Value="Code Mod" />
 	<!--Link to the forum post where the mod can be discussed-->
@@ -74,7 +74,7 @@ You can see the [trailer video](https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE
 	<!--Version of the mod-->
 	<ModVersion Value="1.0" />
 	<!--Recommended version of the base game to use the mod-->
-	<GameVersion Value="1.0.*" />
+	<GameVersion Value="1.1.*" />
 	<!--Dependency for the mod, can be set multiple times-->
   <Dependency Id="75724" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->

@@ -37,8 +37,8 @@
     <Reference Include="$(CustomManagedPath)\Game*.dll" Private="False" />
     <Reference Include="$(CustomManagedPath)\Unity.*.dll" Private="False" />
     <Reference Include="$(CustomManagedPath)\cohtml.Net.dll" Private="False" />
-    <Reference Include="$(LocalModsPath)\ExtraLib\ExtraLib.dll" Private="False" />
-    <!--<Reference Include="$(UserDataPath)\.cache\Mods\mods_subscribed\75724_*\ExtraLib.dll" Private="False" />-->
+    <!--<Reference Include="$(LocalModsPath)\ExtraLib\ExtraLib.dll" Private="False" />-->
+    <Reference Include="$(UserDataPath)\.cache\Mods\mods_subscribed\75724_*\ExtraLib.dll" Private="False" />
   </ItemGroup>
   
   <!--<ItemGroup>
