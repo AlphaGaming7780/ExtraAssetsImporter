@@ -32,6 +32,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - [Epic Graffiti Decal Pack](),
 - [Sea Foam Decal Pack](),
 - [Stains and Leakage Decal Pack](),
+- [Extra3.0 Graffiti Decal Pack](https://mods.paradoxplaza.com/mods/80578/Windows),
 ## By Tigon:
 - [Tigons Music Medley Poster Pack](),
 - [Road Markings - Words and Symbols Decal Pack](https://mods.paradoxplaza.com/mods/80537/Windows),
@@ -42,7 +43,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - [Autobahn Letters and Numbers](https://mods.paradoxplaza.com/mods/80539/Windows),
 ## By Dome:
 - [Italian Posters By Dome](),
-- [Billboard Ads By Dome](),
+- [Billboard Ads By Dome](https://mods.paradoxplaza.com/mods/80570/Windows),
 ## By Triton Supreme:
 - [Content Creator Poster Pack](https://mods.paradoxplaza.com/mods/80547/Windows),
 - [EAI - Surface Pack](https://mods.paradoxplaza.com/mods/80530/Windows),
@@ -51,9 +52,9 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ❌French 0%
-- ⚠️Chinese Simplified 9% : RilkeXS(无手文) (RilkeXS)
-- ❌Chinese Traditional 0%
+- ✔️French 100% : aricoseco
+- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou)
+- ❌Chinese Traditional 100% : Tiger Zhang (tiger42231)
 - ✔️German 100% : Konsi
 - ❌Italian 0%
 - ❌Japanese 0%
@@ -61,7 +62,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - ✔️Polish 100% : Lisek
 - ❌Portuguese, Brazilian 0%
 - ❌Russian 0%
-- ❌Spanish 0%
+- ✔️Spanish 100% : elGendo87
   </LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/EAI.png" />
@@ -72,15 +73,19 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.0" />
+	<ModVersion Value="1.0.1" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.1.*" />
 	<!--Dependency for the mod, can be set multiple times-->
   <Dependency Id="75724" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="" />
-	<!--ChangeLog>
-	</ChangeLog-->
+	<!--<ChangeLog Value="" />-->
+  <ChangeLog>
+# 1.0.1
+- Add: French localization by aricoseco
+- Update: Chinese Simplified localization by RilkeXS(无手文) (RilkeXS) and 一叶杳舟 (Yao_Zhou)
+- Update: German localization by Konsi
+  </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
 	<ExternalLink Type="crowdin" Url="https://crowdin.com/project/extraassetsimporter" />
