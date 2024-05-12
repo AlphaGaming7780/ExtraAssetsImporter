@@ -378,7 +378,7 @@ internal class DecalsImporter
 
         PrefabAsset prefabAsset = AssetDatabase.game.AddAsset(prefabPath, decalPrefab);
         PrefabAsset prefabAsset2 = AssetDatabase.game.AddAsset(prefabPath, decalPrefabUI);
-        prefabAsset.Save();
+        prefabAsset.Save(true, false);
 
   //      geometryAsset.Unload();
 		//surfaceAsset.Unload();
