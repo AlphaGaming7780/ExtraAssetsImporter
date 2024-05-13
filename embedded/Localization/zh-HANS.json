@@ -1,6 +1,6 @@
 {
 	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
-	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "主要功能",
+	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "主要",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "导入",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "自定义地皮",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "加载自定义地皮，重启游戏后生效。",

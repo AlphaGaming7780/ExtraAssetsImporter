@@ -1,5 +1,5 @@
 {
-	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "추가 에셋 가져오기 도구",
+	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "추가 에셋 가져오기 도구(Extra Assets Importer)",
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "메인",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "가져오기 도구",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "커스텀 지형",
