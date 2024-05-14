@@ -317,7 +317,7 @@ internal class DecalsImporter
 		AssetDataPath assetDataPath2 = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", "GeometryAsset");
 		geometryAsset.database.AddAsset<GeometryAsset>(assetDataPath2, geometryAsset.guid);
 		geometryAsset.SetData(meshes);
-		geometryAsset.Save(true);
+		geometryAsset.Save(false);
 
 		RenderPrefab renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
 		renderPrefab.name = $"{fullDecalName}_RenderPrefab";
@@ -328,8 +328,6 @@ internal class DecalsImporter
 		renderPrefab.vertexCount = geometryAsset.GetVertexCount(0);
 		renderPrefab.indexCount = 1;
 		renderPrefab.manualVTRequired = false;
-        geometryAsset.Unload();
-        surfaceAsset.Unload();
 
         DecalProperties decalProperties = renderPrefab.AddComponent<DecalProperties>();
 		decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
@@ -360,8 +358,16 @@ internal class DecalsImporter
 		decalPrefabUI.m_Priority = (int)(decalSurface.HasProperty("UiPriority") ? decalSurface.GetFloatProperty("UiPriority") : -1);
 		decalPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
+        //AssetDataPath prefabPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", decalName);
+        //AssetDataPath prefabPath2 = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", decalPrefabUI.name);
+
+        //PrefabAsset prefabAsset = AssetDatabase.game.AddAsset(prefabPath, decalPrefab);
+        //PrefabAsset prefabAsset2 = AssetDatabase.game.AddAsset(prefabPath, decalPrefabUI);
+        //prefabAsset.Save(true, false);
+
         decalSurface.Dispose();
-        //decalPrefab.AddComponent<CustomDecal>();
+        geometryAsset.Unload();
+        surfaceAsset.Unload();
 
         ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
 

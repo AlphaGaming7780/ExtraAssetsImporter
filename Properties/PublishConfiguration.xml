@@ -8,7 +8,7 @@
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<!--LongDescription Value="This is a long description" /-->
 	<LongDescription>
-#ExtraAssetsImporter
+# ExtraAssetsImporter
 This mod let you import custom surfaces and custom decals.
 
 #### I'm recommending you to read this page on the website not in game, the game doesn't support all the formatting the web page does.
@@ -54,14 +54,14 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
 - ✔️French 100% : aricoseco
-- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou)
-- ❌Chinese Traditional 100% : Tiger Zhang (tiger42231)
+- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
+- ✔️Chinese Traditional 100% : Tiger Zhang (tiger42231)
 - ✔️German 100% : Konsi
-- ❌Italian 0%
+- ✔️Italian 100% : Stefano (Furios)
 - ❌Japanese 0%
 - ✔️Korean 100% : Hinanchovo
-- ✔️Polish 100% : Lisek
-- ❌Portuguese, Brazilian 0%
+- ✔️Polish 100% : Lisek, karmel68
+- ⚠️Portuguese, Brazilian 94% : TiZedoGrelo	
 - ❌Russian 0%
 - ✔️Spanish 100% : elGendo87
   </LongDescription>
@@ -82,10 +82,9 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.0.1
-- Add: French localization by aricoseco
-- Update: Chinese Simplified localization by RilkeXS(无手文) (RilkeXS) and 一叶杳舟 (Yao_Zhou)
-- Update: German localization by Konsi
+# 1.1.0
+- Add: Italian localization by Stefano (Furios)
+- Add: Portuguese, Brazilian localization by TiZedoGrelo
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
