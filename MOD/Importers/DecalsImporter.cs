@@ -329,6 +329,12 @@ internal class DecalsImporter
 		renderPrefab.indexCount = 1;
 		renderPrefab.manualVTRequired = false;
 
+        DecalProperties decalProperties = renderPrefab.AddComponent<DecalProperties>();
+		decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
+		decalProperties.m_LayerMask = (DecalLayers)decalSurface.GetFloatProperty("colossal_DecalLayerMask");
+		decalProperties.m_RendererPriority = (int)(decalSurface.HasProperty("_DrawOrder") ? decalSurface.GetFloatProperty("_DrawOrder") : 0);
+		decalProperties.m_EnableInfoviewColor = false;//DecalPropertiesPrefab.m_EnableInfoviewColor;
+
         ObjectMeshInfo objectMeshInfo = new()
         {
             m_Mesh = renderPrefab,
@@ -338,13 +344,7 @@ internal class DecalsImporter
 
         decalPrefab.m_Meshes = [objectMeshInfo];
 
-        DecalProperties decalProperties = renderPrefab.AddComponent<DecalProperties>();
-		decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
-		decalProperties.m_LayerMask = (DecalLayers)decalSurface.GetFloatProperty("colossal_DecalLayerMask");
-		decalProperties.m_RendererPriority = (int)(decalSurface.HasProperty("_DrawOrder") ? decalSurface.GetFloatProperty("_DrawOrder") : 0);
-		decalProperties.m_EnableInfoviewColor = false;//DecalPropertiesPrefab.m_EnableInfoviewColor;
-
-		StaticObjectPrefab placeholder = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
+        StaticObjectPrefab placeholder = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
 		placeholder.name = $"{fullDecalName}_Placeholders";
 		placeholder.m_Meshes = [objectMeshInfo];
 		placeholder.AddComponent<PlaceholderObject>();
