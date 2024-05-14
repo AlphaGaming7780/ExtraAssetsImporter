@@ -51,7 +51,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - ❌Japanese 0%
 - ✔️Korean 100% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
-- ⚠️Portuguese, Brazilian 94% : TiZedoGrelo	
+- ✔️Portuguese, Brazilian 100% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz) 
 - ❌Russian 0%
 - ✔️Spanish 100% : elGendo87
 
