@@ -308,13 +308,13 @@ internal class DecalsImporter
 		Vector4 MeshSize = decalSurface.GetVectorProperty("colossal_MeshSize");
 		Vector4 TextureArea = decalSurface.GetVectorProperty("colossal_TextureArea");
 		Mesh[] meshes = [ConstructMesh(MeshSize.x, MeshSize.y, MeshSize.z)];
-		GeometryAsset geometryAsset = new()
+
+        AssetDataPath assetDataPath2 = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", "GeometryAsset");
+        GeometryAsset geometryAsset = new()
 		{
 			guid = Guid.NewGuid(),
 			database = AssetDatabase.game //DecalRenderPrefab.geometryAsset.database
 		};
-
-		AssetDataPath assetDataPath2 = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", "GeometryAsset");
 		geometryAsset.database.AddAsset<GeometryAsset>(assetDataPath2, geometryAsset.guid);
 		geometryAsset.SetData(meshes);
 		geometryAsset.Save(false);
@@ -329,20 +329,20 @@ internal class DecalsImporter
 		renderPrefab.indexCount = 1;
 		renderPrefab.manualVTRequired = false;
 
+        ObjectMeshInfo objectMeshInfo = new()
+        {
+            m_Mesh = renderPrefab,
+            m_Position = float3.zero,
+            m_RequireState = Game.Objects.ObjectState.None
+        };
+
+        decalPrefab.m_Meshes = [objectMeshInfo];
+
         DecalProperties decalProperties = renderPrefab.AddComponent<DecalProperties>();
 		decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
 		decalProperties.m_LayerMask = (DecalLayers)decalSurface.GetFloatProperty("colossal_DecalLayerMask");
 		decalProperties.m_RendererPriority = (int)(decalSurface.HasProperty("_DrawOrder") ? decalSurface.GetFloatProperty("_DrawOrder") : 0);
 		decalProperties.m_EnableInfoviewColor = false;//DecalPropertiesPrefab.m_EnableInfoviewColor;
-
-		ObjectMeshInfo objectMeshInfo = new()
-		{
-			m_Mesh = renderPrefab,
-			m_Position = float3.zero,
-			m_RequireState = Game.Objects.ObjectState.None
-		};
-
-		decalPrefab.m_Meshes = [objectMeshInfo];
 
 		StaticObjectPrefab placeholder = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
 		placeholder.name = $"{fullDecalName}_Placeholders";
