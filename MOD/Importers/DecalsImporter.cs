@@ -18,6 +18,8 @@ using Unity.Entities;
 using Game.SceneFlow;
 using Colossal.Localization;
 using System.Linq;
+using static Colossal.AssetPipeline.Diagnostic.Report;
+using static Game.UI.NameSystem;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -215,7 +217,7 @@ internal class DecalsImporter
 
 		fileData = File.ReadAllBytes(folderPath + "\\_BaseColorMap.png");
 		Texture2D texture2D_BaseColorMap_Temp = new(1, 1);
-		if (!texture2D_BaseColorMap_Temp.LoadImage(fileData)) { UnityEngine.Debug.LogError($"[EAI] Failed to Load the BaseColorMap image for the {decalName} decal."); return; }
+		if (!texture2D_BaseColorMap_Temp.LoadImage(fileData)) { EAI.Logger.Error($"[EAI] Failed to Load the BaseColorMap image for the {decalName} decal."); return; }
 
 		Texture2D texture2D_BaseColorMap = new(texture2D_BaseColorMap_Temp.width, texture2D_BaseColorMap_Temp.height, GraphicsFormat.R8G8B8A8_SRGB, texture2D_BaseColorMap_Temp.mipmapCount, TextureCreationFlags.MipChain)
 		{
@@ -362,8 +364,7 @@ internal class DecalsImporter
         //PrefabAsset prefabAsset2 = AssetDatabase.game.AddAsset(prefabPath, decalPrefabUI);
 
         AssetDataPath prefabPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", decalName);
-        PrefabAsset prefabAsset = AssetDatabase.game.AddAsset(prefabPath, decalPrefab);
-		prefabAsset.guid = Colossal.Hash128.CreateGuid(fullDecalName);
+        PrefabAsset prefabAsset = AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
         prefabAsset.Save(true, false);
 
 		decalSurface.Dispose();
@@ -382,14 +383,14 @@ internal class DecalsImporter
 		Vector3[] c =
 		[
 			new Vector3(-length * .5f, -height * .5f, width * .5f),
-		new Vector3(length * .5f, -height * .5f, width * .5f),
-		new Vector3(length * .5f, -height * .5f, -width * .5f),
-		new Vector3(-length * .5f, -height * .5f, -width * .5f),
-		new Vector3(-length * .5f, height * .5f, width * .5f),
-		new Vector3(length * .5f, height * .5f, width * .5f),
-		new Vector3(length * .5f, height * .5f, -width * .5f),
-		new Vector3(-length * .5f, height * .5f, -width * .5f),
-	];
+			new Vector3(length * .5f, -height * .5f, width * .5f),
+			new Vector3(length * .5f, -height * .5f, -width * .5f),
+			new Vector3(-length * .5f, -height * .5f, -width * .5f),
+			new Vector3(-length * .5f, height * .5f, width * .5f),
+			new Vector3(length * .5f, height * .5f, width * .5f),
+			new Vector3(length * .5f, height * .5f, -width * .5f),
+			new Vector3(-length * .5f, height * .5f, -width * .5f),
+		];
 
 
 		//4) Define the vertices that the cube is composed of:
