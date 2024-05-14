@@ -358,14 +358,15 @@ internal class DecalsImporter
 		decalPrefabUI.m_Priority = (int)(decalSurface.HasProperty("UiPriority") ? decalSurface.GetFloatProperty("UiPriority") : -1);
 		decalPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
-        //AssetDataPath prefabPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", decalName);
         //AssetDataPath prefabPath2 = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", decalPrefabUI.name);
-
-        //PrefabAsset prefabAsset = AssetDatabase.game.AddAsset(prefabPath, decalPrefab);
         //PrefabAsset prefabAsset2 = AssetDatabase.game.AddAsset(prefabPath, decalPrefabUI);
-        //prefabAsset.Save(true, false);
 
-        decalSurface.Dispose();
+        AssetDataPath prefabPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", decalName);
+        PrefabAsset prefabAsset = AssetDatabase.game.AddAsset(prefabPath, decalPrefab);
+		prefabAsset.guid = Colossal.Hash128.CreateGuid(fullDecalName);
+        prefabAsset.Save(true, false);
+
+		decalSurface.Dispose();
         geometryAsset.Unload();
         surfaceAsset.Unload();
 
