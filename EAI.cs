@@ -24,12 +24,14 @@ namespace ExtraAssetsImporter
 #endif
         static internal readonly string ELTGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI";                                                                          
 		internal static Setting m_Setting;
-
 		internal static string ResourcesIcons { get; private set; }
+
+		internal static string pathModsData;
+
 		public void OnLoad(UpdateSystem updateSystem)
 		{
 			Logger.Info(nameof(OnLoad));
-			ClearData();
+			//ClearData();
 
 			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
@@ -48,9 +50,9 @@ namespace ExtraAssetsImporter
 			ResourcesIcons = Path.Combine(fileInfo.DirectoryName, "Icons");
 			Icons.LoadIcons(fileInfo.DirectoryName);
 
-			string pathToData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
-			string pathToDataCustomDecals = Path.Combine(pathToData, "CustomDecals");
-			string pathToDataCustomSurfaces = Path.Combine(pathToData, "CustomSurfaces");
+			pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
+			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
+			string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
 
 			if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
@@ -64,12 +66,13 @@ namespace ExtraAssetsImporter
 		public void OnDispose()
 		{
 			Logger.Info(nameof(OnDispose));
-			ClearData();
+			//ClearData();
 		}
 
 		private void OnMainMenu()
 		{
-			if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+            EAIDataBaseManager.LoadDataBase();
+            if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
 			ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
 		}
@@ -81,6 +84,7 @@ namespace ExtraAssetsImporter
 				yield return null;
 			}
 			m_Setting.ResetCompatibility();
+			EAIDataBaseManager.SaveValidateDataBase();
 			yield break;
 		}
 
