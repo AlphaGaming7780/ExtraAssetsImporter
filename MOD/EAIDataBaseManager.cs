@@ -180,6 +180,8 @@ internal static class EAIDataBaseManager
 		//PrefabBase prefabBase = (PrefabBase)prefabAsset.Load();
 		//ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
 
+		List<PrefabAsset> prefabAssets = [];
+
 		foreach(string s in DefaultAssetFactory.instance.GetSupportedExtensions())
 		{
 			foreach(string file in Directory.GetFiles(Path.Combine(EnvPath.kStreamingDataPath, asset.AssetPath), $"*{s}"))
@@ -190,13 +192,8 @@ internal static class EAIDataBaseManager
                 try
 				{
                     IAssetData assetData = AssetDatabase.game.AddAsset(assetDataPath);
-					if (assetData is PrefabAsset prefabAsset)
-					{
-						//EAI.Logger.Info(prefabAsset.path);
-						EAI.Logger.Info(assetDataPath.ToPath(new FileSystemDataSource.PathEscapePolicy()));
-                        PrefabBase prefabBase =  (PrefabBase)prefabAsset.Load();
-						ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
-					}
+					if (assetData is PrefabAsset prefabAsset) prefabAssets.Add(prefabAsset);
+					if (assetData is TextureAsset textureAsset) textureAsset.Load();
 							
                 } catch (Exception e)
 				{
@@ -205,6 +202,11 @@ internal static class EAIDataBaseManager
 			}
 		}
 
+		foreach(PrefabAsset prefabAsset in prefabAssets)
+		{
+            PrefabBase prefabBase = (PrefabBase)prefabAsset.Load();
+            ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
+        }
 
         ValidateAssets(asset);
     }
