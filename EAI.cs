@@ -22,16 +22,18 @@ namespace ExtraAssetsImporter
 #else
         internal static Logger Logger = new(log, false);
 #endif
-        static internal readonly string ELTGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI";                                                                          
-		internal static Setting m_Setting;
+        static internal readonly string EAIGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI";  
+
+        internal static Setting m_Setting;
 		internal static string ResourcesIcons { get; private set; }
 
 		internal static string pathModsData;
+		internal static string pathTempFolder;
 
-		public void OnLoad(UpdateSystem updateSystem)
+        public void OnLoad(UpdateSystem updateSystem)
 		{
 			Logger.Info(nameof(OnLoad));
-			//ClearData();
+			ClearData();
 
 			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
@@ -51,8 +53,9 @@ namespace ExtraAssetsImporter
 			Icons.LoadIcons(fileInfo.DirectoryName);
 
 			pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
+            pathTempFolder = Path.Combine(pathModsData, "TempFolder");
 			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
-			string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
+            string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
 
 			if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
@@ -66,7 +69,7 @@ namespace ExtraAssetsImporter
 		public void OnDispose()
 		{
 			Logger.Info(nameof(OnDispose));
-			//ClearData();
+			ClearData();
 		}
 
 		private void OnMainMenu()
@@ -85,20 +88,17 @@ namespace ExtraAssetsImporter
 			}
 			m_Setting.ResetCompatibility();
 			EAIDataBaseManager.SaveValidateDataBase();
+			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
 			yield break;
 		}
 
 
         internal static void ClearData()
 		{
-			if (Directory.Exists(ELTGameDataPath))
+			if (Directory.Exists(pathTempFolder))
 			{
-				Directory.Delete(ELTGameDataPath, true);
+				Directory.Delete(pathTempFolder, true);
 			}
-			//if (Directory.Exists(ELTUserDataPath))
-			//{
-			//	Directory.Delete(ELTUserDataPath, true);
-			//}
 		}
 
 		public static void LoadCustomAssets(string modPath)

@@ -11,86 +11,44 @@ using UnityEngine;
 
 namespace ExtraAssetsImporter;
 
-public struct EAIAsset(string AssetID, int AssetHash, string AssetPath)
-{
-
-	//public struct EAIAssetDataPath()
-	//{
- //       public static EAIAsset Null => default;
- //       public string subPath = null;
-	//	public string assetName = null;
-
- //       public static implicit operator EAIAssetDataPath(AssetDataPath path)
- //       {
-
- //           EAIAssetDataPath assetDataPath = new()
- //           {
- //               subPath = path.subPath,
- //               assetName = path.assetName,
- //           };
- //           return assetDataPath;
- //       }
-
- //       public static implicit operator AssetDataPath(EAIAssetDataPath path)
- //       {
- //           return AssetDataPath.Create(path.subPath, path.assetName);
- //       }
-
- //   }
-
-	public static EAIAsset Null => default;
-	public string AssetID = AssetID;
-	public int AssetHash = AssetHash;
-	public string AssetPath = AssetPath;
- //   public EAIAssetDataPath assetDataPath = new();
- //public List<EAIAssetDataPath> subAssetsDataPath = [];
-
-    public static bool operator ==(EAIAsset lhs, EAIAsset rhs)
-	{
-		return lhs.AssetID == rhs.AssetID;
-	}
-
-	public static bool operator !=(EAIAsset lhs, EAIAsset rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	public override readonly bool Equals(object compare)
-	{
-		if (compare is EAIAsset asset)
-		{
-			return Equals(asset);
-		}
-
-		return false;
-	}
-
-	public readonly bool Equals(EAIAsset asset)
-	{
-		return asset.AssetID == AssetID;
-	}
-
-	public override readonly int GetHashCode()
-	{
-		return AssetHash;
-	}
-}
-
 internal static class EAIDataBaseManager
 {
+	const int DataBaseVersion = 1;
 	private static readonly string pathToAssetsDataBase = EAI.pathModsData + "\\AssetsDataBase.json";
-	private static List<EAIAsset> ValidateAssetsDataBase = [];
+	private static readonly List<EAIAsset> ValidateAssetsDataBase = [];
 	private static List<EAIAsset> AssetsDataBase = [];
 
 	internal static void LoadDataBase()
 	{
 		if (!File.Exists(pathToAssetsDataBase)) return;
-		AssetsDataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDataBase)).Make<List<EAIAsset>>();
-	}
+		try
+		{
+            EAIDataBase dataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDataBase)).Make<EAIDataBase>();
+            if (dataBase.DataBaseVersion != DataBaseVersion) return;
+            AssetsDataBase = dataBase.AssetsDataBase;
+        }
+		catch
+		{
+
+		}
+    }
 
     internal static void SaveValidateDataBase() 
 	{
-		File.WriteAllText(pathToAssetsDataBase, Encoder.Encode(ValidateAssetsDataBase, EncodeOptions.None));
+        EAIDataBase dataBase = new()
+        {
+            DataBaseVersion = DataBaseVersion,
+            AssetsDataBase = ValidateAssetsDataBase
+        };
+        File.WriteAllText(pathToAssetsDataBase, Encoder.Encode(dataBase, EncodeOptions.None));
+	}
+
+	internal static void ClearNotLoadedAssetsFromFiles()
+	{
+		foreach(EAIAsset asset in AssetsDataBase)
+		{
+			if(Directory.Exists(asset.AssetPath)) Directory.Delete(asset.AssetPath, true);
+		}
 	}
 
 	private static void ValidateAssets(string AssetID)
@@ -163,12 +121,12 @@ internal static class EAIDataBaseManager
 		return hash;
 	}
 
-    internal static void LoadAsset(string AssetID)
+    internal static List<object> LoadAsset(string AssetID)
     {
-		LoadAsset(GetEAIAsset(AssetID));
+		return LoadAsset(GetEAIAsset(AssetID));
     }
 
-    internal static void LoadAsset(EAIAsset asset)
+    internal static List<object> LoadAsset(EAIAsset asset)
 	{
 		//foreach(EAIAsset.EAIAssetDataPath dataPath in asset.subAssetsDataPath )
 		//{
@@ -179,6 +137,8 @@ internal static class EAIDataBaseManager
 		//PrefabAsset prefabAsset = AssetDatabase.game.AddAsset<PrefabAsset>(asset.assetDataPath);
 		//PrefabBase prefabBase = (PrefabBase)prefabAsset.Load();
 		//ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
+
+		List<object> output = [];
 
 		List<PrefabAsset> prefabAssets = [];
 
@@ -193,8 +153,8 @@ internal static class EAIDataBaseManager
 				{
                     IAssetData assetData = AssetDatabase.game.AddAsset(assetDataPath);
 					if (assetData is PrefabAsset prefabAsset) prefabAssets.Add(prefabAsset);
-					if (assetData is TextureAsset textureAsset) textureAsset.Load();
-							
+					if (assetData is TextureAsset textureAsset) output.Add(textureAsset.Load());
+					if (assetData is SurfaceAsset surfaceAsset) output.Add(surfaceAsset.Load());
                 } catch (Exception e)
 				{
 					EAI.Logger.Warn(e);
@@ -205,9 +165,82 @@ internal static class EAIDataBaseManager
 		foreach(PrefabAsset prefabAsset in prefabAssets)
 		{
             PrefabBase prefabBase = (PrefabBase)prefabAsset.Load();
+			output.Add(prefabBase);
             ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
         }
 
         ValidateAssets(asset);
+		return output;
+    }
+}
+
+internal class EAIDataBase()
+{
+	public int DataBaseVersion = 0;
+    public List<EAIAsset> AssetsDataBase = [];
+}
+
+public struct EAIAsset(string AssetID, int AssetHash, string AssetPath)
+{
+
+    //public struct EAIAssetDataPath()
+    //{
+    //       public static EAIAsset Null => default;
+    //       public string subPath = null;
+    //	public string assetName = null;
+
+    //       public static implicit operator EAIAssetDataPath(AssetDataPath path)
+    //       {
+
+    //           EAIAssetDataPath assetDataPath = new()
+    //           {
+    //               subPath = path.subPath,
+    //               assetName = path.assetName,
+    //           };
+    //           return assetDataPath;
+    //       }
+
+    //       public static implicit operator AssetDataPath(EAIAssetDataPath path)
+    //       {
+    //           return AssetDataPath.Create(path.subPath, path.assetName);
+    //       }
+
+    //   }
+
+    public static EAIAsset Null => default;
+    public string AssetID = AssetID;
+    public int AssetHash = AssetHash;
+    public string AssetPath = AssetPath;
+    //   public EAIAssetDataPath assetDataPath = new();
+    //public List<EAIAssetDataPath> subAssetsDataPath = [];
+
+    public static bool operator ==(EAIAsset lhs, EAIAsset rhs)
+    {
+        return lhs.AssetID == rhs.AssetID;
+    }
+
+    public static bool operator !=(EAIAsset lhs, EAIAsset rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    public override readonly bool Equals(object compare)
+    {
+        if (compare is EAIAsset asset)
+        {
+            return Equals(asset);
+        }
+
+        return false;
+    }
+
+    public readonly bool Equals(EAIAsset asset)
+    {
+        return asset.AssetID == AssetID;
+    }
+
+    public override readonly int GetHashCode()
+    {
+        return AssetHash;
     }
 }
