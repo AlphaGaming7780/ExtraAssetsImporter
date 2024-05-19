@@ -128,16 +128,6 @@ internal static class EAIDataBaseManager
 
     internal static List<object> LoadAsset(EAIAsset asset)
 	{
-		//foreach(EAIAsset.EAIAssetDataPath dataPath in asset.subAssetsDataPath )
-		//{
-		//	IAssetData assetData = AssetDatabase.game.AddAsset(dataPath);
-		//	//EAI.Logger.Info(assetData);
-		//      }
-
-		//PrefabAsset prefabAsset = AssetDatabase.game.AddAsset<PrefabAsset>(asset.assetDataPath);
-		//PrefabBase prefabBase = (PrefabBase)prefabAsset.Load();
-		//ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
-
 		List<object> output = [];
 
 		List<PrefabAsset> prefabAssets = [];
@@ -147,8 +137,8 @@ internal static class EAIDataBaseManager
 			foreach(string file in Directory.GetFiles(Path.Combine(EnvPath.kStreamingDataPath, asset.AssetPath), $"*{s}"))
 			{
 				string assetPath = file.Replace(EnvPath.kStreamingDataPath + "\\", "");
-                EAI.Logger.Info(assetPath);
-                AssetDataPath assetDataPath = AssetDataPath.Create(assetPath, EscapeStrategy.None);
+				EAI.Logger.Info(assetPath);
+				AssetDataPath assetDataPath = AssetDataPath.Create(assetPath, EscapeStrategy.None);
                 try
 				{
                     IAssetData assetData = AssetDatabase.game.AddAsset(assetDataPath);
@@ -183,36 +173,10 @@ internal class EAIDataBase()
 public struct EAIAsset(string AssetID, int AssetHash, string AssetPath)
 {
 
-    //public struct EAIAssetDataPath()
-    //{
-    //       public static EAIAsset Null => default;
-    //       public string subPath = null;
-    //	public string assetName = null;
-
-    //       public static implicit operator EAIAssetDataPath(AssetDataPath path)
-    //       {
-
-    //           EAIAssetDataPath assetDataPath = new()
-    //           {
-    //               subPath = path.subPath,
-    //               assetName = path.assetName,
-    //           };
-    //           return assetDataPath;
-    //       }
-
-    //       public static implicit operator AssetDataPath(EAIAssetDataPath path)
-    //       {
-    //           return AssetDataPath.Create(path.subPath, path.assetName);
-    //       }
-
-    //   }
-
     public static EAIAsset Null => default;
     public string AssetID = AssetID;
     public int AssetHash = AssetHash;
     public string AssetPath = AssetPath;
-    //   public EAIAssetDataPath assetDataPath = new();
-    //public List<EAIAssetDataPath> subAssetsDataPath = [];
 
     public static bool operator ==(EAIAsset lhs, EAIAsset rhs)
     {

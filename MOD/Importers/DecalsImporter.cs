@@ -235,6 +235,20 @@ internal class DecalsImporter
             }
         }
 
+        if (File.Exists(folderPath + "\\icon.png"))
+        {
+            byte[] fileData = File.ReadAllBytes(folderPath + "\\icon.png");
+            Texture2D texture2D_Icon = new(1, 1);
+            if (texture2D_Icon.LoadImage(fileData))
+            {
+                if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
+                {
+                    //ELT.ResizeTexture(texture2D_Icon, 128, folderPath + "\\icon.png");
+                    texture2D_Icon.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png");
+                }
+            }
+        }
+
         decalPrefab.m_Meshes = [objectMeshInfo];
 
         StaticObjectPrefab placeholder = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
@@ -363,20 +377,6 @@ internal class DecalsImporter
                 //textureAsset.Save();
                 //asset.subAssetsDataPath.Add(MaskMapPath);
             };
-		}
-
-		if (File.Exists(folderPath + "\\icon.png"))
-		{
-			fileData = File.ReadAllBytes(folderPath + "\\icon.png");
-			Texture2D texture2D_Icon = new(1, 1);
-			if (texture2D_Icon.LoadImage(fileData))
-			{
-				if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
-				{
-					//ELT.ResizeTexture(texture2D_Icon, 128, folderPath + "\\icon.png");
-					texture2D_Icon.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png");
-				}
-			}
 		}
 
 		AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(assetDataPath, "SurfaceAsset", EscapeStrategy.None);

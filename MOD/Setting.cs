@@ -1,6 +1,7 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Game.Modding;
 using Game.Settings;
+using System.CodeDom;
 
 namespace ExtraAssetsImporter;
 
@@ -11,25 +12,20 @@ public class Setting(IMod mod) : ModSetting(mod)
 {
     public const string kSection = "Main";
     public const string kImportersGroup = "Importers";
+    public const string kImportersSurfacesGroup = "Surfaces";
+    public const string kImportersDecalsGroup = "Decals";
     public const string kMPHGroup = "Missing Prefab Helper";
 
-    [SettingsUISection(kSection, kImportersGroup)]
+    [SettingsUISection(kSection, kImportersGroup, kImportersSurfacesGroup)]
     public bool Surfaces { get; set; } = true;
 
-    [SettingsUISection(kSection, kImportersGroup)]
+    [SettingsUISection(kSection, kImportersGroup, kImportersDecalsGroup)]
     public bool Decals { get; set; } = true;
+    public bool DeleteDecalsCache { set { } }
 
     [SettingsUISection(kSection, kMPHGroup)]
     public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
 
-    //[SettingsUISection(kSection, kMPHGroup)]
-    //public bool ELT2Compatibility { get; set; } = false;
-
-    //[SettingsUISection(kSection, kMPHGroup)]
-    //public bool ELT3Compatibility { get; set; } = false;
-
-    //[SettingsUISection(kSection, kMPHGroup)]
-    //public bool LocalAssetCompatibility { get; set; } = false;
 
     public bool dummySettingsToAvoidSettingsBugThanksCO = false;
 
@@ -37,18 +33,12 @@ public class Setting(IMod mod) : ModSetting(mod)
     {
         Decals = true;
         Surfaces = true;
-        //ELT2Compatibility = false;
-        //ELT3Compatibility = false;
-        //LocalAssetCompatibility = false;
         CompatibilityDropDown = EAICompatibility.None;
         dummySettingsToAvoidSettingsBugThanksCO = false;
     }
 
     internal void ResetCompatibility()
     {
-        //ELT2Compatibility = false;
-        //ELT3Compatibility = false;
-        //LocalAssetCompatibility = false;
         CompatibilityDropDown = EAICompatibility.None;
         ApplyAndSave();
     }
