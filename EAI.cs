@@ -33,7 +33,6 @@ namespace ExtraAssetsImporter
         public void OnLoad(UpdateSystem updateSystem)
 		{
 			Logger.Info(nameof(OnLoad));
-			ClearData();
 
 			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
@@ -46,6 +45,8 @@ namespace ExtraAssetsImporter
 
 			m_Setting.dummySettingsToAvoidSettingsBugThanksCO = true;
 			m_Setting.ApplyAndSave();
+
+            ClearData();
 
             FileInfo fileInfo = new(asset.path);
 
@@ -88,7 +89,7 @@ namespace ExtraAssetsImporter
 			}
 			m_Setting.ResetCompatibility();
 			EAIDataBaseManager.SaveValidateDataBase();
-			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
+			if(EAI.m_Setting.DeleteNotLoadedAssets) EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
 			yield break;
 		}
 
@@ -99,7 +100,8 @@ namespace ExtraAssetsImporter
 			{
 				Directory.Delete(pathTempFolder, true);
 			}
-		}
+            if ( EAI.m_Setting.DeleteDataBase ) EAIDataBaseManager.DeleteDatabase();
+        }
 
 		public static void LoadCustomAssets(string modPath)
 		{

@@ -14,16 +14,16 @@ namespace ExtraAssetsImporter;
 internal static class EAIDataBaseManager
 {
 	const int DataBaseVersion = 1;
-	private static readonly string pathToAssetsDataBase = EAI.pathModsData + "\\AssetsDataBase.json";
+	private static readonly string pathToAssetsDatabase = EAI.pathModsData + "\\AssetsDataBase.json";
 	private static readonly List<EAIAsset> ValidateAssetsDataBase = [];
 	private static List<EAIAsset> AssetsDataBase = [];
 
 	internal static void LoadDataBase()
 	{
-		if (!File.Exists(pathToAssetsDataBase)) return;
+		if (!File.Exists(pathToAssetsDatabase)) return;
 		try
 		{
-            EAIDataBase dataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDataBase)).Make<EAIDataBase>();
+            EAIDataBase dataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDataBase>();
             if (dataBase.DataBaseVersion != DataBaseVersion) return;
             AssetsDataBase = dataBase.AssetsDataBase;
         }
@@ -35,12 +35,14 @@ internal static class EAIDataBaseManager
 
     internal static void SaveValidateDataBase() 
 	{
+		if (!EAI.m_Setting.DeleteNotLoadedAssets) ValidateAssetsDataBase.AddRange(AssetsDataBase);
+
         EAIDataBase dataBase = new()
-        {
-            DataBaseVersion = DataBaseVersion,
-            AssetsDataBase = ValidateAssetsDataBase
+		{
+			DataBaseVersion = DataBaseVersion,
+			AssetsDataBase =  ValidateAssetsDataBase,
         };
-        File.WriteAllText(pathToAssetsDataBase, Encoder.Encode(dataBase, EncodeOptions.None));
+        File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(dataBase, EncodeOptions.None));
 	}
 
 	internal static void ClearNotLoadedAssetsFromFiles()
@@ -49,6 +51,12 @@ internal static class EAIDataBaseManager
 		{
 			if(Directory.Exists(asset.AssetPath)) Directory.Delete(asset.AssetPath, true);
 		}
+	}
+
+	internal static void DeleteDatabase()
+	{
+		if(File.Exists(pathToAssetsDatabase)) File.Delete(pathToAssetsDatabase);
+		if(Directory.Exists(EAI.EAIGameDataPath)) Directory.Delete(EAI.EAIGameDataPath, true);
 	}
 
 	private static void ValidateAssets(string AssetID)

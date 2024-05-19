@@ -1,7 +1,6 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Game.Modding;
 using Game.Settings;
-using System.CodeDom;
 
 namespace ExtraAssetsImporter;
 
@@ -10,22 +9,28 @@ namespace ExtraAssetsImporter;
 [SettingsUIShowGroupName(kImportersGroup, kMPHGroup)]
 public class Setting(IMod mod) : ModSetting(mod)
 {
-    public const string kSection = "Main";
+    public const string kMainSection = "Main";
+    public const string kDataBaseSection = "DataBase";
     public const string kImportersGroup = "Importers";
-    public const string kImportersSurfacesGroup = "Surfaces";
-    public const string kImportersDecalsGroup = "Decals";
     public const string kMPHGroup = "Missing Prefab Helper";
+    internal bool DeleteDataBase { get; private set; } = false;
 
-    [SettingsUISection(kSection, kImportersGroup, kImportersSurfacesGroup)]
+    [SettingsUISection(kMainSection, kImportersGroup)]
     public bool Surfaces { get; set; } = true;
 
-    [SettingsUISection(kSection, kImportersGroup, kImportersDecalsGroup)]
+    [SettingsUISection(kMainSection, kImportersGroup)]
     public bool Decals { get; set; } = true;
-    public bool DeleteDecalsCache { set { } }
 
-    [SettingsUISection(kSection, kMPHGroup)]
+    [SettingsUISection(kMainSection, kMPHGroup)]
     public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
 
+    [SettingsUISection(kDataBaseSection, "")]
+    public bool DeleteNotLoadedAssets { get; set; } = true;
+
+    [SettingsUISection(kDataBaseSection, "")]
+    [SettingsUIDisableByCondition(typeof(Setting), nameof(DeleteDataBase))]
+    public bool DeleteDataBaseOnClose { set { DeleteDataBase = true; } }
+    //public bool DisableCondition => DeleteDataBase;
 
     public bool dummySettingsToAvoidSettingsBugThanksCO = false;
 
