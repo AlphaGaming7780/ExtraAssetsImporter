@@ -151,8 +151,8 @@ internal static class EAIDataBaseManager
 				{
                     IAssetData assetData = AssetDatabase.game.AddAsset(assetDataPath);
 					if (assetData is PrefabAsset prefabAsset) prefabAssets.Add(prefabAsset);
-					if (assetData is TextureAsset textureAsset) output.Add(textureAsset.Load());
-					if (assetData is SurfaceAsset surfaceAsset) output.Add(surfaceAsset.Load());
+					//if (assetData is TextureAsset textureAsset) output.Add(textureAsset.Load());
+					//if (assetData is SurfaceAsset surfaceAsset) output.Add(surfaceAsset.Load());
                 } catch (Exception e)
 				{
 					EAI.Logger.Warn(e);
