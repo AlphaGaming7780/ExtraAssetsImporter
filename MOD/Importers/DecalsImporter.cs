@@ -243,8 +243,18 @@ internal class DecalsImporter
             }
         }
 
-		NetPiecePrefab netPiecePrefab = (NetPiecePrefab)renderPrefab;
-		netPiecePrefab.m_Layer = NetPieceLayer.Top | NetPieceLayer.Bottom | NetPieceLayer.Surface | NetPieceLayer.Side;
+		NetPiecePrefab netPiecePrefab = ScriptableObject.CreateInstance<NetPiecePrefab>();
+		netPiecePrefab.surfaceAssets = renderPrefab.surfaceAssets;
+		netPiecePrefab.geometryAsset = renderPrefab.geometryAsset;
+		netPiecePrefab.bounds = renderPrefab.bounds;
+        netPiecePrefab.meshCount = renderPrefab.meshCount;
+        netPiecePrefab.vertexCount = renderPrefab.vertexCount;
+        netPiecePrefab.indexCount = renderPrefab.indexCount;
+        netPiecePrefab.manualVTRequired = renderPrefab.manualVTRequired;
+
+        netPiecePrefab.m_Layer = NetPieceLayer.Top | NetPieceLayer.Bottom | NetPieceLayer.Surface | NetPieceLayer.Side;
+		netPiecePrefab.m_Length = 1f;
+		netPiecePrefab.m_Width = 1f;
         //ObjectMeshInfo objectMeshInfo = new()
         //{
         //    m_Mesh = renderPrefab,
