@@ -66,14 +66,6 @@ namespace ExtraAssetsImporter
 			ExtraLib.AddOnMainMenu(OnMainMenu);
 
 			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
-
-            List<PrefabAsset> prefabAssets = AssetDatabase.game.GetAssets<PrefabAsset>().ToList();
-			foreach (var prefabAsset in prefabAssets)
-			{
-				if (prefabAsset.path.ToLower().Contains("eai")) EAI.Logger.Info(prefabAsset.path);
-			}
-
-
 		}
 
 		public void OnDispose()

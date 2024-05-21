@@ -266,6 +266,10 @@ internal class SurfacesImporter
 		// } catch (Exception e) {Plugin.Logger.LogError(e);}
 
 
+		//SurfaceAsset surfaceAsset = new SurfaceAsset();
+		//surfaceAsset.SetData(newMaterial);
+		//surfaceAsset.Save();
+
 		RenderedArea renderedArea = surfacePrefabPlaceHolder.AddComponent<RenderedArea>();
 		renderedArea.m_RendererPriority = (int)newMaterial.GetFloat("_DrawOrder");
 		renderedArea.m_LodBias = 0;
