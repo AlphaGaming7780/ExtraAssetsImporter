@@ -209,14 +209,8 @@ internal class DecalsImporter
     {
 		if(renderPrefab == null) throw new NullReferenceException("RenderPrefab is NULL.");
 
-        ObjectMeshInfo objectMeshInfo = new()
-        {
-            m_Mesh = renderPrefab,
-            m_Position = float3.zero,
-            m_RequireState = Game.Objects.ObjectState.None
-        };
-
-        StaticObjectPrefab decalPrefab = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
+        // StaticObjectPrefab decalPrefab = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
+        NetLaneGeometryPrefab decalPrefab = (NetLaneGeometryPrefab)ScriptableObject.CreateInstance("NetLaneGeometryPrefab");
         decalPrefab.name = fullDecalName;
 
 		JSONDecalsMaterail jSONMaterail = new();
@@ -249,17 +243,44 @@ internal class DecalsImporter
             }
         }
 
-        decalPrefab.m_Meshes = [objectMeshInfo];
+		NetPiecePrefab netPiecePrefab = (NetPiecePrefab)renderPrefab;
+		netPiecePrefab.m_Layer = NetPieceLayer.Top | NetPieceLayer.Bottom | NetPieceLayer.Surface | NetPieceLayer.Side;
+        //ObjectMeshInfo objectMeshInfo = new()
+        //{
+        //    m_Mesh = renderPrefab,
+        //    m_Position = float3.zero,
+        //    m_RequireState = Game.Objects.ObjectState.None
+        //};
 
-        StaticObjectPrefab placeholder = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
+        NetLaneMeshInfo objectMeshInfo = new()
+		{
+			m_Mesh = netPiecePrefab,
+		};
+
+		decalPrefab.m_Meshes = [objectMeshInfo];
+
+        //StaticObjectPrefab placeholder = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
+        //placeholder.name = $"{fullDecalName}_Placeholder";
+        //placeholder.m_Meshes = [objectMeshInfo];
+        //placeholder.AddComponent<PlaceholderObject>();
+
+        NetLaneGeometryPrefab placeholder = (NetLaneGeometryPrefab)ScriptableObject.CreateInstance("NetLaneGeometryPrefab");
         placeholder.name = $"{fullDecalName}_Placeholder";
         placeholder.m_Meshes = [objectMeshInfo];
         placeholder.AddComponent<PlaceholderObject>();
 
-        SpawnableObject spawnableObject = decalPrefab.AddComponent<SpawnableObject>();
-        spawnableObject.m_Placeholders = [placeholder];
+		//SpawnableObject spawnableObject = decalPrefab.AddComponent<SpawnableObject>();
+		//spawnableObject.m_Placeholders = [placeholder];
 
-        UIObject decalPrefabUI = decalPrefab.AddComponent<UIObject>();
+		SpawnableLane spawnableObject = decalPrefab.AddComponent<SpawnableLane>();
+		spawnableObject.m_Placeholders = [placeholder];
+
+		UtilityLane utilityLane = decalPrefab.AddComponent<UtilityLane>();
+		utilityLane.m_UtilityType = Game.Net.UtilityTypes.Fence;
+		utilityLane.m_VisualCapacity = 2;
+		utilityLane.m_Width = 0.4f;
+
+		UIObject decalPrefabUI = decalPrefab.AddComponent<UIObject>();
         decalPrefabUI.m_IsDebugObject = false;
         decalPrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/{decalName}/icon.png" : Icons.DecalPlaceholder;
         decalPrefabUI.m_Priority = jSONMaterail.UiPriority;
