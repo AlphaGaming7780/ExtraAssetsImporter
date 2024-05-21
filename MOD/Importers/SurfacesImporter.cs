@@ -18,6 +18,7 @@ using Colossal.Entities;
 using Colossal.Localization;
 using Game.SceneFlow;
 using Game.Rendering;
+using Colossal.IO.AssetDatabase;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -306,10 +307,11 @@ internal class SurfacesImporter
 		surfacePrefabUI.m_Priority = (int)(SurfaceInformation.Keys.Contains("UiPriority") ? SurfaceInformation["UiPriority"] : -1);
 		surfacePrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
-		//surfacePrefab.AddComponent<CustomSurface>();
+        AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
+        AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
 
-		ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
+        ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
 	}
 
 	internal static int GetRendererPriorityByCat(string cat)
