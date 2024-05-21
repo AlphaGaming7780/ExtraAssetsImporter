@@ -147,7 +147,7 @@ internal static class EAIDataBaseManager
 			foreach(string file in Directory.GetFiles(Path.Combine(EnvPath.kStreamingDataPath, asset.AssetPath), $"*{s}"))
 			{
 				string assetPath = file.Replace(EnvPath.kStreamingDataPath + "\\", "");
-				EAI.Logger.Info(assetPath);
+				//EAI.Logger.Info(assetPath);
 				AssetDataPath assetDataPath = AssetDataPath.Create(assetPath, EscapeStrategy.None);
                 try
 				{

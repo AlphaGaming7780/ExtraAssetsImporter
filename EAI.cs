@@ -9,7 +9,9 @@ using Game;
 using Game.Modding;
 using Game.SceneFlow;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace ExtraAssetsImporter
@@ -28,7 +30,7 @@ namespace ExtraAssetsImporter
 		internal static string ResourcesIcons { get; private set; }
 
 		internal static string pathModsData;
-		internal static string pathTempFolder;
+		internal static string pathTempFolder = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI\\TempAssetsFolder";
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
@@ -54,7 +56,7 @@ namespace ExtraAssetsImporter
 			Icons.LoadIcons(fileInfo.DirectoryName);
 
 			pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
-            pathTempFolder = Path.Combine(pathModsData, "TempFolder");
+            // pathTempFolder = Path.Combine(pathModsData, "TempFolder");
 			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
             string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
 
@@ -64,6 +66,13 @@ namespace ExtraAssetsImporter
 			ExtraLib.AddOnMainMenu(OnMainMenu);
 
 			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
+
+            List<PrefabAsset> prefabAssets = AssetDatabase.game.GetAssets<PrefabAsset>().ToList();
+			foreach (var prefabAsset in prefabAssets)
+			{
+				if (prefabAsset.path.ToLower().Contains("eai")) EAI.Logger.Info(prefabAsset.path);
+			}
+
 
 		}
 
@@ -96,6 +105,7 @@ namespace ExtraAssetsImporter
 
         internal static void ClearData()
 		{
+			//EAI.Logger.Info(pathTempFolder);
 			if (Directory.Exists(pathTempFolder))
 			{
 				Directory.Delete(pathTempFolder, true);

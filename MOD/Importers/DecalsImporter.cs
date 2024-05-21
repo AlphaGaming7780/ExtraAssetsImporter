@@ -152,7 +152,7 @@ internal class DecalsImporter
 						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
 						string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
 						string fullDecalName = $"{modName} {catName} {decalName} Decal";
-                        string assetDataPath = $"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}";
+                        string assetDataPath = $"Mods\\EAI\\CustomDecals\\{modName}\\{catName}\\{decalName}";
 
 						RenderPrefab renderPrefab = null;
 
@@ -265,8 +265,8 @@ internal class DecalsImporter
         decalPrefabUI.m_Priority = jSONMaterail.UiPriority;
         decalPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
-        AssetDataPath prefabAssetPath = AssetDataPath.Create(EAI.pathTempFolder.Replace(EnvPath.kUserDataPath+"\\", ""), fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
-		AssetDatabase.user.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
+        AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
+		AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
         ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
     }
