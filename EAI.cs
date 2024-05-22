@@ -51,7 +51,7 @@ namespace ExtraAssetsImporter
 				}
 				else
 				{
-					Directory.CreateDirectory(new FileInfo(correctLocation).DirectoryName);
+					Directory.CreateDirectory(Path.GetDirectoryName(correctLocation));
 					File.Move(oldLocation, correctLocation);
 				}
             }
