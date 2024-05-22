@@ -48,9 +48,7 @@ namespace ExtraAssetsImporter
                 if (File.Exists(correctLocation))
                 {
                     File.Delete(oldLocation);
-                }
-
-                File.Move(oldLocation, correctLocation);
+                } else File.Move(oldLocation, correctLocation);
             }
 
             ExtraLocalization.LoadLocalization(Logger, Assembly.GetExecutingAssembly(), false);
