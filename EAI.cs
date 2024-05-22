@@ -39,6 +39,18 @@ namespace ExtraAssetsImporter
 			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
 
+            var oldLocation = Path.Combine(EnvPath.kUserDataPath, "ModSettings", nameof(ExtraAssetsImporter), "settings.coc");
+
+            if (File.Exists(oldLocation))
+            {
+                var correctLocation = Path.Combine(EnvPath.kUserDataPath, "ModsSettings", nameof(ExtraAssetsImporter), "settings.coc");
+
+                if (File.Exists(correctLocation))
+                {
+                    File.Delete(oldLocation);
+                } else File.Move(oldLocation, correctLocation);
+            }
+
             ExtraLocalization.LoadLocalization(Logger, Assembly.GetExecutingAssembly(), false);
 
             m_Setting = new Setting(this);
