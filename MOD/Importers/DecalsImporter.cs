@@ -243,25 +243,36 @@ internal class DecalsImporter
             }
         }
 
-		//NetPiecePrefab netPiecePrefab = ScriptableObject.CreateInstance<NetPiecePrefab>();
-		//netPiecePrefab.name = renderPrefab.name;
-		//netPiecePrefab.surfaceAssets = renderPrefab.surfaceAssets;
-		//netPiecePrefab.geometryAsset = renderPrefab.geometryAsset;
-		//netPiecePrefab.bounds = renderPrefab.bounds;
-  //      netPiecePrefab.meshCount = renderPrefab.meshCount;
-  //      netPiecePrefab.vertexCount = renderPrefab.vertexCount;
-  //      netPiecePrefab.indexCount = renderPrefab.indexCount;
-  //      netPiecePrefab.manualVTRequired = renderPrefab.manualVTRequired;
+        //NetPiecePrefab netPiecePrefab = ScriptableObject.CreateInstance<NetPiecePrefab>();
+        //      netPiecePrefab.name = renderPrefab.name;
+        //netPiecePrefab.surfaceAssets = renderPrefab.surfaceAssets;
+        //netPiecePrefab.geometryAsset = renderPrefab.geometryAsset;
+        //netPiecePrefab.bounds = renderPrefab.bounds;
+        //netPiecePrefab.meshCount = renderPrefab.meshCount;
+        //netPiecePrefab.vertexCount = renderPrefab.vertexCount;
+        //netPiecePrefab.indexCount = renderPrefab.indexCount;
+        //netPiecePrefab.manualVTRequired = renderPrefab.manualVTRequired;
 
-  //      netPiecePrefab.m_Layer = NetPieceLayer.Top | NetPieceLayer.Bottom | NetPieceLayer.Surface | NetPieceLayer.Side;
-		//netPiecePrefab.m_Length = 1f;
-		//netPiecePrefab.m_Width = 1f;
-		//netPiecePrefab.m_WidthOffset = 1f;
-		//netPiecePrefab.m_NodeOffset = 1f;
+        //netPiecePrefab.m_Layer = NetPieceLayer.Top | NetPieceLayer.Bottom | NetPieceLayer.Surface | NetPieceLayer.Side;
+        //netPiecePrefab.m_Length = 1f;
+        //netPiecePrefab.m_Width = 1f;
+        //netPiecePrefab.m_WidthOffset = 1f;
+        //netPiecePrefab.m_NodeOffset = 1f;
+
+  //      UnityEngine.Hash128 hash = UnityEngine.Hash128.Parse("cdfda2f5ecbb82640ad2a6fe7a89c5c7");
+  //      IAssetData assetData = AssetDatabase..GetAsset()
+  //      if (assetData is null) EAI.Logger.Warn("assetData is NULL");
+		//EAI.Logger.Info(assetData.ToString());
+  //      PrefabAsset prefabAsset = assetData as PrefabAsset;
+		//if (prefabAsset is null) EAI.Logger.Warn("prefabAsset is NULL");
+		//ScriptableObject scriptableObject = prefabAsset.Load();
+		//EAI.Logger.Info(scriptableObject.GetType());
 
 		CurveProperties curveProperties = renderPrefab.AddComponent<CurveProperties>();
 		curveProperties.m_TilingCount = 2;
-		curveProperties.m_GeometryTiling = true;
+		curveProperties.m_SmoothingDistance = 0;
+		curveProperties.m_OverrideLength = 0;
+		curveProperties.m_GeometryTiling = false;
 
         //ObjectMeshInfo objectMeshInfo = new()
         //{
