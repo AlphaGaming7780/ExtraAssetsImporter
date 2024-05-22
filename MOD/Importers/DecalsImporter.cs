@@ -296,7 +296,7 @@ internal class DecalsImporter
 		UtilityLane utilityLane = decalPrefab.AddComponent<UtilityLane>();
 		utilityLane.m_UtilityType = Game.Net.UtilityTypes.Fence;
 		utilityLane.m_VisualCapacity = 2;
-		utilityLane.m_Width = 0.4f;
+		utilityLane.m_Width = 0;
 
 		UIObject decalPrefabUI = decalPrefab.AddComponent<UIObject>();
         decalPrefabUI.m_IsDebugObject = false;

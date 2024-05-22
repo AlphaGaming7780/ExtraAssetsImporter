@@ -45,10 +45,15 @@ namespace ExtraAssetsImporter
             {
                 var correctLocation = Path.Combine(EnvPath.kUserDataPath, "ModsSettings", nameof(ExtraAssetsImporter), "settings.coc");
 
-                if (File.Exists(correctLocation))
-                {
-                    File.Delete(oldLocation);
-                } else File.Move(oldLocation, correctLocation);
+				if (File.Exists(correctLocation))
+				{
+					File.Delete(oldLocation);
+				}
+				else
+				{
+					Directory.CreateDirectory(new FileInfo(correctLocation).DirectoryName);
+					File.Move(oldLocation, correctLocation);
+				}
             }
 
             ExtraLocalization.LoadLocalization(Logger, Assembly.GetExecutingAssembly(), false);
