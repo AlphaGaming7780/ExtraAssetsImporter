@@ -4,7 +4,7 @@ using Game.Settings;
 
 namespace ExtraAssetsImporter;
 
-[FileLocation($"ModSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
+[FileLocation($"ModsSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
 [SettingsUIGroupOrder(kImportersGroup, kMPHGroup)]
 [SettingsUIShowGroupName(kImportersGroup, kMPHGroup)]
 public class Setting(IMod mod) : ModSetting(mod)
