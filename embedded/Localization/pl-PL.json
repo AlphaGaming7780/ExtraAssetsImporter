@@ -16,6 +16,6 @@
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "Baza danych",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Usuń niezaładowane obiekty.",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Usuń pliki obiektów z dysku, jeśli nie zostały załadowane (np. wyłączony mod).",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Usuń bazę danych przy zamykaniu",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Delete the database when you close the game, useful when uninstalling the mod."
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Usuń bazę danych przy wyłączaniu gry",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Usuń bazę danych przy wyłączaniu gry, przydatne podczas odinstalowywaniu moda."
 }
