@@ -4,32 +4,33 @@ using Game.Settings;
 
 namespace ExtraAssetsImporter;
 
-[FileLocation($"ModSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
+[FileLocation($"ModsSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
 [SettingsUIGroupOrder(kImportersGroup, kMPHGroup)]
 [SettingsUIShowGroupName(kImportersGroup, kMPHGroup)]
 public class Setting(IMod mod) : ModSetting(mod)
 {
-    public const string kSection = "Main";
+    public const string kMainSection = "Main";
+    public const string kDataBaseSection = "DataBase";
     public const string kImportersGroup = "Importers";
     public const string kMPHGroup = "Missing Prefab Helper";
+    internal bool DeleteDataBase { get; private set; } = false;
 
-    [SettingsUISection(kSection, kImportersGroup)]
+    [SettingsUISection(kMainSection, kImportersGroup)]
     public bool Surfaces { get; set; } = true;
 
-    [SettingsUISection(kSection, kImportersGroup)]
+    [SettingsUISection(kMainSection, kImportersGroup)]
     public bool Decals { get; set; } = true;
 
-    [SettingsUISection(kSection, kMPHGroup)]
+    [SettingsUISection(kMainSection, kMPHGroup)]
     public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
 
-    //[SettingsUISection(kSection, kMPHGroup)]
-    //public bool ELT2Compatibility { get; set; } = false;
+    [SettingsUISection(kDataBaseSection, "")]
+    public bool DeleteNotLoadedAssets { get; set; } = true;
 
-    //[SettingsUISection(kSection, kMPHGroup)]
-    //public bool ELT3Compatibility { get; set; } = false;
-
-    //[SettingsUISection(kSection, kMPHGroup)]
-    //public bool LocalAssetCompatibility { get; set; } = false;
+    [SettingsUISection(kDataBaseSection, "")]
+    [SettingsUIDisableByCondition(typeof(Setting), nameof(DeleteDataBase))]
+    public bool DeleteDataBaseOnClose { set { DeleteDataBase = true; } }
+    //public bool DisableCondition => DeleteDataBase;
 
     public bool dummySettingsToAvoidSettingsBugThanksCO = false;
 
@@ -37,18 +38,12 @@ public class Setting(IMod mod) : ModSetting(mod)
     {
         Decals = true;
         Surfaces = true;
-        //ELT2Compatibility = false;
-        //ELT3Compatibility = false;
-        //LocalAssetCompatibility = false;
         CompatibilityDropDown = EAICompatibility.None;
         dummySettingsToAvoidSettingsBugThanksCO = false;
     }
 
     internal void ResetCompatibility()
     {
-        //ELT2Compatibility = false;
-        //ELT3Compatibility = false;
-        //LocalAssetCompatibility = false;
         CompatibilityDropDown = EAICompatibility.None;
         ApplyAndSave();
     }

@@ -17,6 +17,8 @@ using Unity.Entities;
 using Colossal.Entities;
 using Colossal.Localization;
 using Game.SceneFlow;
+using Game.Rendering;
+using Colossal.IO.AssetDatabase;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -264,13 +266,18 @@ internal class SurfacesImporter
 		// } catch (Exception e) {Plugin.Logger.LogError(e);}
 
 
+		//SurfaceAsset surfaceAsset = new SurfaceAsset();
+		//surfaceAsset.SetData(newMaterial);
+		//surfaceAsset.Save();
+
 		RenderedArea renderedArea = surfacePrefabPlaceHolder.AddComponent<RenderedArea>();
 		renderedArea.m_RendererPriority = (int)newMaterial.GetFloat("_DrawOrder");
 		renderedArea.m_LodBias = 0;
 		renderedArea.m_Roundness = 1;
 		renderedArea.m_Material = newMaterial;
+		renderedArea.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat("colossal_DecalLayerMask");
 
-		PlaceholderArea placeholderArea = surfacePrefabPlaceHolder.AddComponent<PlaceholderArea>();
+        PlaceholderArea placeholderArea = surfacePrefabPlaceHolder.AddComponent<PlaceholderArea>();
 
 		SpawnableArea spawnableArea = surfacePrefab.AddComponent<SpawnableArea>();
 		spawnableArea.m_Placeholders = new AreaPrefab[1];
@@ -281,8 +288,9 @@ internal class SurfacesImporter
 		renderedArea1.m_LodBias = 0;
 		renderedArea1.m_Roundness = 1;
 		renderedArea1.m_Material = newMaterial;
+		renderedArea1.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat("colossal_DecalLayerMask");
 
-		if (File.Exists(folderPath + "\\icon.png"))
+        if (File.Exists(folderPath + "\\icon.png"))
 		{
 			fileData = File.ReadAllBytes(folderPath + "\\icon.png");
 			Texture2D texture2D_Icon = new(1, 1);
@@ -303,10 +311,11 @@ internal class SurfacesImporter
 		surfacePrefabUI.m_Priority = (int)(SurfaceInformation.Keys.Contains("UiPriority") ? SurfaceInformation["UiPriority"] : -1);
 		surfacePrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
-		//surfacePrefab.AddComponent<CustomSurface>();
+        AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
+        AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
 
-		ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
+        ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
 	}
 
 	internal static int GetRendererPriorityByCat(string cat)
@@ -334,7 +343,8 @@ internal class SurfacesImporter
 		material.SetFloat("_DecalColorMask3", 8);
 		material.SetFloat("_DecalStencilRef", 16);
 		material.SetFloat("_DecalStencilWriteMask", 16);
-		material.enableInstancing = true;
+		material.SetFloat("colossal_DecalLayerMask", 1);
+        material.enableInstancing = true;
 		material.shaderKeywords = ["_MATERIAL_AFFECTS_ALBEDO", "_MATERIAL_AFFECTS_MASKMAP", "_MATERIAL_AFFECTS_NORMAL"];
         return material;
     }
