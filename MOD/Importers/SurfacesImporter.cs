@@ -132,7 +132,12 @@ internal class SurfacesImporter
                     notificationInfo.progressState = ProgressState.Progressing;
 					notificationInfo.progress = (int)(ammoutOfSurfacesloaded / (float)numberOfSurfaces * 100);
 					notificationInfo.text = $"Loading : {surfaceName}";
-					try
+                    if (surfaceName.StartsWith("."))
+                    {
+                        failedSurfaces++;
+                        continue;
+                    }
+                    try
 					{
                         string catName = new DirectoryInfo(surfacesCat).Name;
                         FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");

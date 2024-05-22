@@ -146,6 +146,10 @@ internal class DecalsImporter
 					notificationInfo.progressState = ProgressState.Progressing;
 					notificationInfo.progress = (int)(ammoutOfDecalsloaded / (float)numberOfDecals * 100);
 					notificationInfo.text = $"Loading : {decalName}";
+					if(decalName.StartsWith(".")) {
+						failedDecals++;
+						continue;
+					}
 					try
 					{
 						string catName = new DirectoryInfo(catFolder).Name;
