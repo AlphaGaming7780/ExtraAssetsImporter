@@ -42,7 +42,7 @@ internal static class EAIDataBaseManager
 			DataBaseVersion = DataBaseVersion,
 			AssetsDataBase =  ValidateAssetsDataBase,
         };
-		string directoryPath = new FileInfo(pathToAssetsDatabase).Directory.FullName;
+        string directoryPath = Path.GetDirectoryName(pathToAssetsDatabase);
         if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
         File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(dataBase, EncodeOptions.None));
 	}
