@@ -7,7 +7,7 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Собственные наклейки",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Загрузить собственные наклейки, вступят в силу после перезапуска игры.",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Отсутствует Префактор",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Исправления соместимости",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Исправление совместимости",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Эта настройка предназначена для того, чтобы попытаться исправить недостающую сборку, вызванную обновлением EAI. Использовать его очень просто, включите настройку, соответствующую версии мода, которую вы использовали в своем сохранении, перезапустите игру, загрузите свое сохранение, проверьте, вернулись ли отсутствующие префабы, и все ли в порядке. Если все в порядке, сохраните сохранение и перезапустите игру, если что-то не так, выйдите из игры без сохранения. Эта настройка автоматически отключается после перезапуска, чтобы избежать конфликтов и проблем в будущем.",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Отключено",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT2]": "ELT 2.0",
