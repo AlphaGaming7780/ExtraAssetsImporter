@@ -1,5 +1,5 @@
 {
-	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
+	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Импорт дополнительных объектов",
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Главная",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "Импорт",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Собственные поверхности",
@@ -13,7 +13,7 @@
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT2]": "ELT 2.0",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT3]": "ELT 3.0",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[LocalAsset]": "Локальные ресурсы",
-	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "DataBase",
+	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "База данных",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Удалить не загруженные ассеты",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Удалить файлы ассета с жёсткого диска, если они не были загружены (например,  мод удалён или неактивен).",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Удалить базу данных при закрытии",
