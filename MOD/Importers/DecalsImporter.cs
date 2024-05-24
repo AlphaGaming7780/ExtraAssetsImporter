@@ -17,9 +17,7 @@ using Colossal.Json;
 using Unity.Entities;
 using Game.SceneFlow;
 using Colossal.Localization;
-using TextureAsset = Colossal.IO.AssetDatabase.TextureAsset;
 using Colossal.PSI.Environment;
-using static Extra.Lib.UI.ExtraAssetsMenu;
 using Extra.Lib.mod.ClassExtension;
 
 namespace ExtraAssetsImporter.Importers;
