@@ -20,6 +20,7 @@ using Colossal.Localization;
 using TextureAsset = Colossal.IO.AssetDatabase.TextureAsset;
 using Colossal.PSI.Environment;
 using static Extra.Lib.UI.ExtraAssetsMenu;
+using Extra.Lib.mod.ClassExtension;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -143,10 +144,12 @@ internal class DecalsImporter
 				foreach (string decalsFolder in Directory.GetDirectories(catFolder))
 				{
 					string decalName = new DirectoryInfo(decalsFolder).Name;
-					notificationInfo.progressState = ProgressState.Progressing;
+                    notificationInfo.progressState = ProgressState.Progressing;
 					notificationInfo.progress = (int)(ammoutOfDecalsloaded / (float)numberOfDecals * 100);
 					notificationInfo.text = $"Loading : {decalName}";
-					try
+					ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
+
+                    try
 					{
 						string catName = new DirectoryInfo(catFolder).Name;
 						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
