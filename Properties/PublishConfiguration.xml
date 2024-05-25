@@ -73,7 +73,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.1.0" />
+	<ModVersion Value="1.1.1" /> <!--NEW VERSION--> 
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.1.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -81,18 +81,9 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.1.0
-### EAI
-- Will now create a "database" or a cache to reload on startup instead of recreating everything, increase loading time and SSD life time, ONLY WORKS FOR DECALS.
-- You can now disable local asset by adding a `.` in front of the folder name.
-### Custom Surfaces
-- Support `colossal_DecalLayerMask` property in the JSON (same as decals, so you can set your surface to render on road).
-### Translation
-- Add: Russian localization by Mihail (kaktyc)
-- Add: Italian localization by Stefano (Furios)
-- Add: Portuguese, Brazilian localization by TiZedoGrelo and Miguel Pereira Campos (mpcamposz)
-- Update: Polish by karmel68
-- Update: Spanish by elGendo87
+# 1.1.1
+- Fixe default value in decal layer mask for surfaces.
+- Update Korean translation by Hinanchovo
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
