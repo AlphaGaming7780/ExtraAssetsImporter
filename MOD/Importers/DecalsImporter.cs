@@ -162,10 +162,10 @@ internal class DecalsImporter
 
 						RenderPrefab renderPrefab = null;
 
-						if (!EAIDataBaseManager.IsAssetsInDataBase(fullDecalName))
+						if (!EAIDataBaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(decalsFolder))
 						{
 							renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
-							EAIAsset asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
+							asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
 							EAIDataBaseManager.AddAssets(asset);
 						}
 						else

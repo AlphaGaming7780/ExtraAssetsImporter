@@ -107,7 +107,7 @@ namespace ExtraAssetsImporter
 			}
 			m_Setting.ResetCompatibility();
 			EAIDataBaseManager.SaveValidateDataBase();
-			if(EAI.m_Setting.DeleteNotLoadedAssets) EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
+			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
 			yield break;
 		}
 

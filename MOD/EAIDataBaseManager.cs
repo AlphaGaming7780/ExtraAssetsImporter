@@ -6,8 +6,6 @@ using Game.Prefabs;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Policy;
-using UnityEngine;
 
 namespace ExtraAssetsImporter;
 
@@ -35,7 +33,12 @@ internal static class EAIDataBaseManager
 
     internal static void SaveValidateDataBase() 
 	{
-		if (!EAI.m_Setting.DeleteNotLoadedAssets) ValidateAssetsDataBase.AddRange(AssetsDataBase);
+		if (!EAI.m_Setting.DeleteNotLoadedAssets)
+		{
+			ValidateAssetsDataBase.AddRange(AssetsDataBase);
+            AssetsDataBase.Clear();
+
+        }
 
         EAIDataBase dataBase = new()
 		{
@@ -51,7 +54,8 @@ internal static class EAIDataBaseManager
 	{
 		foreach(EAIAsset asset in AssetsDataBase)
 		{
-			if(Directory.Exists(asset.AssetPath)) Directory.Delete(asset.AssetPath, true);
+			string path = Path.Combine(EnvPath.kStreamingDataPath, asset.AssetPath);
+            if (Directory.Exists(path)) Directory.Delete(path, true);
 		}
 	}
 
@@ -120,7 +124,14 @@ internal static class EAIDataBaseManager
 		return EAIAsset.Null;
 	}
 
-	internal static int GetAssetHash(string assetFolder)
+	internal static bool TryGetEAIAsset(string AssetID, out EAIAsset asset)
+	{
+		asset = AssetsDataBase.Find(asset => asset.AssetID == AssetID);
+		return asset != EAIAsset.Null;
+    }
+
+
+    internal static int GetAssetHash(string assetFolder)
 	{
 		DirectoryInfo directoryInfo = new (assetFolder);
 		int hash = 0;
