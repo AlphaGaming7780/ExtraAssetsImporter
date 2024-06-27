@@ -37,7 +37,6 @@ internal static class EAIDataBaseManager
 		{
 			ValidateAssetsDataBase.AddRange(AssetsDataBase);
             AssetsDataBase.Clear();
-
         }
 
         EAIDataBase dataBase = new()
@@ -55,8 +54,10 @@ internal static class EAIDataBaseManager
 		foreach(EAIAsset asset in AssetsDataBase)
 		{
 			string path = Path.Combine(EnvPath.kStreamingDataPath, asset.AssetPath);
-            if (Directory.Exists(path)) Directory.Delete(path, true);
+			if (Directory.Exists(path)) Directory.Delete(path, true);
+			else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
 		}
+		AssetsDataBase.Clear();
 	}
 
 	internal static void DeleteDatabase()

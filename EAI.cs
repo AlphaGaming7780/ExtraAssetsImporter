@@ -9,9 +9,7 @@ using Game;
 using Game.Modding;
 using Game.SceneFlow;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace ExtraAssetsImporter
@@ -73,7 +71,6 @@ namespace ExtraAssetsImporter
 			Icons.LoadIcons(fileInfo.DirectoryName);
 
 			pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
-            // pathTempFolder = Path.Combine(pathModsData, "TempFolder");
 			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
             string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
 

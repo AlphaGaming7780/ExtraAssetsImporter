@@ -12,13 +12,6 @@
     <CustomManagedPath>E:\SteamLibrary\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>
 
     <AdditionalFilesDirectory>Resources</AdditionalFilesDirectory>
-    
-		<!--Path to the text file where PDX account data is stored which is required to publish the mod-->
-		<!--Keep it outside of project in order to not commit it or share accidentally-->
-		<!--The file should contain 2 lines:-->
-		<!--Your.PDX@Account.login-->
-		<!--Your-PDX-Account-Pa$$word-->
-		<PDXAccountDataPath>$(USERPROFILE)\Desktop\pdx_account.txt</PDXAccountDataPath>
 		
 		<!--The file where mod information which is required for publishing mod on PDX mods are stored-->
 		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>

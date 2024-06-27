@@ -52,13 +52,13 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ⚠️French 77% : aricoseco
-- ⚠️Chinese Simplified 77% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
+- ✔️French 100% : aricoseco, Edou24
+- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
 - ⚠️Chinese Traditional 77% : Tiger Zhang (tiger42231)
 - ⚠️German 77% : Konsi
 - ⚠️Italian 77% : Stefano (Furios)
 - ❌Japanese 0%
-- ⚠️Korean 77% : Hinanchovo
+- ✔️Korean 100% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
 - ⚠️Portuguese, Brazilian 77% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz) 
 - ✔️Russian 100% : Mihail (kaktyc), Lek0ms, MrSandcraft
@@ -73,7 +73,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.1.1" /> <!--NEW VERSION--> 
+	<ModVersion Value="1.1.2" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.1.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -81,9 +81,15 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.1.1
-- Fixe default value in decal layer mask for surfaces.
-- Update Korean translation by Hinanchovo
+# 1.1.2
+## Fixes
+- Fixed, EAI not updating the database of edited assets.
+- Fixed, EAI not deleting disabled assets, if the settings is enabled.
+
+## Translation
+- Korean by Hinanchovo
+- Chinese Simplified by RilkeXS(无手文) (RilkeXS)
+- French by Edou24
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
