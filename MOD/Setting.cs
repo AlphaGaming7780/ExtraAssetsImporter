@@ -32,14 +32,11 @@ public class Setting(IMod mod) : ModSetting(mod)
     public bool DeleteDataBaseOnClose { set { DeleteDataBase = true; } }
     //public bool DisableCondition => DeleteDataBase;
 
-    public bool dummySettingsToAvoidSettingsBugThanksCO = false;
-
     public override void SetDefaults()
     {
         Decals = true;
         Surfaces = true;
         CompatibilityDropDown = EAICompatibility.None;
-        dummySettingsToAvoidSettingsBugThanksCO = false;
     }
 
     internal void ResetCompatibility()

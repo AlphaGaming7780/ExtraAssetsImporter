@@ -57,44 +57,6 @@ internal class SurfacesImporter
 		Icons.UnLoadIcons(new DirectoryInfo(folder).Parent.FullName);
 	}
 
-	internal static void LoadLocalization()
-	{
-
-		Dictionary<string, string> csLocalisation = [];
-
-		foreach (string folder in FolderToLoadSurface)
-		{
-			foreach (string surfacesCat in Directory.GetDirectories(folder))
-			{
-
-				//if (!csLocalisation.ContainsKey($"SubServices.NAME[{new DirectoryInfo(surfacesCat).Name} Surfaces]"))
-				//{
-				//	csLocalisation.Add($"SubServices.NAME[{new DirectoryInfo(surfacesCat).Name} Surfaces]", $"{new DirectoryInfo(surfacesCat).Name} Surfaces");
-				//}
-
-				//if (!csLocalisation.ContainsKey($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(surfacesCat).Name} Surfaces]"))
-				//{
-				//	csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(surfacesCat).Name} Surfaces]", $"{new DirectoryInfo(surfacesCat).Name} Surfaces");
-				//}
-
-				foreach (string filePath in Directory.GetDirectories(surfacesCat))
-				{
-					FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
-					string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-					string surfaceName = $"{modName} {new DirectoryInfo(surfacesCat).Name} {new DirectoryInfo(filePath).Name} Surface";
-
-					if (!csLocalisation.ContainsKey($"Assets.NAME[{surfaceName}]")) csLocalisation.Add($"Assets.NAME[{surfaceName}]", new DirectoryInfo(filePath).Name);
-					if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{surfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{surfaceName}]", new DirectoryInfo(filePath).Name);
-				}
-			}
-		}
-
-		foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-		{
-			GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
-		}
-	}
-
 	internal static IEnumerator CreateCustomSurfaces()
 	{
 		if (SurfacesIsLoading || FolderToLoadSurface.Count <= 0) yield break;

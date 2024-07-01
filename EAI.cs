@@ -60,9 +60,6 @@ namespace ExtraAssetsImporter
             m_Setting.RegisterInOptionsUI();
             AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
 
-			m_Setting.dummySettingsToAvoidSettingsBugThanksCO = true;
-			m_Setting.ApplyAndSave();
-
             ClearData();
 
             FileInfo fileInfo = new(asset.path);
