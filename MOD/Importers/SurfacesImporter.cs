@@ -1,20 +1,13 @@
-﻿using Extra;
-using Game.Prefabs;
+﻿using Game.Prefabs;
 using System;
 using System.Collections.Generic;
-using System.IO.Compression;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 using Extra.Lib;
 using Extra.Lib.UI;
 using Colossal.PSI.Common;
 using System.Collections;
 using Colossal.Json;
-using UnityEngine.Rendering;
-using Unity.Entities;
-using Colossal.Entities;
 using Colossal.Localization;
 using Game.SceneFlow;
 using Game.Rendering;
@@ -25,6 +18,7 @@ namespace ExtraAssetsImporter.Importers;
 public class JSONSurfacesMaterail
 {
 	public int UiPriority = 0;
+	public float m_Roundness = 0.5f;
 	public Dictionary<string, float> Float = [];
 	public Dictionary<string, Vector4> Vector = [];
 	public List<PrefabIdentifierInfo> prefabIdentifierInfos = [];
@@ -36,12 +30,6 @@ internal class SurfacesImporter
 
 	private static bool SurfacesIsLoading = false;
 	internal static bool SurfacesIsLoaded = false;
-
-	// internal static void ClearSurfacesCache() {
-	// 	if(Directory.Exists($"{GameManager_Awake.resourcesCache}/Surfaces")) {
-	// 		Directory.Delete($"{GameManager_Awake.resourcesCache}/Surfaces", true);
-	// 	}
-	// }
 
 	public static void AddCustomSurfacesFolder(string path)
 	{
@@ -240,7 +228,7 @@ internal class SurfacesImporter
 		RenderedArea renderedArea = surfacePrefabPlaceHolder.AddComponent<RenderedArea>();
 		renderedArea.m_RendererPriority = (int)newMaterial.GetFloat("_DrawOrder");
 		renderedArea.m_LodBias = 0;
-		renderedArea.m_Roundness = 1;
+		renderedArea.m_Roundness = jSONMaterail.m_Roundness;
 		renderedArea.m_Material = newMaterial;
 		renderedArea.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat("colossal_DecalLayerMask");
 
@@ -253,7 +241,7 @@ internal class SurfacesImporter
 		RenderedArea renderedArea1 = surfacePrefab.AddComponent<RenderedArea>();
 		renderedArea1.m_RendererPriority = (int)newMaterial.GetFloat("_DrawOrder");
 		renderedArea1.m_LodBias = 0;
-		renderedArea1.m_Roundness = 1;
+		renderedArea1.m_Roundness = jSONMaterail.m_Roundness;
 		renderedArea1.m_Material = newMaterial;
 		renderedArea1.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat("colossal_DecalLayerMask");
 
