@@ -2,6 +2,7 @@
 using Colossal.Json;
 using Colossal.PSI.Environment;
 using Extra.Lib;
+using ExtraAssetsImporter.DataBase;
 using Game.Prefabs;
 using System;
 using System.Collections.Generic;
@@ -11,12 +12,13 @@ namespace ExtraAssetsImporter;
 
 internal static class EAIDataBaseManager
 {
-	const int DataBaseVersion = 1;
+	const int DataBaseVersion = 2;
 	private static readonly string pathToAssetsDatabase = EAI.pathModsData + "\\AssetsDataBase.json";
 	private static readonly List<EAIAsset> ValidateAssetsDataBase = [];
 	private static List<EAIAsset> AssetsDataBase = [];
+    public static ILocalAssetDatabase assetDataBaseEAI => AssetDatabase<AssetDataBaseEAI>.instance;
 
-	internal static void LoadDataBase()
+    internal static void LoadDataBase()
 	{
 		if (!File.Exists(pathToAssetsDatabase)) return;
 		try
@@ -53,7 +55,7 @@ internal static class EAIDataBaseManager
 	{
 		foreach(EAIAsset asset in AssetsDataBase)
 		{
-			string path = Path.Combine(EnvPath.kStreamingDataPath, asset.AssetPath);
+			string path = Path.Combine(EnvPath.kContentPath, asset.AssetPath);
 			if (Directory.Exists(path)) Directory.Delete(path, true);
 			else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
 		}
@@ -63,7 +65,7 @@ internal static class EAIDataBaseManager
 	internal static void DeleteDatabase()
 	{
 		if(File.Exists(pathToAssetsDatabase)) File.Delete(pathToAssetsDatabase);
-		if(Directory.Exists(EAI.EAIGameDataPath)) Directory.Delete(EAI.EAIGameDataPath, true);
+		if(Directory.Exists(AssetDataBaseEAI.rootPath)) Directory.Delete(AssetDataBaseEAI.rootPath, true);
 	}
 
 	private static void ValidateAssets(string AssetID)
@@ -156,14 +158,14 @@ internal static class EAIDataBaseManager
 
 		foreach(string s in DefaultAssetFactory.instance.GetSupportedExtensions())
 		{
-			foreach(string file in Directory.GetFiles(Path.Combine(EnvPath.kStreamingDataPath, asset.AssetPath), $"*{s}"))
+			foreach(string file in Directory.GetFiles(Path.Combine(AssetDataBaseEAI.rootPath, asset.AssetPath), $"*{s}"))
 			{
-				string assetPath = file.Replace(EnvPath.kStreamingDataPath + "\\", "");
+				string assetPath = file.Replace(AssetDataBaseEAI.rootPath + "\\", "");
 				//EAI.Logger.Info(assetPath);
 				AssetDataPath assetDataPath = AssetDataPath.Create(assetPath, EscapeStrategy.None);
                 try
 				{
-                    IAssetData assetData = AssetDatabase.game.AddAsset(assetDataPath);
+                    IAssetData assetData = assetDataBaseEAI.AddAsset(assetDataPath);
 					if (assetData is PrefabAsset prefabAsset) prefabAssets.Add(prefabAsset);
 					//if (assetData is TextureAsset textureAsset) output.Add(textureAsset.Load());
 					//if (assetData is SurfaceAsset surfaceAsset) output.Add(surfaceAsset.Load());

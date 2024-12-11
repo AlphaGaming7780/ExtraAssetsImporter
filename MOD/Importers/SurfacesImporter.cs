@@ -266,11 +266,12 @@ internal class SurfacesImporter
 		surfacePrefabUI.m_Priority = jSONMaterail.UiPriority;
 		surfacePrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
-		AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
-		AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
+		//AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
+		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
+		//AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
+		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
-
-		ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
+        ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
 	}
 
 	internal static int GetRendererPriorityByCat(string cat)

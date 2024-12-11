@@ -16,23 +16,34 @@ namespace ExtraAssetsImporter
 {
 	public class EAI : IMod
 	{
-		private static ILog log = LogManager.GetLogger($"{nameof(ExtraAssetsImporter)}").SetShowsErrorsInUI(false);
+		private static readonly ILog log = LogManager.GetLogger($"{nameof(ExtraAssetsImporter)}").SetShowsErrorsInUI(false);
 #if DEBUG
 		internal static Logger Logger = new(log, true);
 #else
         internal static Logger Logger = new(log, false);
 #endif
-        static internal readonly string EAIGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI";  
 
         internal static Setting m_Setting;
 		internal static string ResourcesIcons { get; private set; }
 
 		internal static string pathModsData;
-		internal static string pathTempFolder = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI\\TempAssetsFolder";
+		internal static string pathTempFolder = $"{EnvPath.kContentPath}\\Mods\\EAI\\TempAssetsFolder";
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
 			Logger.Info(nameof(OnLoad));
+
+			string oldDataPath = $"{UnityEngine.Application.streamingAssetsPath}\\Mods\\EAI";
+			string oldModsPath = $"{UnityEngine.Application.streamingAssetsPath}\\Mods";
+
+            if (Directory.Exists(oldDataPath))
+			{
+                Directory.Delete(oldDataPath, true);
+				if(Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+				{
+					Directory.Delete(oldModsPath, false);
+				}
+			}
 
 			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
@@ -74,7 +85,9 @@ namespace ExtraAssetsImporter
 			if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
 
-			ExtraLib.AddOnMainMenu(OnMainMenu);
+            AssetDatabase.global.RegisterDatabase(EAIDataBaseManager.assetDataBaseEAI).Wait();
+
+            ExtraLib.AddOnMainMenu(OnMainMenu);
 
 			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 		}

@@ -19,6 +19,7 @@ using Game.SceneFlow;
 using Colossal.Localization;
 using Colossal.PSI.Environment;
 using Extra.Lib.mod.ClassExtension;
+using ExtraAssetsImporter.DataBase;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -158,9 +159,10 @@ internal class DecalsImporter
 						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
 						string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
 						string fullDecalName = $"{modName} {catName} {decalName} Decal";
-						string assetDataPath = $"Mods\\EAI\\CustomDecals\\{modName}\\{catName}\\{decalName}";
+						//string assetDataPath = $"Mods\\EAI\\CustomDecals\\{modName}\\{catName}\\{decalName}";
+						string assetDataPath = $"CustomDecals\\{modName}\\{catName}\\{decalName}";
 
-						RenderPrefab renderPrefab = null;
+                        RenderPrefab renderPrefab = null;
 
 						if (!EAIDataBaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(decalsFolder))
 						{
@@ -271,16 +273,17 @@ internal class DecalsImporter
 		decalPrefabUI.m_Priority = jSONMaterail.UiPriority;
 		decalPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
-		AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
-		AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
+		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
+		//AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
+		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
-		ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
+        ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
 	}
 
 	private static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath)
 	{
 
-		if (Directory.Exists($"{EnvPath.kStreamingDataPath}\\{assetDataPath}")) { Directory.Delete($"{EnvPath.kStreamingDataPath}\\{assetDataPath}", true); }
+		if (Directory.Exists($"{AssetDataBaseEAI.rootPath}\\{assetDataPath}")) { Directory.Delete($"{AssetDataBaseEAI.rootPath}\\{assetDataPath}", true); }
 
 		//EAIAsset asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(folderPath));
 		//EAIAsset asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
@@ -390,8 +393,9 @@ internal class DecalsImporter
 		SurfaceAsset surfaceAsset = new()
 		{
 			guid = Guid.NewGuid(), //DecalRenderPrefab.surfaceAssets.ToArray()[0].guid, //
-			database = AssetDatabase.game //DecalRenderPrefab.surfaceAssets.ToArray()[0].database,
-		};
+			//database = AssetDatabase.game //DecalRenderPrefab.surfaceAssets.ToArray()[0].database,
+			database = EAIDataBaseManager.assetDataBaseEAI //DecalRenderPrefab.surfaceAssets.ToArray()[0].database,
+        };
 		surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.guid);
 		surfaceAsset.SetData(decalSurface);
 		surfaceAsset.Save(force: false, saveTextures: true, vt: false);
@@ -405,8 +409,9 @@ internal class DecalsImporter
 		GeometryAsset geometryAsset = new()
 		{
 			guid = Guid.NewGuid(),
-			database = AssetDatabase.game //DecalRenderPrefab.geometryAsset.database
-		};
+			//database = AssetDatabase.game //DecalRenderPrefab.geometryAsset.database
+            database = EAIDataBaseManager.assetDataBaseEAI //DecalRenderPrefab.surfaceAssets.ToArray()[0].database,
+        };
 		geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.guid);
 		geometryAsset.SetData(meshes);
 		geometryAsset.Save(false);
@@ -428,54 +433,17 @@ internal class DecalsImporter
 		decalProperties.m_RendererPriority = (int)(decalSurface.HasProperty("_DrawOrder") ? decalSurface.GetFloatProperty("_DrawOrder") : 0);
 		decalProperties.m_EnableInfoviewColor = false;//DecalPropertiesPrefab.m_EnableInfoviewColor;
 
-		AssetDataPath renderPrefabAssetPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", $"{decalName}_RenderPrefab", EscapeStrategy.None);
-		PrefabAsset renderPrefabAsset = AssetDatabase.game.AddAsset(renderPrefabAssetPath, renderPrefab);
-		renderPrefabAsset.Save();
+		//AssetDataPath renderPrefabAssetPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", $"{decalName}_RenderPrefab", EscapeStrategy.None);
+        AssetDataPath renderPrefabAssetPath = AssetDataPath.Create($"CustomDecals/{modName}/{catName}/{decalName}", $"{decalName}_RenderPrefab", EscapeStrategy.None);
+		//PrefabAsset renderPrefabAsset = AssetDatabase.game.AddAsset(renderPrefabAssetPath, renderPrefab);
+		PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset(renderPrefabAssetPath, renderPrefab);
+        renderPrefabAsset.Save();
 
 		decalSurface.Dispose();
 		geometryAsset.Unload();
 		surfaceAsset.Unload();
 
 		return renderPrefab;
-
-		/*
-
-		ObjectMeshInfo objectMeshInfo = new()
-		{
-			m_Mesh = renderPrefab,
-			m_Position = float3.zero,
-			m_RequireState = Game.Objects.ObjectState.None
-		};
-
-		decalPrefab.m_Meshes = [objectMeshInfo];
-
-		StaticObjectPrefab placeholder = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
-		placeholder.name = $"{fullDecalName}_Placeholder";
-		placeholder.m_Meshes = [objectMeshInfo];
-		placeholder.AddComponent<PlaceholderObject>();
-
-		AssetDataPath placeholderPrefabAssetPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", $"{decalName}_Placeholder", EscapeStrategy.None);
-		PrefabAsset placeholderPrefabAsset = AssetDatabase.game.AddAsset(placeholderPrefabAssetPath, placeholder);
-		placeholderPrefabAsset.Save();
-
-		SpawnableObject spawnableObject = decalPrefab.AddComponent<SpawnableObject>();
-		spawnableObject.m_Placeholders = [placeholder];
-
-		UIObject decalPrefabUI = decalPrefab.AddComponent<UIObject>();
-		decalPrefabUI.m_IsDebugObject = false;
-		decalPrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/{decalName}/icon.png" : Icons.DecalPlaceholder;
-		decalPrefabUI.m_Priority = (int)(decalSurface.HasProperty("UiPriority") ? decalSurface.GetFloatProperty("UiPriority") : -1);
-		decalPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
-
-		AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, decalName, EscapeStrategy.None);
-		PrefabAsset prefabAsset = AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
-		prefabAsset.Save(false, false);
-		//asset.assetDataPath = prefabAssetPath;
-
-		EAIDataBaseManager.AddAssets(asset);
-
-		ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
-		*/
 
 	}
 
