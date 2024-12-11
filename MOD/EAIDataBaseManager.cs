@@ -53,12 +53,24 @@ internal static class EAIDataBaseManager
 
 	internal static void ClearNotLoadedAssetsFromFiles()
 	{
-		foreach(EAIAsset asset in AssetsDataBase)
+		List<EAIAsset> tempDataBase = new(AssetsDataBase);
+		EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDataBase.Count}");
+		foreach(EAIAsset asset in tempDataBase)
 		{
-			string path = Path.Combine(EnvPath.kContentPath, asset.AssetPath);
-			if (Directory.Exists(path)) Directory.Delete(path, true);
+			string path = Path.Combine(AssetDataBaseEAI.rootPath, asset.AssetPath);
+			if (Directory.Exists(path))
+			{
+				if (!AssetsDataBase.Remove(asset))
+				{
+					EAI.Logger.Warn($"Failed to remove a none loaded asset at path {path} from the data base.");
+					continue;
+				}
+                Directory.Delete(path, true);
+            }
 			else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
 		}
+		EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDataBase.Count}.");
+		ValidateAssetsDataBase.AddRange(AssetsDataBase);
 		AssetsDataBase.Clear();
 	}
 

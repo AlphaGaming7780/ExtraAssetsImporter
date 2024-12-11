@@ -54,13 +54,14 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
 - ✔️French 100% : aricoseco, Edou24
 - ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
-- ⚠️Chinese Traditional 77% : Tiger Zhang (tiger42231)
+- ⚠️Chinese Traditional 79% : Tiger Zhang (tiger42231)
 - ⚠️German 77% : Konsi
 - ⚠️Italian 77% : Stefano (Furios)
 - ❌Japanese 0%
 - ✔️Korean 100% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
-- ⚠️Portuguese, Brazilian 77% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz) 
+- ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ✔️Portuguese, Brazilian 100% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
 - ✔️Russian 100% : Mihail (kaktyc), Lek0ms, MrSandcraft
 - ✔️Spanish 100% : elGendo87
   </LongDescription>
@@ -73,16 +74,18 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.1.4" />
+	<ModVersion Value="1.2.0" />
 	<!--Recommended version of the base game to use the mod-->
-	<GameVersion Value="1.1.*" />
+	<GameVersion Value="1.2.*" />
 	<!--Dependency for the mod, can be set multiple times-->
   <Dependency Id="75724" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.1.4
-- Add `m_Roundness` property to the JSON for surface, it controls the round corners to sharp corners.
+# 1.2.0
+- Fixe for the 1.2.0f1 patch.
+- EAI now use its own database and no longer Game one.
+- Portuguese translation by Tiago Correia (ti4go)
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />

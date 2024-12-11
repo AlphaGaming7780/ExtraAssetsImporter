@@ -1,9 +1,11 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.Logging;
+using Colossal.PSI.Common;
 using Colossal.PSI.Environment;
 using Extra.Lib;
 using Extra.Lib.Debugger;
 using Extra.Lib.Localization;
+using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using Game;
 using Game.Modding;
@@ -27,7 +29,7 @@ namespace ExtraAssetsImporter
 		internal static string ResourcesIcons { get; private set; }
 
 		internal static string pathModsData;
-		internal static string pathTempFolder = $"{EnvPath.kContentPath}\\Mods\\EAI\\TempAssetsFolder";
+		internal static string pathTempFolder = $"{AssetDataBaseEAI.rootPath}\\TempAssetsFolder";
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
@@ -113,7 +115,7 @@ namespace ExtraAssetsImporter
 				yield return null;
 			}
 			m_Setting.ResetCompatibility();
-			EAIDataBaseManager.SaveValidateDataBase();
+            EAIDataBaseManager.SaveValidateDataBase();
 			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
 			yield break;
 		}
@@ -121,7 +123,6 @@ namespace ExtraAssetsImporter
 
         internal static void ClearData()
 		{
-			//EAI.Logger.Info(pathTempFolder);
 			if (Directory.Exists(pathTempFolder))
 			{
 				Directory.Delete(pathTempFolder, true);
