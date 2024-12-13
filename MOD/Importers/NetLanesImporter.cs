@@ -23,7 +23,7 @@ using static Extra.Lib.UI.ExtraAssetsMenu;
 
 namespace ExtraAssetsImporter.Importers;
 
-public class JSONDecalsMaterail
+public class JSONNetLanesMaterail
 {
 	public int UiPriority = 0;
     public Dictionary<string, float> Float = [];
@@ -31,7 +31,7 @@ public class JSONDecalsMaterail
 	public List<PrefabIdentifierInfo> prefabIdentifierInfos = [];
 }
 
-internal class DecalsImporter
+internal class NetLanesImporter
 {
 	internal static List<string> FolderToLoadDecals = [];
 	private static bool DecalsLoading = false;
