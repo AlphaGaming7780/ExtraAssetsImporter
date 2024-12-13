@@ -2,23 +2,23 @@
 using Colossal.Json;
 using Colossal.PSI.Environment;
 using Extra.Lib;
+using ExtraAssetsImporter.DataBase;
 using Game.Prefabs;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Policy;
-using UnityEngine;
 
 namespace ExtraAssetsImporter;
 
 internal static class EAIDataBaseManager
 {
-	const int DataBaseVersion = 1;
+	const int DataBaseVersion = 2;
 	private static readonly string pathToAssetsDatabase = EAI.pathModsData + "\\AssetsDataBase.json";
 	private static readonly List<EAIAsset> ValidateAssetsDataBase = [];
 	private static List<EAIAsset> AssetsDataBase = [];
+    public static ILocalAssetDatabase assetDataBaseEAI => AssetDatabase<AssetDataBaseEAI>.instance;
 
-	internal static void LoadDataBase()
+    internal static void LoadDataBase()
 	{
 		if (!File.Exists(pathToAssetsDatabase)) return;
 		try
@@ -35,7 +35,11 @@ internal static class EAIDataBaseManager
 
     internal static void SaveValidateDataBase() 
 	{
-		if (!EAI.m_Setting.DeleteNotLoadedAssets) ValidateAssetsDataBase.AddRange(AssetsDataBase);
+		if (!EAI.m_Setting.DeleteNotLoadedAssets)
+		{
+			ValidateAssetsDataBase.AddRange(AssetsDataBase);
+            AssetsDataBase.Clear();
+        }
 
         EAIDataBase dataBase = new()
 		{
@@ -49,16 +53,31 @@ internal static class EAIDataBaseManager
 
 	internal static void ClearNotLoadedAssetsFromFiles()
 	{
-		foreach(EAIAsset asset in AssetsDataBase)
+		List<EAIAsset> tempDataBase = new(AssetsDataBase);
+		EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDataBase.Count}");
+		foreach(EAIAsset asset in tempDataBase)
 		{
-			if(Directory.Exists(asset.AssetPath)) Directory.Delete(asset.AssetPath, true);
+			string path = Path.Combine(AssetDataBaseEAI.rootPath, asset.AssetPath);
+			if (Directory.Exists(path))
+			{
+				if (!AssetsDataBase.Remove(asset))
+				{
+					EAI.Logger.Warn($"Failed to remove a none loaded asset at path {path} from the data base.");
+					continue;
+				}
+                Directory.Delete(path, true);
+            }
+			else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
 		}
+		EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDataBase.Count}.");
+		ValidateAssetsDataBase.AddRange(AssetsDataBase);
+		AssetsDataBase.Clear();
 	}
 
 	internal static void DeleteDatabase()
 	{
 		if(File.Exists(pathToAssetsDatabase)) File.Delete(pathToAssetsDatabase);
-		if(Directory.Exists(EAI.EAIGameDataPath)) Directory.Delete(EAI.EAIGameDataPath, true);
+		if(Directory.Exists(AssetDataBaseEAI.rootPath)) Directory.Delete(AssetDataBaseEAI.rootPath, true);
 	}
 
 	private static void ValidateAssets(string AssetID)
@@ -120,7 +139,14 @@ internal static class EAIDataBaseManager
 		return EAIAsset.Null;
 	}
 
-	internal static int GetAssetHash(string assetFolder)
+	internal static bool TryGetEAIAsset(string AssetID, out EAIAsset asset)
+	{
+		asset = AssetsDataBase.Find(asset => asset.AssetID == AssetID);
+		return asset != EAIAsset.Null;
+    }
+
+
+    internal static int GetAssetHash(string assetFolder)
 	{
 		DirectoryInfo directoryInfo = new (assetFolder);
 		int hash = 0;
@@ -144,14 +170,14 @@ internal static class EAIDataBaseManager
 
 		foreach(string s in DefaultAssetFactory.instance.GetSupportedExtensions())
 		{
-			foreach(string file in Directory.GetFiles(Path.Combine(EnvPath.kStreamingDataPath, asset.AssetPath), $"*{s}"))
+			foreach(string file in Directory.GetFiles(Path.Combine(AssetDataBaseEAI.rootPath, asset.AssetPath), $"*{s}"))
 			{
-				string assetPath = file.Replace(EnvPath.kStreamingDataPath + "\\", "");
+				string assetPath = file.Replace(AssetDataBaseEAI.rootPath + "\\", "");
 				//EAI.Logger.Info(assetPath);
 				AssetDataPath assetDataPath = AssetDataPath.Create(assetPath, EscapeStrategy.None);
                 try
 				{
-                    IAssetData assetData = AssetDatabase.game.AddAsset(assetDataPath);
+                    IAssetData assetData = assetDataBaseEAI.AddAsset(assetDataPath);
 					if (assetData is PrefabAsset prefabAsset) prefabAssets.Add(prefabAsset);
 					//if (assetData is TextureAsset textureAsset) output.Add(textureAsset.Load());
 					//if (assetData is SurfaceAsset surfaceAsset) output.Add(surfaceAsset.Load());

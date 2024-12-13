@@ -1,20 +1,13 @@
-﻿using Extra;
-using Game.Prefabs;
+﻿using Game.Prefabs;
 using System;
 using System.Collections.Generic;
-using System.IO.Compression;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 using Extra.Lib;
 using Extra.Lib.UI;
 using Colossal.PSI.Common;
 using System.Collections;
 using Colossal.Json;
-using UnityEngine.Rendering;
-using Unity.Entities;
-using Colossal.Entities;
 using Colossal.Localization;
 using Game.SceneFlow;
 using Game.Rendering;
@@ -24,9 +17,10 @@ namespace ExtraAssetsImporter.Importers;
 
 public class JSONSurfacesMaterail
 {
+	public int UiPriority = 0;
+	public float m_Roundness = 0.5f;
 	public Dictionary<string, float> Float = [];
 	public Dictionary<string, Vector4> Vector = [];
-	// public PrefabIdentifierInfo[] prefabIdentifierInfos = [];
 	public List<PrefabIdentifierInfo> prefabIdentifierInfos = [];
 }
 
@@ -37,13 +31,7 @@ internal class SurfacesImporter
 	private static bool SurfacesIsLoading = false;
 	internal static bool SurfacesIsLoaded = false;
 
-    // internal static void ClearSurfacesCache() {
-    // 	if(Directory.Exists($"{GameManager_Awake.resourcesCache}/Surfaces")) {
-    // 		Directory.Delete($"{GameManager_Awake.resourcesCache}/Surfaces", true);
-    // 	}
-    // }
-
-    public static void AddCustomSurfacesFolder(string path)
+	public static void AddCustomSurfacesFolder(string path)
 	{
 		if (FolderToLoadSurface.Contains(path)) return;
 		FolderToLoadSurface.Add(path);
@@ -52,48 +40,10 @@ internal class SurfacesImporter
 
 	public static void RemoveCustomSurfacesFolder(string folder)
 	{
-        if (!FolderToLoadSurface.Contains(folder)) return;
-        FolderToLoadSurface.Remove(folder);
-        Icons.UnLoadIcons(new DirectoryInfo(folder).Parent.FullName);
-    }
-
-	internal static void LoadLocalization()
-	{
-
-		Dictionary<string, string> csLocalisation = [];
-
-		foreach (string folder in FolderToLoadSurface)
-		{
-			foreach (string surfacesCat in Directory.GetDirectories(folder))
-			{
-
-				//if (!csLocalisation.ContainsKey($"SubServices.NAME[{new DirectoryInfo(surfacesCat).Name} Surfaces]"))
-				//{
-				//	csLocalisation.Add($"SubServices.NAME[{new DirectoryInfo(surfacesCat).Name} Surfaces]", $"{new DirectoryInfo(surfacesCat).Name} Surfaces");
-				//}
-
-				//if (!csLocalisation.ContainsKey($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(surfacesCat).Name} Surfaces]"))
-				//{
-				//	csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(surfacesCat).Name} Surfaces]", $"{new DirectoryInfo(surfacesCat).Name} Surfaces");
-				//}
-
-				foreach (string filePath in Directory.GetDirectories(surfacesCat))
-				{
-                    FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
-                    string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-                    string surfaceName = $"{modName} {new DirectoryInfo(surfacesCat).Name} {new DirectoryInfo(filePath).Name} Surface";
-
-					if (!csLocalisation.ContainsKey($"Assets.NAME[{surfaceName}]")) csLocalisation.Add($"Assets.NAME[{surfaceName}]", new DirectoryInfo(filePath).Name);
-					if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{surfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{surfaceName}]", new DirectoryInfo(filePath).Name);
-				}
-			}
-		}
-
-        foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-        {
-            GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
-        }
-    }
+		if (!FolderToLoadSurface.Contains(folder)) return;
+		FolderToLoadSurface.Remove(folder);
+		Icons.UnLoadIcons(new DirectoryInfo(folder).Parent.FullName);
+	}
 
 	internal static IEnumerator CreateCustomSurfaces()
 	{
@@ -120,28 +70,33 @@ internal class SurfacesImporter
 
 		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("Surfaces", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/Surfaces.svg");
 
-        Dictionary<string, string> csLocalisation = [];
+		Dictionary<string, string> csLocalisation = [];
 
-        foreach (string folder in FolderToLoadSurface)
+		foreach (string folder in FolderToLoadSurface)
 		{
 			foreach (string surfacesCat in Directory.GetDirectories(folder))
 			{
 				foreach (string surfaceFolder in Directory.GetDirectories(surfacesCat))
 				{
-                    string surfaceName = new DirectoryInfo(surfaceFolder).Name;
-                    notificationInfo.progressState = ProgressState.Progressing;
+					string surfaceName = new DirectoryInfo(surfaceFolder).Name;
+					notificationInfo.progressState = ProgressState.Progressing;
 					notificationInfo.progress = (int)(ammoutOfSurfacesloaded / (float)numberOfSurfaces * 100);
 					notificationInfo.text = $"Loading : {surfaceName}";
+					if (surfaceName.StartsWith("."))
+					{
+						failedSurfaces++;
+						continue;
+					}
 					try
 					{
-                        string catName = new DirectoryInfo(surfacesCat).Name;
-                        FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
-                        string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-                        string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
-                        CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat);
-                        if (!csLocalisation.ContainsKey($"Assets.NAME[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullSurfaceName}]")) csLocalisation.Add($"Assets.NAME[{fullSurfaceName}]", surfaceName);
-                        if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullSurfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullSurfaceName}]", surfaceName);
-                    }
+						string catName = new DirectoryInfo(surfacesCat).Name;
+						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+						string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+						string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
+						CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat);
+						if (!csLocalisation.ContainsKey($"Assets.NAME[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullSurfaceName}]")) csLocalisation.Add($"Assets.NAME[{fullSurfaceName}]", surfaceName);
+						if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullSurfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullSurfaceName}]", surfaceName);
+					}
 					catch (Exception e)
 					{
 						failedSurfaces++;
@@ -153,12 +108,12 @@ internal class SurfacesImporter
 			}
 		}
 
-        foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-        {
-            GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
-        }
+		foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+		{
+			GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
+		}
 
-        ExtraLib.m_NotificationUISystem.RemoveNotification(
+		ExtraLib.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
 			text: $"Complete, {numberOfSurfaces - failedSurfaces} Loaded, {failedSurfaces} failed.",
@@ -168,7 +123,7 @@ internal class SurfacesImporter
 
 		//LoadLocalization();
 		SurfacesIsLoaded = true;
-    }
+	}
 
 	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, ExtraAssetsMenu.AssetCat assetCat)
 	{
@@ -177,7 +132,7 @@ internal class SurfacesImporter
 
 		//string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
 
-		Dictionary<string, float> SurfaceInformation = [];
+		JSONSurfacesMaterail jSONMaterail = new();
 
 		SurfacePrefab surfacePrefab = (SurfacePrefab)ScriptableObject.CreateInstance("SurfacePrefab");
 		surfacePrefab.name = fullSurfaceName;
@@ -204,21 +159,21 @@ internal class SurfacesImporter
 
 		if (File.Exists(folderPath + "\\surface.json"))
 		{
-			JSONSurfacesMaterail jSONMaterail = Decoder.Decode(File.ReadAllText(folderPath + "\\surface.json")).Make<JSONSurfacesMaterail>();
+			jSONMaterail = Decoder.Decode(File.ReadAllText(folderPath + "\\surface.json")).Make<JSONSurfacesMaterail>();
 			foreach (string key in jSONMaterail.Float.Keys)
 			{
 				if (newMaterial.HasProperty(key)) newMaterial.SetFloat(key, jSONMaterail.Float[key]);
 				else
 				{
-					SurfaceInformation.Add(key, jSONMaterail.Float[key]);
+					if (key == "UiPriority") jSONMaterail.UiPriority = (int)jSONMaterail.Float[key];
 				}
 			}
 			foreach (string key in jSONMaterail.Vector.Keys) { newMaterial.SetVector(key, jSONMaterail.Vector[key]); }
 
-            VersionCompatiblity(jSONMaterail, catName, surfaceName);
-            if (jSONMaterail.prefabIdentifierInfos.Count > 0)
+			VersionCompatiblity(jSONMaterail, catName, surfaceName);
+			if (jSONMaterail.prefabIdentifierInfos.Count > 0)
 			{
-                ObsoleteIdentifiers obsoleteIdentifiers = surfacePrefab.AddComponent<ObsoleteIdentifiers>();
+				ObsoleteIdentifiers obsoleteIdentifiers = surfacePrefab.AddComponent<ObsoleteIdentifiers>();
 				obsoleteIdentifiers.m_PrefabIdentifiers = [.. jSONMaterail.prefabIdentifierInfos];
 			}
 		}
@@ -273,11 +228,11 @@ internal class SurfacesImporter
 		RenderedArea renderedArea = surfacePrefabPlaceHolder.AddComponent<RenderedArea>();
 		renderedArea.m_RendererPriority = (int)newMaterial.GetFloat("_DrawOrder");
 		renderedArea.m_LodBias = 0;
-		renderedArea.m_Roundness = 1;
+		renderedArea.m_Roundness = jSONMaterail.m_Roundness;
 		renderedArea.m_Material = newMaterial;
 		renderedArea.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat("colossal_DecalLayerMask");
 
-        PlaceholderArea placeholderArea = surfacePrefabPlaceHolder.AddComponent<PlaceholderArea>();
+		PlaceholderArea placeholderArea = surfacePrefabPlaceHolder.AddComponent<PlaceholderArea>();
 
 		SpawnableArea spawnableArea = surfacePrefab.AddComponent<SpawnableArea>();
 		spawnableArea.m_Placeholders = new AreaPrefab[1];
@@ -286,11 +241,11 @@ internal class SurfacesImporter
 		RenderedArea renderedArea1 = surfacePrefab.AddComponent<RenderedArea>();
 		renderedArea1.m_RendererPriority = (int)newMaterial.GetFloat("_DrawOrder");
 		renderedArea1.m_LodBias = 0;
-		renderedArea1.m_Roundness = 1;
+		renderedArea1.m_Roundness = jSONMaterail.m_Roundness;
 		renderedArea1.m_Material = newMaterial;
 		renderedArea1.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat("colossal_DecalLayerMask");
 
-        if (File.Exists(folderPath + "\\icon.png"))
+		if (File.Exists(folderPath + "\\icon.png"))
 		{
 			fileData = File.ReadAllBytes(folderPath + "\\icon.png");
 			Texture2D texture2D_Icon = new(1, 1);
@@ -308,12 +263,13 @@ internal class SurfacesImporter
 		UIObject surfacePrefabUI = surfacePrefab.AddComponent<UIObject>();
 		surfacePrefabUI.m_IsDebugObject = false;
 		surfacePrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomSurfaces/{catName}/{new DirectoryInfo(folderPath).Name}/icon.png" : Icons.GetIcon(surfacePrefab);
-		surfacePrefabUI.m_Priority = (int)(SurfaceInformation.Keys.Contains("UiPriority") ? SurfaceInformation["UiPriority"] : -1);
+		surfacePrefabUI.m_Priority = jSONMaterail.UiPriority;
 		surfacePrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
-        AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
-        AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
-
+		//AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
+		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
+		//AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
+		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
         ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
 	}
@@ -336,7 +292,7 @@ internal class SurfacesImporter
 
 	private static Material GetDefaultSurfaceMaterial()
 	{
-        Material material = new(Shader.Find("Shader Graphs/AreaDecalShader"));
+		Material material = new(Shader.Find("Shader Graphs/AreaDecalShader"));
 		material.SetFloat("_DecalColorMask0", 15);
 		material.SetFloat("_DecalColorMask1", 15);
 		material.SetFloat("_DecalColorMask2", 11);
@@ -344,44 +300,39 @@ internal class SurfacesImporter
 		material.SetFloat("_DecalStencilRef", 16);
 		material.SetFloat("_DecalStencilWriteMask", 16);
 		material.SetFloat("colossal_DecalLayerMask", 1);
-        material.enableInstancing = true;
+		material.enableInstancing = true;
 		material.shaderKeywords = ["_MATERIAL_AFFECTS_ALBEDO", "_MATERIAL_AFFECTS_MASKMAP", "_MATERIAL_AFFECTS_NORMAL"];
-        return material;
-    }
+		return material;
+	}
 
 	private static void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName)
 	{
-        if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
-        {
-            PrefabIdentifierInfo prefabIdentifierInfo = new()
-            {
-                m_Name = $"ExtraAssetsImporter {catName} {surfaceName} Surface",
-                m_Type = "StaticObjectPrefab"
-            };
-            jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
-        }
-        if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT2)
-        {
-            PrefabIdentifierInfo prefabIdentifierInfo = new()
-            {
-                m_Name = $"{surfaceName}",
-                m_Type = "SurfacePrefab"
-            };
-            jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
-        }
-        if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT3)
-        {
-            PrefabIdentifierInfo prefabIdentifierInfo = new()
-            {
-                m_Name = $"ExtraLandscapingTools_mods_{catName}_{surfaceName}",
-                m_Type = "SurfacePrefab"
-            };
-            jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
-        }
-    }
-}
-internal class CustomSurface : ComponentBase
-{
-    public override void GetArchetypeComponents(HashSet<ComponentType> components) { }
-    public override void GetPrefabComponents(HashSet<ComponentType> components) { }
+		if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
+		{
+			PrefabIdentifierInfo prefabIdentifierInfo = new()
+			{
+				m_Name = $"ExtraAssetsImporter {catName} {surfaceName} Surface",
+				m_Type = "StaticObjectPrefab"
+			};
+			jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+		}
+		if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT2)
+		{
+			PrefabIdentifierInfo prefabIdentifierInfo = new()
+			{
+				m_Name = $"{surfaceName}",
+				m_Type = "SurfacePrefab"
+			};
+			jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+		}
+		if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT3)
+		{
+			PrefabIdentifierInfo prefabIdentifierInfo = new()
+			{
+				m_Name = $"ExtraLandscapingTools_mods_{catName}_{surfaceName}",
+				m_Type = "SurfacePrefab"
+			};
+			jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+		}
+	}
 }

@@ -1,40 +1,51 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.Logging;
+using Colossal.PSI.Common;
 using Colossal.PSI.Environment;
 using Extra.Lib;
 using Extra.Lib.Debugger;
 using Extra.Lib.Localization;
+using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using Game;
 using Game.Modding;
 using Game.SceneFlow;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace ExtraAssetsImporter
 {
 	public class EAI : IMod
 	{
-		private static ILog log = LogManager.GetLogger($"{nameof(ExtraAssetsImporter)}").SetShowsErrorsInUI(false);
+		private static readonly ILog log = LogManager.GetLogger($"{nameof(ExtraAssetsImporter)}").SetShowsErrorsInUI(false);
 #if DEBUG
 		internal static Logger Logger = new(log, true);
 #else
         internal static Logger Logger = new(log, false);
 #endif
-        static internal readonly string EAIGameDataPath = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI";  
 
         internal static Setting m_Setting;
 		internal static string ResourcesIcons { get; private set; }
 
 		internal static string pathModsData;
-		internal static string pathTempFolder = $"{EnvPath.kStreamingDataPath}\\Mods\\EAI\\TempAssetsFolder";
+		internal static string pathTempFolder = $"{AssetDataBaseEAI.rootPath}\\TempAssetsFolder";
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
 			Logger.Info(nameof(OnLoad));
+
+			string oldDataPath = $"{UnityEngine.Application.streamingAssetsPath}\\Mods\\EAI";
+			string oldModsPath = $"{UnityEngine.Application.streamingAssetsPath}\\Mods";
+
+            if (Directory.Exists(oldDataPath))
+			{
+                Directory.Delete(oldDataPath, true);
+				if(Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+				{
+					Directory.Delete(oldModsPath, false);
+				}
+			}
 
 			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
@@ -62,9 +73,6 @@ namespace ExtraAssetsImporter
             m_Setting.RegisterInOptionsUI();
             AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
 
-			m_Setting.dummySettingsToAvoidSettingsBugThanksCO = true;
-			m_Setting.ApplyAndSave();
-
             ClearData();
 
             FileInfo fileInfo = new(asset.path);
@@ -73,14 +81,15 @@ namespace ExtraAssetsImporter
 			Icons.LoadIcons(fileInfo.DirectoryName);
 
 			pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
-            // pathTempFolder = Path.Combine(pathModsData, "TempFolder");
 			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
             string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
 
 			if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
 
-			ExtraLib.AddOnMainMenu(OnMainMenu);
+            AssetDatabase.global.RegisterDatabase(EAIDataBaseManager.assetDataBaseEAI).Wait();
+
+            ExtraLib.AddOnMainMenu(OnMainMenu);
 
 			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 		}
@@ -106,15 +115,14 @@ namespace ExtraAssetsImporter
 				yield return null;
 			}
 			m_Setting.ResetCompatibility();
-			EAIDataBaseManager.SaveValidateDataBase();
-			if(EAI.m_Setting.DeleteNotLoadedAssets) EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
+            EAIDataBaseManager.SaveValidateDataBase();
+			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
 			yield break;
 		}
 
 
         internal static void ClearData()
 		{
-			//EAI.Logger.Info(pathTempFolder);
 			if (Directory.Exists(pathTempFolder))
 			{
 				Directory.Delete(pathTempFolder, true);

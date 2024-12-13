@@ -2,7 +2,7 @@
     "Float": {
         "_Metallic": 0.116,
         "_Smoothness": 0.043,
-        "colossal_DecalLayerMask": 0,
+        "colossal_DecalLayerMask": 1,
         "_AffectAlbedo": 1,
         "_AffectMetal": 1,
         "_AffectNormal": 1,
