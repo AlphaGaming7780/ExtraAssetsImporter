@@ -8,7 +8,8 @@ namespace ExtraAssetsImporter
         internal const string IconsResourceKey = "extraassetsimporter";
         internal static readonly string COUIBaseLocation = $"coui://{IconsResourceKey}";
 
-        public static readonly string DecalPlaceholder = $"{COUIBaseLocation}/Icons/Decals/Decal_Placeholder.svg";
+        public static readonly string DecalPlaceholder = $"{COUIBaseLocation}/Icons/Placeholder/Decals.svg";
+        public static readonly string NetLanesPlaceholder = $"{COUIBaseLocation}/Icons/Placeholder/NetLanes.svg";
 
         internal static void LoadIcons(string path)
         {

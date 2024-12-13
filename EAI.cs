@@ -83,9 +83,11 @@ namespace ExtraAssetsImporter
 			pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
 			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
             string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
+            string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
 
-			if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+            if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
+			if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
 
             AssetDatabase.global.RegisterDatabase(EAIDataBaseManager.assetDataBaseEAI).Wait();
 
@@ -105,12 +107,13 @@ namespace ExtraAssetsImporter
             EAIDataBaseManager.LoadDataBase();
             if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-			ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+            ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+            ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
 		}
 
 		private IEnumerator WaitForCustomStuffToFinish()
 		{
-			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded)) 
+			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || !NetLanesDecalImporter.NetLanesLoaded) 
 			{
 				yield return null;
 			}
