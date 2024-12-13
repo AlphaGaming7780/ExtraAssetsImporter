@@ -172,7 +172,6 @@ internal class DecalsImporter
 						}
 						else
 						{
-							ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 							List<object> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
 							foreach (object obj in loadedObject)
 							{
