@@ -104,6 +104,7 @@ namespace ExtraAssetsImporter
 
 		private void OnMainMenu()
 		{
+			EAI.Logger.Info("OnMainMenu");
             EAIDataBaseManager.LoadDataBase();
             if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
@@ -117,9 +118,29 @@ namespace ExtraAssetsImporter
 			{
 				yield return null;
 			}
+			EAI.Logger.Info("The loading of custom stuff as finished.");
 			m_Setting.ResetCompatibility();
             EAIDataBaseManager.SaveValidateDataBase();
 			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
+
+			//foreach (MaterialLibrary.MaterialDescription material in AssetDatabase.global.resources.materialLibrary.m_Materials)
+			//{
+			//	Logger.Info(material.m_Material.name);
+
+			//	Logger.Info($"{material.m_Material.name} | Shader name : {material.m_Material.shader.name}");
+
+			//	if (material.m_Material.name != "DefaultDecal" && material.m_Material.name != "CurvedDecal") continue;
+
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Int)) { Logger.Info($"{material.m_Material.name} | Int : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Float)) { Logger.Info($"{material.m_Material.name} | Float : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Vector)) { Logger.Info($"{material.m_Material.name} | Vector : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Texture)) { Logger.Info($"{material.m_Material.name} | Texture : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Matrix)) { Logger.Info($"{material.m_Material.name} | Matrix : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ConstantBuffer)) { Logger.Info($"{material.m_Material.name} | ConstantBuffer : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ComputeBuffer)) { Logger.Info($"{material.m_Material.name} | ComputeBuffer : {s}"); }
+
+			//}
+
 			yield break;
 		}
 

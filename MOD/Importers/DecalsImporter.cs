@@ -174,9 +174,20 @@ internal class DecalsImporter
 							List<object> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
 							foreach (object obj in loadedObject)
 							{
-								if(obj is RenderPrefab renderPrefab1) renderPrefab = renderPrefab1;
+								if (obj is RenderPrefab renderPrefab1)
+								{
+									renderPrefab = renderPrefab1;
+									break;
+								}
 							}
-						}
+
+							if(renderPrefab == null)
+							{
+                                renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
+                                asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
+                                EAIDataBaseManager.AddAssets(asset);
+                            }
+                        }
 
                         ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
                         CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
@@ -279,7 +290,7 @@ internal class DecalsImporter
         ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
 	}
 
-	private static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath)
+	internal static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, string materialName = "DefaultDecal")
 	{
 
 		if (Directory.Exists($"{AssetDataBaseEAI.rootPath}\\{assetDataPath}")) { Directory.Delete($"{AssetDataBaseEAI.rootPath}\\{assetDataPath}", true); }
@@ -287,7 +298,7 @@ internal class DecalsImporter
 		//EAIAsset asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(folderPath));
 		//EAIAsset asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
 
-		Surface decalSurface = new(decalName, "DefaultDecal");
+		Surface decalSurface = new(decalName, materialName);
 		decalSurface.AddProperty("colossal_DecalLayerMask", 1);
 
 		if (File.Exists(folderPath + "\\decal.json"))
@@ -433,7 +444,7 @@ internal class DecalsImporter
 		decalProperties.m_EnableInfoviewColor = false;//DecalPropertiesPrefab.m_EnableInfoviewColor;
 
 		//AssetDataPath renderPrefabAssetPath = AssetDataPath.Create($"Mods/EAI/CustomDecals/{modName}/{catName}/{decalName}", $"{decalName}_RenderPrefab", EscapeStrategy.None);
-        AssetDataPath renderPrefabAssetPath = AssetDataPath.Create($"CustomDecals/{modName}/{catName}/{decalName}", $"{decalName}_RenderPrefab", EscapeStrategy.None);
+        AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(assetDataPath, $"{decalName}_RenderPrefab", EscapeStrategy.None);
 		//PrefabAsset renderPrefabAsset = AssetDatabase.game.AddAsset(renderPrefabAssetPath, renderPrefab);
 		PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset(renderPrefabAssetPath, renderPrefab);
         renderPrefabAsset.Save();
@@ -565,9 +576,4 @@ internal class DecalsImporter
 			jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
 		}
 	}
-}
-internal class CustomDecal : ComponentBase
-{
-	public override void GetArchetypeComponents(HashSet<ComponentType> components) { }
-	public override void GetPrefabComponents(HashSet<ComponentType> components) { }
 }

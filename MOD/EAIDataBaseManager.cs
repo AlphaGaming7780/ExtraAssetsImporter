@@ -49,7 +49,8 @@ internal static class EAIDataBaseManager
         string directoryPath = Path.GetDirectoryName(pathToAssetsDatabase);
         if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
         File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(dataBase, EncodeOptions.None));
-	}
+		//assetDataBaseEAI.ResaveCache().Wait();
+    }
 
 	internal static void ClearNotLoadedAssetsFromFiles()
 	{
@@ -76,6 +77,7 @@ internal static class EAIDataBaseManager
 
 	internal static void DeleteDatabase()
 	{
+		EAI.Logger.Info("Deleting the database.");
 		if(File.Exists(pathToAssetsDatabase)) File.Delete(pathToAssetsDatabase);
 		if(Directory.Exists(AssetDataBaseEAI.rootPath)) Directory.Delete(AssetDataBaseEAI.rootPath, true);
 	}
@@ -105,7 +107,11 @@ internal static class EAIDataBaseManager
 
     internal static void AddAssets(EAIAsset asset)
 	{
-		if(IsAssetsInDataBase(asset)) { EAI.Logger.Warn($"Try to add {asset.AssetID} in the data base, it is already in the data base."); return; }
+		if(IsAssetsInDataBase(asset)) { 
+			EAI.Logger.Info($"Try to add {asset.AssetID} in the data base, it is already in the data base. Validating this asset instead."); 
+			ValidateAssets(asset);
+			return; 
+		}
 		ValidateAssetsDataBase.Add(asset);
 	}
 
@@ -168,19 +174,20 @@ internal static class EAIDataBaseManager
 
 		List<PrefabAsset> prefabAssets = [];
 
-		foreach(string s in DefaultAssetFactory.instance.GetSupportedExtensions())
+		string assetPath = Path.Combine(AssetDataBaseEAI.rootPath, asset.AssetPath);
+
+		if(!Directory.Exists(assetPath)) return output;
+
+        foreach (string s in DefaultAssetFactory.instance.GetSupportedExtensions())
 		{
-			foreach(string file in Directory.GetFiles(Path.Combine(AssetDataBaseEAI.rootPath, asset.AssetPath), $"*{s}"))
+			foreach(string file in Directory.GetFiles(assetPath, $"*{s}"))
 			{
-				string assetPath = file.Replace(AssetDataBaseEAI.rootPath + "\\", "");
-				//EAI.Logger.Info(assetPath);
-				AssetDataPath assetDataPath = AssetDataPath.Create(assetPath, EscapeStrategy.None);
+				string filePath = file.Replace(AssetDataBaseEAI.rootPath + "\\", "");
+				AssetDataPath assetDataPath = AssetDataPath.Create(filePath, EscapeStrategy.None);
                 try
 				{
                     IAssetData assetData = assetDataBaseEAI.AddAsset(assetDataPath);
 					if (assetData is PrefabAsset prefabAsset) prefabAssets.Add(prefabAsset);
-					//if (assetData is TextureAsset textureAsset) output.Add(textureAsset.Load());
-					//if (assetData is SurfaceAsset surfaceAsset) output.Add(surfaceAsset.Load());
                 } catch (Exception e)
 				{
 					EAI.Logger.Warn(e);
