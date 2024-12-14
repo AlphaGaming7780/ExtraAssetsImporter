@@ -24,14 +24,6 @@ using ExtraAssetsImporter.DataBase;
 
 namespace ExtraAssetsImporter.Importers;
 
-public class JSONNetLanesMaterail
-{
-	public int UiPriority = 0;
-    public Dictionary<string, float> Float = [];
-	public Dictionary<string, Vector4> Vector = [];
-	public List<PrefabIdentifierInfo> prefabIdentifierInfos = [];
-}
-
 internal class NetLanesDecalImporter
 {
 	internal static List<string> FolderToLoadNetLanes = [];
@@ -199,24 +191,20 @@ internal class NetLanesDecalImporter
     {
 		if(renderPrefab == null) throw new NullReferenceException("RenderPrefab is NULL.");
 
-        // StaticObjectPrefab netLanesPrefab = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
         NetLaneGeometryPrefab netLanesPrefab = (NetLaneGeometryPrefab)ScriptableObject.CreateInstance("NetLaneGeometryPrefab");
-		//NetLanePrefab netLanesPrefab = (NetLanePrefab)ScriptableObject.CreateInstance("NetLanePrefab");
         netLanesPrefab.name = fullNetLaneName;
 
-		JSONNetLanesMaterail jSONMaterail = new();
+        JsonNetLanes jsonNetLane = new();
 
-        if (File.Exists(folderPath + "\\decal.json"))
+        if (File.Exists(folderPath + "\\netLane.json"))
         {
-            jSONMaterail = Decoder.Decode(File.ReadAllText(folderPath + "\\decal.json")).Make<JSONNetLanesMaterail>();
+            jsonNetLane = Decoder.Decode(File.ReadAllText(folderPath + "\\netLane.json")).Make<JsonNetLanes>();
 
-			if (jSONMaterail.Float.ContainsKey("UiPriority")) jSONMaterail.UiPriority = (int)jSONMaterail.Float["UiPriority"];
-
-            VersionCompatiblity(jSONMaterail, catName, netLanesName);
-            if (jSONMaterail.prefabIdentifierInfos.Count > 0)
+            VersionCompatiblity(jsonNetLane, catName, netLanesName);
+            if (jsonNetLane.prefabIdentifierInfos.Count > 0)
             {
                 ObsoleteIdentifiers obsoleteIdentifiers = netLanesPrefab.AddComponent<ObsoleteIdentifiers>();
-                obsoleteIdentifiers.m_PrefabIdentifiers = [.. jSONMaterail.prefabIdentifierInfos];
+                obsoleteIdentifiers.m_PrefabIdentifiers = [.. jsonNetLane.prefabIdentifierInfos];
             }
         }
 
@@ -234,14 +222,17 @@ internal class NetLanesDecalImporter
             }
         }
 
-		CurveProperties curveProperties = renderPrefab.AddComponent<CurveProperties>();
-		curveProperties.m_TilingCount = 0;
-		curveProperties.m_SmoothingDistance = 0.1f;
-		curveProperties.m_OverrideLength = 0;
-		curveProperties.m_GeometryTiling = false;
-		curveProperties.m_StraightTiling = false;
-		curveProperties.m_SubFlow = false;
-		curveProperties.m_InvertCurve = false;
+		if( jsonNetLane.curveProperties != null )
+		{
+            CurveProperties curveProperties = renderPrefab.AddComponent<CurveProperties>();
+            curveProperties.m_TilingCount = jsonNetLane.curveProperties.TilingCount;
+            curveProperties.m_SmoothingDistance = jsonNetLane.curveProperties.SmoothingDistance;
+            curveProperties.m_OverrideLength = jsonNetLane.curveProperties.OverrideLength;
+            curveProperties.m_GeometryTiling = jsonNetLane.curveProperties.GeometryTiling;
+            curveProperties.m_StraightTiling = jsonNetLane.curveProperties.StraightTiling;
+            curveProperties.m_SubFlow = jsonNetLane.curveProperties.SubFlow;
+            curveProperties.m_InvertCurve = jsonNetLane.curveProperties.InvertCurve;
+        }
 
         NetLaneMeshInfo objectMeshInfo = new()
 		{
@@ -250,25 +241,30 @@ internal class NetLanesDecalImporter
 
         netLanesPrefab.m_Meshes = [objectMeshInfo];
 
-		//NetLaneGeometryPrefab placeholder = (NetLaneGeometryPrefab)ScriptableObject.CreateInstance("NetLaneGeometryPrefab");
-  //      placeholder.name = $"{fullNetLaneName}_Placeholder";
-  //      placeholder.m_Meshes = [objectMeshInfo];
-  //      placeholder.AddComponent<PlaceholderObject>();
+        //NetLaneGeometryPrefab placeholder = (NetLaneGeometryPrefab)ScriptableObject.CreateInstance("NetLaneGeometryPrefab");
+        //      placeholder.name = $"{fullNetLaneName}_Placeholder";
+        //      placeholder.m_Meshes = [objectMeshInfo];
+        //      placeholder.AddComponent<PlaceholderObject>();
 
-		//SpawnableLane spawnableObject = netLanesPrefab.AddComponent<SpawnableLane>();
-		//spawnableObject.m_Placeholders = [placeholder];
+        //SpawnableLane spawnableObject = netLanesPrefab.AddComponent<SpawnableLane>();
+        //spawnableObject.m_Placeholders = [placeholder];
 
-		//UtilityLane utilityLane = netLanesPrefab.AddComponent<UtilityLane>();
-		//utilityLane.m_UtilityType = Game.Net.UtilityTypes.Fence;
-		//utilityLane.m_VisualCapacity = 2;
-		//utilityLane.m_Width = 0;
+        if (jsonNetLane.utilityLane != null)
+		{
+            UtilityLane utilityLane = netLanesPrefab.AddComponent<UtilityLane>();
+            utilityLane.m_UtilityType = jsonNetLane.utilityLane.UtilityType;
+            utilityLane.m_VisualCapacity = jsonNetLane.utilityLane.VisualCapacity;
+            utilityLane.m_Width = jsonNetLane.utilityLane.Width;
+			utilityLane.m_Hanging = jsonNetLane.utilityLane.Hanging;
+			utilityLane.m_Underground = jsonNetLane.utilityLane.Underground;
+        }
 
-		//SecondaryLane secondaryLane = netLanesPrefab.AddComponent<SecondaryLane>();
+        //SecondaryLane secondaryLane = netLanesPrefab.AddComponent<SecondaryLane>();
 
-		UIObject netLanesPrefabUI = netLanesPrefab.AddComponent<UIObject>();
+        UIObject netLanesPrefabUI = netLanesPrefab.AddComponent<UIObject>();
         netLanesPrefabUI.m_IsDebugObject = false;
         netLanesPrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomNetLanes/{catName}/{netLanesName}/icon.png" : Icons.NetLanesPlaceholder;
-        netLanesPrefabUI.m_Priority = jSONMaterail.UiPriority;
+        netLanesPrefabUI.m_Priority = jsonNetLane.UiPriority;
         netLanesPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
         AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullNetLaneName+PrefabAsset.kExtension, EscapeStrategy.None);
@@ -277,7 +273,7 @@ internal class NetLanesDecalImporter
         ExtraLib.m_PrefabSystem.AddPrefab(netLanesPrefab);
     }
 
-	private static void VersionCompatiblity(JSONNetLanesMaterail jSONNetLanesMaterail, string catName, string netLanesName)
+	private static void VersionCompatiblity(JsonNetLanes jSONNetLanesMaterail, string catName, string netLanesName)
 	{
 		if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
 		{
@@ -298,4 +294,33 @@ internal class NetLanesDecalImporter
 			jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
 		}
 	}
+}
+
+public class JsonCurveProperties
+{
+    public int TilingCount;
+    public float OverrideLength;
+    public float SmoothingDistance;
+    public bool GeometryTiling;
+    public bool StraightTiling;
+    public bool InvertCurve;
+    public bool SubFlow;
+    public bool HangingSwaying;
+}
+
+public class JsonUtilityLane
+{
+    public Game.Net.UtilityTypes UtilityType = Game.Net.UtilityTypes.WaterPipe;
+    public float Width;
+    public float VisualCapacity;
+    public float Hanging;
+    public bool Underground;
+}
+
+public class JsonNetLanes
+{
+    public int UiPriority = 0;
+    public JsonCurveProperties curveProperties = null;
+    public JsonUtilityLane utilityLane = null;
+    public List<PrefabIdentifierInfo> prefabIdentifierInfos = [];
 }
