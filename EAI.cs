@@ -31,6 +31,8 @@ namespace ExtraAssetsImporter
 		internal static string pathModsData;
 		internal static string pathTempFolder = $"{AssetDataBaseEAI.rootPath}\\TempAssetsFolder";
 
+		private bool eaiIsLoaded = false;
+
         public void OnLoad(UpdateSystem updateSystem)
 		{
 			Logger.Info(nameof(OnLoad));
@@ -104,17 +106,19 @@ namespace ExtraAssetsImporter
 
 		private void OnMainMenu()
 		{
-			EAI.Logger.Info("OnMainMenu");
+			if (eaiIsLoaded) return;
+            EAI.Logger.Info("Loading EAI.");
             EAIDataBaseManager.LoadDataBase();
             if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-            ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+            if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
             ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
-		}
+			eaiIsLoaded = true;
+        }
 
 		private IEnumerator WaitForCustomStuffToFinish()
 		{
-			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || !NetLanesDecalImporter.NetLanesLoaded) 
+			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || ( m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded)) 
 			{
 				yield return null;
 			}
