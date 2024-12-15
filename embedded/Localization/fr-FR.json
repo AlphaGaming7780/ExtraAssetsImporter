@@ -6,6 +6,8 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Charger les surfaces personnalisées, prendre effet après le redémarrage du jeu.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Autocollants personnalisés",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Charger les surfaces personnalisées, prendra effet après le redémarrage du jeu.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Prefab Fixer manquant",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Correction de la compatibilité",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Ce paramètre a pour but d'essayer de corriger le prefab manquant causé par la mise à jour de l'EIA. Pour l'utiliser simplement, activez le paramètre correspondant à la version du mod que vous avez utilisé dans votre sauvegarde, redémarrez le jeu, chargez votre sauvegarde, vérifiez si les prefabs manquants sont de retour et si tout est normal. Si tout est normal, sauvegardez votre partie et redémarrez le jeu, s'il y a un problème, quitter le jeu sans sauvegarder. Ce paramètre se désactive automatiquement après le redémarrage pour éviter de futurs conflits et problèmes.",
@@ -17,5 +19,12 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Supprimer les assets non chargés.",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Supprime les fichiers d'assets du disque s'ils n'ont pas été chargés (par exemple, un mod désactivé).",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Supprimer la base de données à la fermeture",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Supprime la base de données lorsque vous fermez le jeu, utile lors de la désinstallation du mod."
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Supprime la base de données lorsque vous fermez le jeu, utile lors de la désinstallation du mod.",
+	"SubServices.NAME[NetLanes]": "NetLanes",
+	"SubServices.NAME[Misc NetLanes]": "Misc NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "This category contains all the Misc NetLanes.",
+	"SubServices.NAME[RoadMarking NetLanes]": "RoadMarking NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
+	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes."
 }
