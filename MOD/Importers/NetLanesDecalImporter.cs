@@ -231,6 +231,17 @@ internal class NetLanesDecalImporter
 
         netLanesPrefab.m_Meshes = [objectMeshInfo];
 
+		if (jsonNetLane.PathfindPrefab != null) {
+			if (ExtraLib.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(PathfindPrefab), jsonNetLane.PathfindPrefab), out PrefabBase prefabBase) && prefabBase is PathfindPrefab pathfindPrefab)
+			{
+				netLanesPrefab.m_PathfindPrefab = pathfindPrefab;
+			}
+			else
+			{
+				EAI.Logger.Warn($"Failed to get the PathfindPrefab with the name of {jsonNetLane.PathfindPrefab} for the {fullNetLaneName} asset.");
+			}
+		}
+
         //NetLaneGeometryPrefab placeholder = (NetLaneGeometryPrefab)ScriptableObject.CreateInstance("NetLaneGeometryPrefab");
         //      placeholder.name = $"{fullNetLaneName}_Placeholder";
         //      placeholder.m_Meshes = [objectMeshInfo];
@@ -310,6 +321,7 @@ public class JsonUtilityLane
 public class JsonNetLanes
 {
     public int UiPriority = 0;
+	public string PathfindPrefab = null;
     public JsonCurveProperties curveProperties = null;
     public JsonUtilityLane utilityLane = null;
     public List<PrefabIdentifierInfo> prefabIdentifierInfos = [];
