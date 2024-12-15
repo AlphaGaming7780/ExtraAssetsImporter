@@ -23,7 +23,8 @@ namespace ExtraAssetsImporter.DataBase
 
         public IAssetFactory assetFactory => DefaultAssetFactory.instance;
 
-        public IDataSourceProvider dataSourceProvider => new FileSystemDataSource(name, kRootPath, assetFactory, 0L);
+        //public IDataSourceProvider dataSourceProvider => new CachedFileSystemDataSource(name, kRootPath, assetFactory);
+        public IDataSourceProvider dataSourceProvider => new FileSystemDataSource(name, kRootPath, assetFactory);
 
         public bool Equals(AssetDataBaseEAI other)
         {

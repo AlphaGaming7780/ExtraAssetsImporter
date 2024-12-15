@@ -31,6 +31,8 @@ namespace ExtraAssetsImporter
 		internal static string pathModsData;
 		internal static string pathTempFolder = $"{AssetDataBaseEAI.rootPath}\\TempAssetsFolder";
 
+		private bool eaiIsLoaded = false;
+
         public void OnLoad(UpdateSystem updateSystem)
 		{
 			Logger.Info(nameof(OnLoad));
@@ -83,9 +85,11 @@ namespace ExtraAssetsImporter
 			pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
 			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
             string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
+            string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
 
-			if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+            if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
+			if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
 
             AssetDatabase.global.RegisterDatabase(EAIDataBaseManager.assetDataBaseEAI).Wait();
 
@@ -102,21 +106,45 @@ namespace ExtraAssetsImporter
 
 		private void OnMainMenu()
 		{
+			if (eaiIsLoaded) return;
+            EAI.Logger.Info("Loading EAI.");
             EAIDataBaseManager.LoadDataBase();
             if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-			ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
-		}
+            if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+            ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+			eaiIsLoaded = true;
+        }
 
 		private IEnumerator WaitForCustomStuffToFinish()
 		{
-			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded)) 
+			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || ( m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded)) 
 			{
 				yield return null;
 			}
+			EAI.Logger.Info("The loading of custom stuff as finished.");
 			m_Setting.ResetCompatibility();
             EAIDataBaseManager.SaveValidateDataBase();
 			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
+
+			//foreach (MaterialLibrary.MaterialDescription material in AssetDatabase.global.resources.materialLibrary.m_Materials)
+			//{
+			//	Logger.Info(material.m_Material.name);
+
+			//	Logger.Info($"{material.m_Material.name} | Shader name : {material.m_Material.shader.name}");
+
+			//	if (material.m_Material.name != "DefaultDecal" && material.m_Material.name != "CurvedDecal") continue;
+
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Int)) { Logger.Info($"{material.m_Material.name} | Int : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Float)) { Logger.Info($"{material.m_Material.name} | Float : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Vector)) { Logger.Info($"{material.m_Material.name} | Vector : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Texture)) { Logger.Info($"{material.m_Material.name} | Texture : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Matrix)) { Logger.Info($"{material.m_Material.name} | Matrix : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ConstantBuffer)) { Logger.Info($"{material.m_Material.name} | ConstantBuffer : {s}"); }
+			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ComputeBuffer)) { Logger.Info($"{material.m_Material.name} | ComputeBuffer : {s}"); }
+
+			//}
+
 			yield break;
 		}
 

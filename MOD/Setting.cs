@@ -21,6 +21,9 @@ public class Setting(IMod mod) : ModSetting(mod)
     [SettingsUISection(kMainSection, kImportersGroup)]
     public bool Decals { get; set; } = true;
 
+    [SettingsUISection(kMainSection, kImportersGroup)]
+    public bool NetLanes { get; set; } = true;
+
     [SettingsUISection(kMainSection, kMPHGroup)]
     public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
 
@@ -36,6 +39,7 @@ public class Setting(IMod mod) : ModSetting(mod)
     {
         Decals = true;
         Surfaces = true;
+        NetLanes = true;
         CompatibilityDropDown = EAICompatibility.None;
     }
 
