@@ -1,26 +1,16 @@
-﻿using Colossal.AssetPipeline.Importers;
-using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO.AssetDatabase;
 using Game.Prefabs;
-using Game.Rendering;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine.Experimental.Rendering;
 using UnityEngine;
-using Colossal.AssetPipeline;
-using Unity.Mathematics;
 using Extra.Lib;
 using Extra.Lib.UI;
 using System.Collections;
 using Colossal.PSI.Common;
 using Colossal.Json;
-using Unity.Entities;
 using Game.SceneFlow;
 using Colossal.Localization;
-using TextureAsset = Colossal.IO.AssetDatabase.TextureAsset;
-using Colossal.PSI.Environment;
-using static Extra.Lib.UI.ExtraAssetsMenu;
-using ExtraAssetsImporter.DataBase;
 
 namespace ExtraAssetsImporter.Importers;
 

@@ -21,6 +21,14 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Delete not loaded assets.",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Delete the asset files from the disk if they haven't been loaded (for example, disabled mod).",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Delete database on close",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Delete the database when you close the game, useful when uninstalling the mod."
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Delete the database when you close the game, useful when uninstalling the mod.",
+
+	"SubServices.NAME[NetLanes]": "NetLanes",
+	"SubServices.NAME[Misc NetLanes]": "Misc NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "This category contains all the Misc NetLanes.",
+	"SubServices.NAME[RoadMarking NetLanes]": "RoadMarking NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
+	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes."
 
 }
