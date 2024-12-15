@@ -6,6 +6,8 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "커스텀 지형을 불러오려면 게임을 다시 시작한 후에 적용됩니다.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "커스텀 데칼",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "커스텀 데칼을 불러오려면 게임을 다시 시작한 후에 적용됩니다.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "누락된 프리팹 수정 도구",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "호환성 패치",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "이 설정은 EAI 업데이트로 인한 누락된 프리팹을 수정하려는 목표를 가지고 있습니다. 사용 방법은 간단합니다. 저장된 모드 버전에 해당하는 설정을 활성화하고, 게임을 다시 시작한 후에 저장된 파일을 불러와 누락된 프리팹이 복구되었는지 확인하고, 문제가 없는 경우 저장한 후 게임을 다시 시작하십시오. 만약 문제가 발생하면 저장하지 않고 게임을 종료하십시오. 이 설정은 자동으로 재시작 후에 자체적으로 비활성화되어 향후 충돌과 문제를 방지합니다.",
@@ -17,5 +19,12 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "로드되지 않은 에셋 삭제",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "디스크에 있는 에셋 파일이 로드되지 않았다면 (예시: 비활성화된 모드) 삭제하세요.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "게임 종료시 데이터베이스 삭제",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "게임을 종료할 때 데이터베이스를 삭제하면 모드를 제거할 때 유용합니다."
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "게임을 종료할 때 데이터베이스를 삭제하면 모드를 제거할 때 유용합니다.",
+	"SubServices.NAME[NetLanes]": "NetLanes",
+	"SubServices.NAME[Misc NetLanes]": "Misc NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "This category contains all the Misc NetLanes.",
+	"SubServices.NAME[RoadMarking NetLanes]": "RoadMarking NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
+	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes."
 }
