@@ -6,6 +6,8 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "加载自定义地皮，重启游戏后生效。",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "自定义贴花",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "加载自定义贴花，重启游戏后生效。",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "恢复缺失的预制件",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "兼容性修复",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "此选项的目的是尝试修复由 EAI 更新导致缺失的预制件。使用方法很简单，启用与存档中使用的模组的版本相符合的选项，重启游戏，加载您的存档，检查缺失的预制件是否已恢复，以及是否有其他问题。如果没有问题，请保存存档并重启游戏；如果有出现了问题，请不要保存并退出游戏。重启游戏后，此选项会自动禁用，以避免将来引起冲突等问题。",
@@ -17,5 +19,12 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "删除未加载的资产。",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "从硬盘中删除未加载的资产（例如，被禁用的模组）。",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "关闭时删除数据库",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "关闭游戏时删除数据库，此选项适用于卸载模组。"
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "关闭游戏时删除数据库，此选项适用于卸载模组。",
+	"SubServices.NAME[NetLanes]": "NetLanes",
+	"SubServices.NAME[Misc NetLanes]": "Misc NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "This category contains all the Misc NetLanes.",
+	"SubServices.NAME[RoadMarking NetLanes]": "RoadMarking NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
+	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes."
 }

@@ -6,6 +6,8 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Carrega as superfícies personalizadas, tem efeito após reiniciar o jogo.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Decalques personalizados",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Carrega os decalques personalizados, tem efeito após reiniciar o jogo.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Reparador de prefabs em falta",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Correção de compatibilidade",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Esta definição tem o objetivo de tentar corrigir prefabs em falta causados pela atualização do EAI. Para utilizá-la, basta ativar a definição correspondente à versão do mod que usaste no teu jogo gravado, reiniciar o jogo, carregar o jogo gravado e verificar se os prefabs estão de volta e se nada está errado. Se tudo estiver correto, grava o teu jogo e reinicia o jogo novamente. Se houver algum problema, sai do jogo sem gravar. Esta definição desativa-se automaticamente após o reinício para evitar conflitos futuros.",
@@ -17,5 +19,12 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Eliminar assets não carregados.",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Elimina os ficheiros de assets do disco se não tiverem sido carregados (por exemplo, mod desativado).",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Eliminar base de dados ao fechar",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Elimina a base de dados quando fechas o jogo, útil ao desinstalar o mod."
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Elimina a base de dados quando fechas o jogo, útil ao desinstalar o mod.",
+	"SubServices.NAME[NetLanes]": "NetLanes",
+	"SubServices.NAME[Misc NetLanes]": "Misc NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "This category contains all the Misc NetLanes.",
+	"SubServices.NAME[RoadMarking NetLanes]": "RoadMarking NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
+	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes."
 }

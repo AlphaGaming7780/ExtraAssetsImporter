@@ -6,6 +6,8 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Wczytaj niestandardowe powierzchnie, zmiany zaczną obowiązywać po ponownym uruchomieniu gry.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Niestandardowe naklejki",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Wczytaj niestandardowe naklejki, zmiany zaczną obowiązywać po ponownym uruchomieniu gry.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Korektor brakujących prefabrykatów",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Poprawka zgodności",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "To ustawienie ma na celu naprawę brakującego prefabrykatu spowodowanego aktualizacją EAI. Aby z niego skorzystać, włącz ustawienie odpowiadające wersji moda, którego użyłeś w zapisie, uruchom ponownie grę, wczytaj zapis, sprawdź, czy brakujące prefabrykaty wróciły i czy wszystko jest w porządku. Jeśli wszystko jest w porządku, zapisz i uruchom ponownie grę, jeśli coś jest nie tak, wyjdź z gry bez zapisywania. To ustawienie wyłącza się automatycznie po ponownym uruchomieniu, aby uniknąć przyszłych konfliktów i problemów.",
@@ -17,5 +19,12 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Usuń niezaładowane obiekty.",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Usuń pliki obiektów z dysku, jeśli nie zostały załadowane (np. wyłączony mod).",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Usuń bazę danych przy wyłączaniu gry",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Usuń bazę danych przy wyłączaniu gry, przydatne podczas odinstalowywaniu moda."
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Usuń bazę danych przy wyłączaniu gry, przydatne podczas odinstalowywaniu moda.",
+	"SubServices.NAME[NetLanes]": "NetLanes",
+	"SubServices.NAME[Misc NetLanes]": "Misc NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "This category contains all the Misc NetLanes.",
+	"SubServices.NAME[RoadMarking NetLanes]": "RoadMarking NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
+	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes."
 }
