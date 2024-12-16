@@ -184,6 +184,7 @@ internal class DecalsImporter
 
 							if(renderPrefab == null)
 							{
+                                EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
                                 renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
                                 asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
                                 EAIDataBaseManager.AddAssets(asset);
