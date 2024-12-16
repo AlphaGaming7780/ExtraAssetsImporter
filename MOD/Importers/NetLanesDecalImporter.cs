@@ -70,6 +70,7 @@ internal class NetLanesDecalImporter
 		int numberOfNetLanes = 0;
 		int ammoutOfNetLanesloaded = 0;
 		int failedNetLanes = 0;
+		int skipedNetLane = 0;
 
 		var notificationInfo = ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(
 			$"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(CreateCustomNetLanes)}",
@@ -101,7 +102,7 @@ internal class NetLanesDecalImporter
 
                     if (netLanesName.StartsWith("."))
                     {
-                        failedNetLanes++;
+                        skipedNetLane++;
                         continue;
                     }
 
@@ -168,7 +169,7 @@ internal class NetLanesDecalImporter
 		ExtraLib.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
-			text: $"Complete, {numberOfNetLanes - failedNetLanes} Loaded, {failedNetLanes} failed.",
+			text: $"Complete, {numberOfNetLanes - failedNetLanes} Loaded, {failedNetLanes} failed, {skipedNetLane} skiped.",
 			progressState: ProgressState.Complete,
 			progress: 100
 		);

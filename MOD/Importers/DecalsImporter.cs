@@ -118,6 +118,7 @@ internal class DecalsImporter
 		int numberOfDecals = 0;
 		int ammoutOfDecalsloaded = 0;
 		int failedDecals = 0;
+		int skipedDecal = 0;
 
 		var notificationInfo = ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(
 			$"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(CreateCustomDecals)}",
@@ -149,7 +150,7 @@ internal class DecalsImporter
 					ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
 
 					if(decalName.StartsWith(".")) {
-						failedDecals++;
+                        skipedDecal++;
 						continue;
 					}
 					
@@ -184,7 +185,7 @@ internal class DecalsImporter
 
 							if(renderPrefab == null)
 							{
-                                EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
+                                EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
                                 renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
                                 asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
                                 EAIDataBaseManager.AddAssets(asset);
@@ -216,7 +217,7 @@ internal class DecalsImporter
 		ExtraLib.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
-			text: $"Complete, {numberOfDecals - failedDecals} Loaded, {failedDecals} failed.",
+			text: $"Complete, {numberOfDecals - failedDecals} Loaded, {failedDecals} failed, {skipedDecal} skiped.",
 			progressState: ProgressState.Complete,
 			progress: 100
 		);
