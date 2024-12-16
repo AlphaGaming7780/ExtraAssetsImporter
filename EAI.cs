@@ -1,4 +1,5 @@
 ﻿using Colossal.IO.AssetDatabase;
+using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Logging;
 using Colossal.PSI.Common;
 using Colossal.PSI.Environment;
@@ -31,7 +32,10 @@ namespace ExtraAssetsImporter
 		internal static string pathModsData;
 		internal static string pathTempFolder = $"{AssetDataBaseEAI.rootPath}\\TempAssetsFolder";
 
-		private bool eaiIsLoaded = false;
+        internal static TextureStreamingSystem textureStreamingSystem;
+
+		internal static DecalsImporter decalsImporter = new();
+		internal static NetLanesDecalImporter netLanesDecalImporter = new();
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
@@ -87,16 +91,18 @@ namespace ExtraAssetsImporter
             string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
             string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
 
-            if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+            if (Directory.Exists(pathToDataCustomDecals)) decalsImporter.AddFolder(pathToDataCustomDecals);
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
-			if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
+			if (Directory.Exists(pathToDataCustomNetLanes)) netLanesDecalImporter.AddFolder(pathToDataCustomNetLanes);
+
+            textureStreamingSystem = updateSystem.World.GetExistingSystemManaged<TextureStreamingSystem>();
 
             AssetDatabase.global.RegisterDatabase(EAIDataBaseManager.assetDataBaseEAI).Wait();
 
 			GameManager.instance.RegisterUpdater(Initialize);
 
 			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
-		}
+        }
 
 		public void OnDispose()
 		{
@@ -106,20 +112,21 @@ namespace ExtraAssetsImporter
 
 		private bool Initialize()
 		{
-            if (!GameManager.instance.modManager.isInitialized) return false;
+
+			if(!GameManager.instance.modManager.isInitialized) return false;
 
             EAI.Logger.Info("Start loading custom stuff.");
             EAIDataBaseManager.LoadDataBase();
-            if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+            if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(decalsImporter.CreateCustomAssets());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-            if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+            if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(netLanesDecalImporter.CreateCustomAssets());
             ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
 			return true;
         }
 
 		private IEnumerator WaitForCustomStuffToFinish()
 		{
-			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || ( m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded)) 
+			while( (m_Setting.Decals && !decalsImporter.isLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || ( m_Setting.NetLanes && !netLanesDecalImporter.isLoaded)) 
 			{
 				yield return null;
 			}
@@ -162,15 +169,15 @@ namespace ExtraAssetsImporter
 		public static void LoadCustomAssets(string modPath)
 		{
 			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.AddCustomSurfacesFolder(modPath + "\\CustomSurfaces");
-			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.AddCustomDecalsFolder(modPath + "\\CustomDecals");
-			if (Directory.Exists(modPath + "\\CustomNetLanes")) NetLanesDecalImporter.AddCustomNetLanesFolder(modPath + "\\CustomNetLanes");
+			if (Directory.Exists(modPath + "\\CustomDecals")) decalsImporter.AddFolder(modPath + "\\CustomDecals");
+			if (Directory.Exists(modPath + "\\CustomNetLanes")) netLanesDecalImporter.AddFolder(modPath + "\\CustomNetLanes");
         }
 
 		public static void UnLoadCustomAssets(string modPath)
 		{
 			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.RemoveCustomSurfacesFolder(modPath + "\\CustomSurfaces");
-			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.RemoveCustomDecalsFolder(modPath + "\\CustomDecals");
-            if (Directory.Exists(modPath + "\\CustomNetLanes")) NetLanesDecalImporter.RemoveCustomNetLanesFolder(modPath + "\\CustomNetLanes");
+			if (Directory.Exists(modPath + "\\CustomDecals")) decalsImporter.RemoveFolder(modPath + "\\CustomDecals");
+            if (Directory.Exists(modPath + "\\CustomNetLanes")) netLanesDecalImporter.RemoveFolder(modPath + "\\CustomNetLanes");
         }
 
 	}

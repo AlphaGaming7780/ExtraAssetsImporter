@@ -6,178 +6,181 @@ using System.IO;
 using UnityEngine;
 using Extra.Lib;
 using Extra.Lib.UI;
-using System.Collections;
-using Colossal.PSI.Common;
 using Colossal.Json;
-using Game.SceneFlow;
-using Colossal.Localization;
 
 namespace ExtraAssetsImporter.Importers;
 
-internal class NetLanesDecalImporter
+internal class NetLanesDecalImporter : Importer
 {
-	internal static List<string> FolderToLoadNetLanes = [];
-	private static bool NetLanesLoading = false;
-	internal static bool NetLanesLoaded = false;
+    public override string AssetType => "NetLanes";
 
-	internal static void LoadLocalization()
-	{
+    public override string AssetNameID => "NetLane";
 
-		Dictionary<string, string> csLocalisation = [];
+    //   public static void AddCustomNetLanesFolder(string path)
+    //{
+    //	if (FolderToLoadNetLanes.Contains(path)) return;
+    //	FolderToLoadNetLanes.Add(path);
+    //	Icons.LoadIcons(new DirectoryInfo(path).Parent.FullName);
+    //}
 
-		foreach (string folder in FolderToLoadNetLanes)
-		{
-			foreach (string netLanesCat in Directory.GetDirectories(folder))
-			{
-				foreach (string filePath in Directory.GetDirectories(netLanesCat))
-				{
-					FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
-					string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-					string netLanesName = $"{modName} {new DirectoryInfo(netLanesCat).Name} {new DirectoryInfo(filePath).Name} Net Lanes";
+    //public static void RemoveCustomNetLanesFolder(string path)
+    //{
+    //	if (!FolderToLoadNetLanes.Contains(path)) return;
+    //	FolderToLoadNetLanes.Remove(path);
+    //	Icons.UnLoadIcons(new DirectoryInfo(path).Parent.FullName);
+    //}
 
-					if (!csLocalisation.ContainsKey($"Assets.NAME[{netLanesName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{netLanesName}]")) csLocalisation.Add($"Assets.NAME[{netLanesName}]", new DirectoryInfo(filePath).Name);
-					if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{netLanesName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{netLanesName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{netLanesName}]", new DirectoryInfo(filePath).Name);
-				}
-			}
-		}
+    //internal static IEnumerator CreateCustomNetLanes()
+    //{
+    //	if (NetLanesLoading || FolderToLoadNetLanes.Count <= 0) yield break;
 
-		foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-		{
-			GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
-		}
-	}
+    //	NetLanesLoading = true;
 
-	public static void AddCustomNetLanesFolder(string path)
-	{
-		if (FolderToLoadNetLanes.Contains(path)) return;
-		FolderToLoadNetLanes.Add(path);
-		Icons.LoadIcons(new DirectoryInfo(path).Parent.FullName);
-	}
+    //	int numberOfNetLanes = 0;
+    //	int ammoutOfNetLanesloaded = 0;
+    //	int failedNetLanes = 0;
 
-	public static void RemoveCustomNetLanesFolder(string path)
-	{
-		if (!FolderToLoadNetLanes.Contains(path)) return;
-		FolderToLoadNetLanes.Remove(path);
-		Icons.UnLoadIcons(new DirectoryInfo(path).Parent.FullName);
-	}
+    //	var notificationInfo = ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(
+    //		$"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(CreateCustomNetLanes)}",
+    //		title: "EAI, Importing the custom net lanes.",
+    //		progressState: ProgressState.Indeterminate,
+    //		thumbnail: $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/NetLanes.svg",
+    //		progress: 0
+    //	);
 
-	internal static IEnumerator CreateCustomNetLanes()
-	{
-		if (NetLanesLoading || FolderToLoadNetLanes.Count <= 0) yield break;
+    //	foreach (string folder in FolderToLoadNetLanes)
+    //		foreach (string catFolder in Directory.GetDirectories(folder))
+    //			foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
+    //				numberOfNetLanes++;
 
-		NetLanesLoading = true;
+    //	ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("NetLanes", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/NetLanes.svg");
 
-		int numberOfNetLanes = 0;
-		int ammoutOfNetLanesloaded = 0;
-		int failedNetLanes = 0;
+    //	Dictionary<string, string> csLocalisation = [];
 
-		var notificationInfo = ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(
-			$"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(CreateCustomNetLanes)}",
-			title: "EAI, Importing the custom net lanes.",
-			progressState: ProgressState.Indeterminate,
-			thumbnail: $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/NetLanes.svg",
-			progress: 0
-		);
+    //	foreach (string folder in FolderToLoadNetLanes)
+    //	{
+    //		foreach (string catFolder in Directory.GetDirectories(folder))
+    //		{
+    //			foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
+    //			{
+    //				string netLanesName = new DirectoryInfo(netLanesFolder).Name;
+    //				notificationInfo.progressState = ProgressState.Progressing;
+    //				notificationInfo.progress = (int)(ammoutOfNetLanesloaded / (float)numberOfNetLanes * 100);
+    //				notificationInfo.text = $"Loading : {netLanesName}";
 
-		foreach (string folder in FolderToLoadNetLanes)
-			foreach (string catFolder in Directory.GetDirectories(folder))
-				foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
-					numberOfNetLanes++;
+    //                   if (netLanesName.StartsWith("."))
+    //                   {
+    //                       failedNetLanes++;
+    //                       continue;
+    //                   }
 
-		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("NetLanes", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/NetLanes.svg");
-
-		Dictionary<string, string> csLocalisation = [];
-
-		foreach (string folder in FolderToLoadNetLanes)
-		{
-			foreach (string catFolder in Directory.GetDirectories(folder))
-			{
-				foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
-				{
-					string netLanesName = new DirectoryInfo(netLanesFolder).Name;
-					notificationInfo.progressState = ProgressState.Progressing;
-					notificationInfo.progress = (int)(ammoutOfNetLanesloaded / (float)numberOfNetLanes * 100);
-					notificationInfo.text = $"Loading : {netLanesName}";
-
-                    if (netLanesName.StartsWith("."))
-                    {
-                        failedNetLanes++;
-                        continue;
-                    }
-
-                    try
-					{
-						string catName = new DirectoryInfo(catFolder).Name;
-						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
-						string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-						string fullNetLaneName = $"{modName} {catName} {netLanesName} NetLane";
-                        string assetDataPath = $"CustomNetLanes\\{modName}\\{catName}\\{netLanesName}";
+    //                   try
+    //				{
+    //					string catName = new DirectoryInfo(catFolder).Name;
+    //					FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+    //					string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+    //					string fullNetLaneName = $"{modName} {catName} {netLanesName} NetLane";
+    //                       string assetDataPath = $"CustomNetLanes\\{modName}\\{catName}\\{netLanesName}";
 
 
-                        RenderPrefab renderPrefab = null;
+    //                       RenderPrefab renderPrefab = null;
 
-                        if (!EAIDataBaseManager.TryGetEAIAsset(fullNetLaneName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(netLanesFolder))
-                        {
-                            //renderPrefab = CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath);
-                            renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
-                            asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
-                            EAIDataBaseManager.AddAssets(asset);
-                        }
-                        else
-                        {
-                            List<object> loadedObject = EAIDataBaseManager.LoadAsset(fullNetLaneName);
-                            foreach (object obj in loadedObject)
-                            {
-                                if (obj is RenderPrefab renderPrefab1)
-                                {
-                                    renderPrefab = renderPrefab1;
-                                    break;
-                                }
-                            }
+    //                       if (!EAIDataBaseManager.TryGetEAIAsset(fullNetLaneName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(netLanesFolder))
+    //                       {
+    //                           //renderPrefab = CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath);
+    //                           renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
+    //                           asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
+    //                           EAIDataBaseManager.AddAssets(asset);
+    //                       }
+    //                       else
+    //                       {
+    //                           List<object> loadedObject = EAIDataBaseManager.LoadAsset(fullNetLaneName);
+    //                           foreach (object obj in loadedObject)
+    //                           {
+    //                               if (obj is RenderPrefab renderPrefab1)
+    //                               {
+    //                                   renderPrefab = renderPrefab1;
+    //                                   break;
+    //                               }
+    //                           }
 
-                            if (renderPrefab == null)
-                            {
-								EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
-                                renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
-                                asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
-                                EAIDataBaseManager.AddAssets(asset);
-                            }
-                        }
+    //                           if (renderPrefab == null)
+    //                           {
+    //							EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
+    //                               renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
+    //                               asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
+    //                               EAIDataBaseManager.AddAssets(asset);
+    //                           }
+    //                       }
 
-                        CreateCustomNetLane(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, assetCat, renderPrefab);
+    //                       CreateCustomNetLane(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, assetCat, renderPrefab);
 
-						if (!csLocalisation.ContainsKey($"Assets.NAME[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullNetLaneName}]")) csLocalisation.Add($"Assets.NAME[{fullNetLaneName}]", netLanesName);
-						if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullNetLaneName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullNetLaneName}]", netLanesName);
-					}
-					catch (Exception e)
-					{
-						failedNetLanes++;
-						EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
-					}
-					ammoutOfNetLanesloaded++;
-					yield return null;
-				}
-			}
-		}
+    //					if (!csLocalisation.ContainsKey($"Assets.NAME[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullNetLaneName}]")) csLocalisation.Add($"Assets.NAME[{fullNetLaneName}]", netLanesName);
+    //					if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullNetLaneName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullNetLaneName}]", netLanesName);
+    //				}
+    //				catch (Exception e)
+    //				{
+    //					failedNetLanes++;
+    //					EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
+    //				}
+    //				ammoutOfNetLanesloaded++;
+    //				yield return null;
+    //			}
+    //		}
+    //	}
 
-		foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-		{
-			GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
-		}
+    //	foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+    //	{
+    //		GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
+    //	}
 
-		ExtraLib.m_NotificationUISystem.RemoveNotification(
-			identifier: notificationInfo.id,
-			delay: 5f,
-			text: $"Complete, {numberOfNetLanes - failedNetLanes} Loaded, {failedNetLanes} failed.",
-			progressState: ProgressState.Complete,
-			progress: 100
-		);
+    //	ExtraLib.m_NotificationUISystem.RemoveNotification(
+    //		identifier: notificationInfo.id,
+    //		delay: 5f,
+    //		text: $"Complete, {numberOfNetLanes - failedNetLanes} Loaded, {failedNetLanes} failed.",
+    //		progressState: ProgressState.Complete,
+    //		progress: 100
+    //	);
 
-		//LoadLocalization();
-		NetLanesLoaded = true;
-	}
+    //	//LoadLocalization();
+    //	NetLanesLoaded = true;
+    //}
 
-	private static void CreateCustomNetLane(string folderPath, string netLanesName, string catName, string modName, string fullNetLaneName, string assetDataPath, ExtraAssetsMenu.AssetCat assetCat, RenderPrefab renderPrefab)
+    internal override void CreateCustomAsset(string assetFolder, string assetName, string catName, string modName, string fullAssetName, string assetCachePath, ExtraAssetsMenu.AssetCat assetCat)
+    {
+        RenderPrefab renderPrefab = null;
+
+        if (!EAIDataBaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(assetFolder))
+        {
+            renderPrefab = DecalsImporter.CreateRenderPrefab(assetFolder, assetName, catName, modName, fullAssetName, assetCachePath, "CurvedDecal");
+            asset = new(fullAssetName, EAIDataBaseManager.GetAssetHash(assetFolder), assetCachePath);
+            EAIDataBaseManager.AddAssets(asset);
+        }
+        else
+        {
+            List<object> loadedObject = EAIDataBaseManager.LoadAsset(fullAssetName);
+            foreach (object obj in loadedObject)
+            {
+                if (obj is RenderPrefab renderPrefab1)
+                {
+                    renderPrefab = renderPrefab1;
+                    break;
+                }
+            }
+
+            if (renderPrefab == null)
+            {
+                EAI.Logger.Warn($"EAI failed to load the cached data for {fullAssetName}");
+                renderPrefab = DecalsImporter.CreateRenderPrefab(assetFolder, assetName, catName, modName, fullAssetName, assetCachePath, "CurvedDecal");
+                asset = new(fullAssetName, EAIDataBaseManager.GetAssetHash(assetFolder), assetCachePath);
+                EAIDataBaseManager.AddAssets(asset);
+            }
+        }
+
+        CreateCustomNetLane(assetFolder, assetName, catName, modName, fullAssetName, assetCachePath, assetCat, renderPrefab);
+    }
+
+    private static void CreateCustomNetLane(string folderPath, string netLanesName, string catName, string modName, string fullNetLaneName, string assetDataPath, ExtraAssetsMenu.AssetCat assetCat, RenderPrefab renderPrefab)
     {
 		if(renderPrefab == null) throw new NullReferenceException("RenderPrefab is NULL.");
 
