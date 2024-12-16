@@ -20,6 +20,7 @@ using Colossal.Localization;
 using Colossal.PSI.Environment;
 using Extra.Lib.mod.ClassExtension;
 using ExtraAssetsImporter.DataBase;
+using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -311,107 +312,68 @@ internal class DecalsImporter
 			foreach (string key in jSONMaterail.Vector.Keys) { decalSurface.AddProperty(key, jSONMaterail.Vector[key]); }
 		}
 
-		// if(!decalSurface.floats.ContainsKey("_DrawOrder")) decalSurface.AddProperty("_DrawOrder", 0f);
+        // if(!decalSurface.floats.ContainsKey("_DrawOrder")) decalSurface.AddProperty("_DrawOrder", 0f);
 
-		byte[] fileData;
+        DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
 
-		fileData = File.ReadAllBytes(folderPath + "\\_BaseColorMap.png");
-		Texture2D texture2D_BaseColorMap_Temp = new(1, 1);
-		if (!texture2D_BaseColorMap_Temp.LoadImage(fileData)) { EAI.Logger.Error($"[EAI] Failed to Load the BaseColorMap image for the {decalName} decal."); return null; }
 
-		Texture2D texture2D_BaseColorMap = new(texture2D_BaseColorMap_Temp.width, texture2D_BaseColorMap_Temp.height, GraphicsFormat.R8G8B8A8_SRGB, texture2D_BaseColorMap_Temp.mipmapCount, TextureCreationFlags.MipChain)
-		{
-			name = $"{decalName}_BaseColorMap"
-		};
+        ImportSettings importSettings = ImportSettings.GetDefault();
+        importSettings.compressBC = true;
+        importSettings.wrapMode = TextureWrapMode.Repeat;
+        TextureImporter.Texture textureImporterBaseColorMap = defaultTextureImporter.Import(importSettings, folderPath + "\\_BaseColorMap.png");
+        textureImporterBaseColorMap.ComputeMips(true, true);
+        decalSurface.AddProperty("_BaseColorMap", textureImporterBaseColorMap);
 
-		for (int i = 0; i < texture2D_BaseColorMap_Temp.mipmapCount; i++)
-		{
-			texture2D_BaseColorMap.SetPixels(texture2D_BaseColorMap_Temp.GetPixels(i), i);
-		}
-		texture2D_BaseColorMap.Apply();
-		if (!File.Exists(folderPath + "\\icon.png")) texture2D_BaseColorMap.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png");//ELT.ResizeTexture(texture2D_BaseColorMap_Temp, 128, folderPath + "\\icon.png");
-		TextureImporter.Texture textureImporterBaseColorMap = new($"{decalName}_BaseColorMap", folderPath + "\\" + "_BaseColorMap.png", texture2D_BaseColorMap);
-		decalSurface.AddProperty("_BaseColorMap", textureImporterBaseColorMap);
+        if (File.Exists(folderPath + "\\_NormalMap.png"))
+        {
+            importSettings = ImportSettings.GetDefault();
+            importSettings.normalMap = true;
+            importSettings.alphaIsTransparency = false;
+            importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
+            importSettings.wrapMode = TextureWrapMode.Repeat;
+            TextureImporter.Texture textureImporterNormalMap = defaultTextureImporter.Import(importSettings, folderPath + "\\_NormalMap.png");
+            textureImporterBaseColorMap.ComputeMips(true, false);
+            decalSurface.AddProperty("_NormalMap", textureImporterNormalMap);
+        }
 
-		//AssetDataPath pathBaseColorName = AssetDataPath.Create(assetDataPath, "BaseColorMap", EscapeStrategy.None);
-		//TextureAsset textureAssetBaseColorMap = AssetDatabase.game.AddAsset<TextureAsset>(pathBaseColorName);
-		//textureAssetBaseColorMap.SetData(textureImporterBaseColorMap);
-		//textureAssetBaseColorMap.Save();
-		//asset.subAssetsDataPath.Add(pathBaseColorName);
+        if (File.Exists(folderPath + "\\_MaskMap.png"))
+        {
+            importSettings = ImportSettings.GetDefault();
+            importSettings.normalMap = false;
+            importSettings.alphaIsTransparency = false;
+            importSettings.wrapMode = TextureWrapMode.Repeat;
+            TextureImporter.Texture textureImporterMaskMap = defaultTextureImporter.Import(importSettings, folderPath + "\\_MaskMap.png");
+            textureImporterBaseColorMap.ComputeMips(true, false);
+            decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
+        }
 
-		if (File.Exists(folderPath + "\\_NormalMap.png"))
-		{
-			fileData = File.ReadAllBytes(folderPath + "\\_NormalMap.png");
-			Texture2D texture2D_NormalMap_temp = new(1, 1)
-			{
-				name = $"{decalName}_NormalMap"
-			};
-			if (texture2D_NormalMap_temp.LoadImage(fileData))
-			{
-				Texture2D texture2D_NormalMap = new(texture2D_NormalMap_temp.width, texture2D_NormalMap_temp.height, GraphicsFormat.R8G8B8A8_SRGB, texture2D_NormalMap_temp.mipmapCount, TextureCreationFlags.None)
-				{
-					name = $"{decalName}_NormalMap"
-				};
-
-				for (int i = 0; i < texture2D_NormalMap_temp.mipmapCount; i++)
-				{
-					texture2D_NormalMap.SetPixels(texture2D_NormalMap_temp.GetPixels(i), i);
-				}
-				texture2D_NormalMap.Apply();
-				TextureImporter.Texture textureImporterNormalMap = new($"{decalName}_NormalMap", folderPath + "\\" + "_NormalMap.png", texture2D_NormalMap);
-				textureImporterNormalMap.CompressBC(1, Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC5);
-				decalSurface.AddProperty("_NormalMap", textureImporterNormalMap);
-
-				//AssetDataPath NormalMapPath = AssetDataPath.Create(assetDataPath, "NormalMap", EscapeStrategy.None);
-				//TextureAsset textureAsset = AssetDatabase.game.AddAsset<TextureAsset>(NormalMapPath);
-				//textureAsset.SetData(textureImporterNormalMap);
-				//textureAsset.Save();
-				//asset.subAssetsDataPath.Add(NormalMapPath);
-
-			};
-		}
-
-		if (File.Exists(folderPath + "\\_MaskMap.png"))
-		{
-			fileData = File.ReadAllBytes(folderPath + "\\_MaskMap.png");
-			Texture2D texture2D_MaskMap_temp = new(1, 1);
-			if (texture2D_MaskMap_temp.LoadImage(fileData))
-			{
-				Texture2D texture2D_MaskMap = new(texture2D_MaskMap_temp.width, texture2D_MaskMap_temp.height, GraphicsFormat.R8G8B8A8_SRGB, texture2D_MaskMap_temp.mipmapCount, TextureCreationFlags.None)
-				{
-					name = $"{decalName}_MaskMap"
-				};
-
-				for (int i = 0; i < texture2D_MaskMap_temp.mipmapCount; i++)
-				{
-					texture2D_MaskMap.SetPixels(texture2D_MaskMap_temp.GetPixels(i), i);
-				}
-				texture2D_MaskMap.Apply();
-				TextureImporter.Texture textureImporterMaskMap = new($"{decalName}_MaskMap", folderPath + "\\" + "_MaskMap.png", texture2D_MaskMap);
-				//textureImporterMaskMap.CompressBC(1);
-				decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
-
-				//AssetDataPath MaskMapPath = AssetDataPath.Create(assetDataPath, "MaskMap", EscapeStrategy.None);
-				//TextureAsset textureAsset = AssetDatabase.game.AddAsset<TextureAsset>(MaskMapPath);
-				//textureAsset.SetData(textureImporterMaskMap);
-				//textureAsset.Save();
-				//asset.subAssetsDataPath.Add(MaskMapPath);
-			};
-		}
-
-		AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(assetDataPath, "SurfaceAsset", EscapeStrategy.None);
-		SurfaceAsset surfaceAsset = new()
-		{
-			guid = Guid.NewGuid(), //DecalRenderPrefab.surfaceAssets.ToArray()[0].guid, //
-			//database = AssetDatabase.game //DecalRenderPrefab.surfaceAssets.ToArray()[0].database,
-			database = EAIDataBaseManager.assetDataBaseEAI //DecalRenderPrefab.surfaceAssets.ToArray()[0].database,
+        AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(assetDataPath, $"{decalName}_SurfaceAsset", EscapeStrategy.None);
+        SurfaceAsset surfaceAsset = new()
+        {
+            guid = Guid.NewGuid(), //DecalRenderPrefab.surfaceAssets.ToArray()[0].guid, //
+                                   //database = AssetDatabase.game //DecalRenderPrefab.surfaceAssets.ToArray()[0].database,
+            database = EAIDataBaseManager.assetDataBaseEAI //DecalRenderPrefab.surfaceAssets.ToArray()[0].database,
         };
-		surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.guid);
-		surfaceAsset.SetData(decalSurface);
-		surfaceAsset.Save(force: false, saveTextures: true, vt: false);
-		//asset.subAssetsDataPath.Add(surfaceAssetDataPath);
+        surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.guid);
+        surfaceAsset.SetData(decalSurface);
+        surfaceAsset.Save(force: false, saveTextures: true, vt: false);
 
-		Vector4 MeshSize = decalSurface.GetVectorProperty("colossal_MeshSize");
+
+        //VT Stuff
+        //VirtualTexturingConfig virtualTexturingConfig = EAI.textureStreamingSystem.virtualTexturingConfig; //(VirtualTexturingConfig)ScriptableObject.CreateInstance("VirtualTexturingConfig");
+        //Dictionary<Colossal.IO.AssetDatabase.TextureAsset, List<SurfaceAsset>> textureReferencesMap = [];
+
+        //foreach (Colossal.IO.AssetDatabase.TextureAsset asset in surfaceAsset.textures.Values)
+        //{
+        //	asset.Save();
+        //	textureReferencesMap.Add(asset, [surfaceAsset]);
+        //}
+
+        //surfaceAsset.Save(force: false, saveTextures: false, vt: true, virtualTexturingConfig: virtualTexturingConfig, textureReferencesMap: textureReferencesMap, tileSize: virtualTexturingConfig.tileSize, nbMidMipLevelsRequested: 0);
+
+        // END OF VT Stuff.
+
+        Vector4 MeshSize = decalSurface.GetVectorProperty("colossal_MeshSize");
 		Vector4 TextureArea = decalSurface.GetVectorProperty("colossal_TextureArea");
 		Mesh[] meshes = [ConstructMesh(MeshSize.x, MeshSize.y, MeshSize.z)];
 

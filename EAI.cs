@@ -104,14 +104,17 @@ namespace ExtraAssetsImporter
 			ClearData();
 		}
 
-		private void Initialize()
+		private bool Initialize()
 		{
+            if (!GameManager.instance.modManager.isInitialized) return false;
+
             EAI.Logger.Info("Start loading custom stuff.");
             EAIDataBaseManager.LoadDataBase();
             if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
             if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
             ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+			return true;
         }
 
 		private IEnumerator WaitForCustomStuffToFinish()
@@ -160,13 +163,15 @@ namespace ExtraAssetsImporter
 		{
 			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.AddCustomSurfacesFolder(modPath + "\\CustomSurfaces");
 			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.AddCustomDecalsFolder(modPath + "\\CustomDecals");
-		}
+			if (Directory.Exists(modPath + "\\CustomNetLanes")) NetLanesDecalImporter.AddCustomNetLanesFolder(modPath + "\\CustomNetLanes");
+        }
 
 		public static void UnLoadCustomAssets(string modPath)
 		{
 			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.RemoveCustomSurfacesFolder(modPath + "\\CustomSurfaces");
 			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.RemoveCustomDecalsFolder(modPath + "\\CustomDecals");
-		}
+            if (Directory.Exists(modPath + "\\CustomNetLanes")) NetLanesDecalImporter.RemoveCustomNetLanesFolder(modPath + "\\CustomNetLanes");
+        }
 
 	}
 }
