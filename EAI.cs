@@ -93,7 +93,7 @@ namespace ExtraAssetsImporter
 
             AssetDatabase.global.RegisterDatabase(EAIDataBaseManager.assetDataBaseEAI).Wait();
 
-            ExtraLib.AddOnMainMenu(OnMainMenu);
+			GameManager.instance.RegisterUpdater(Initialize);
 
 			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 		}
@@ -104,16 +104,14 @@ namespace ExtraAssetsImporter
 			ClearData();
 		}
 
-		private void OnMainMenu()
+		private void Initialize()
 		{
-			if (eaiIsLoaded) return;
-            EAI.Logger.Info("Loading EAI.");
+            EAI.Logger.Info("Start loading custom stuff.");
             EAIDataBaseManager.LoadDataBase();
             if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
             if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
             ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
-			eaiIsLoaded = true;
         }
 
 		private IEnumerator WaitForCustomStuffToFinish()
