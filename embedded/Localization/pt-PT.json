@@ -27,6 +27,6 @@
 	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "Esta categoria contém todas as faixas de rede com marcação rodoviária.",
 	"SubServices.NAME[Roadway NetLanes]": "Faixas de rede viária",
 	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "Esta categoria contém todas as faixas de rede viária.",
-	"SubServices.NAME[Beach NetLanes]": "Beach NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes."
+	"SubServices.NAME[Beach NetLanes]": "Faixas de rede de praia",
+	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "Esta categoria contém todas as faixas de rede de praia."
 }
