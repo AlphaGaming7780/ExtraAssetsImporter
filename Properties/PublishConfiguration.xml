@@ -53,14 +53,14 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
 - ⚠️French 80% : aricoseco, Edou24
-- ⚠️Chinese Simplified 80% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
+- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
 - ⚠️Chinese Traditional 64% : Tiger Zhang (tiger42231)
 - ⚠️German 62% : Konsi
 - ⚠️Italian 62% : Stefano (Furios)
 - ❌Japanese 0%
 - ⚠️Korean 80% : Hinanchovo
-- ⚠️Polish 80% : Lisek, karmel68
-- ⚠️Portuguese 80% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ✔️Polish 100% : Lisek, karmel68
+- ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
 - ⚠️Portuguese, Brazilian 80% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
 - ⚠️Russian 80% : Mihail (kaktyc), Lek0ms, MrSandcraft
 - ⚠️Spanish 80% : elGendo87
@@ -89,6 +89,11 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 ## Fixes
 - Fixed the meomry leak during the texture loading creation process.
+
+## Translations
+- ⚠️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS)
+- ⚠️Polish 100% : karmel68
+- ⚠️Portuguese 100% : Tiago Correia (ti4go)
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
