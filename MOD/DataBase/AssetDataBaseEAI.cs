@@ -2,6 +2,7 @@
 using Colossal.PSI.Environment;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ namespace ExtraAssetsImporter.DataBase
 {
     public readonly struct AssetDataBaseEAI : IAssetDatabaseDescriptor<AssetDataBaseEAI>, IEquatable<AssetDataBaseEAI>
     {
-        private static readonly string kRootPath = $"{EnvPath.kContentPath}\\Mods\\EAI";
+        private static readonly string kRootPath = Path.Combine(EnvPath.kContentPath, "Mods", "EAI");
         public static readonly string rootPath = kRootPath;
 
         public bool canWriteSettings => true;

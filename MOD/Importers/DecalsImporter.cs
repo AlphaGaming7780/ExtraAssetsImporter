@@ -55,47 +55,6 @@ internal class DecalsImporter
 	//    }
 	//}
 
-	internal static void LoadLocalization()
-	{
-
-		Dictionary<string, string> csLocalisation = [];
-
-		foreach (string folder in FolderToLoadDecals)
-		{
-			foreach (string decalsCat in Directory.GetDirectories(folder))
-			{
-
-				//if (!csLocalisation.ContainsKey($"SubServices.NAME[{new DirectoryInfo(decalsCat).Name} Decals]"))
-				//{
-				//	csLocalisation.Add($"SubServices.NAME[{new DirectoryInfo(decalsCat).Name} Decals]", $"{new DirectoryInfo(decalsCat).Name} Decals");
-				//}
-
-				//if (!csLocalisation.ContainsKey($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(decalsCat).Name} Decals]"))
-				//{
-				//	csLocalisation.Add($"Assets.SUB_SERVICE_DESCRIPTION[{new DirectoryInfo(decalsCat).Name} Decals]", $"{new DirectoryInfo(decalsCat).Name} Decals");
-				//}
-
-				
-
-
-				foreach (string filePath in Directory.GetDirectories(decalsCat))
-				{
-					FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles(".dll");
-					string modName = fileInfos.Length > 0 ? fileInfos[0].Name.Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-					string decalName = $"{modName} {new DirectoryInfo(decalsCat).Name} {new DirectoryInfo(filePath).Name} Decal";
-
-					if (!csLocalisation.ContainsKey($"Assets.NAME[{decalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{decalName}]")) csLocalisation.Add($"Assets.NAME[{decalName}]", new DirectoryInfo(filePath).Name);
-					if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{decalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{decalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{decalName}]", new DirectoryInfo(filePath).Name);
-				}
-			}
-		}
-
-		foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-		{
-			GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
-		}
-	}
-
 	public static void AddCustomDecalsFolder(string path)
 	{
 		if (FolderToLoadDecals.Contains(path)) return;
@@ -167,8 +126,7 @@ internal class DecalsImporter
 						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
 						string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
 						string fullDecalName = $"{modName} {catName} {decalName} Decal";
-						//string assetDataPath = $"Mods\\EAI\\CustomDecals\\{modName}\\{catName}\\{decalName}";
-						string assetDataPath = $"CustomDecals\\{modName}\\{catName}\\{decalName}";
+						string assetDataPath = Path.Combine("CustomDecals", modName, catName, decalName); //$"CustomDecals\\{modName}\\{catName}\\{decalName}";
 
                         RenderPrefab renderPrefab = null;
 
@@ -244,14 +202,15 @@ internal class DecalsImporter
 			m_RequireState = Game.Objects.ObjectState.None
 		};
 
-		StaticObjectPrefab decalPrefab = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
+		StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 		decalPrefab.name = fullDecalName;
 
 		JSONDecalsMaterail jSONMaterail = new();
 
-		if (File.Exists(folderPath + "\\decal.json"))
+        string jsonDecalPath = Path.Combine(folderPath, "decal.json");
+        if (File.Exists(jsonDecalPath))
 		{
-			jSONMaterail = Decoder.Decode(File.ReadAllText(folderPath + "\\decal.json")).Make<JSONDecalsMaterail>();
+			jSONMaterail = Decoder.Decode(File.ReadAllText(jsonDecalPath)).Make<JSONDecalsMaterail>();
 
 			if (jSONMaterail.Float.ContainsKey("UiPriority")) jSONMaterail.UiPriority = (int)jSONMaterail.Float["UiPriority"];
 
@@ -263,15 +222,16 @@ internal class DecalsImporter
 			}
 		}
 
-		if (File.Exists(folderPath + "\\icon.png"))
+        string iconPath = Path.Combine(folderPath, "icon.png");
+        if (File.Exists(iconPath))
 		{
-			byte[] fileData = File.ReadAllBytes(folderPath + "\\icon.png");
+			byte[] fileData = File.ReadAllBytes(iconPath);
 			Texture2D texture2D_Icon = new(1, 1);
 			if (texture2D_Icon.LoadImage(fileData))
 			{
 				if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
 				{
-					TextureHelper.ResizeTexture(ref texture2D_Icon, 128, folderPath + "\\icon.png");
+					TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
 				}
 			}
 			UnityEngine.Object.Destroy(texture2D_Icon);
@@ -279,7 +239,7 @@ internal class DecalsImporter
 
 		decalPrefab.m_Meshes = [objectMeshInfo];
 
-		StaticObjectPrefab placeholder = (StaticObjectPrefab)ScriptableObject.CreateInstance("StaticObjectPrefab");
+		StaticObjectPrefab placeholder = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 		placeholder.name = $"{fullDecalName}_Placeholder";
 		placeholder.m_Meshes = [objectMeshInfo];
 		placeholder.AddComponent<PlaceholderObject>();
@@ -289,12 +249,11 @@ internal class DecalsImporter
 
 		UIObject decalPrefabUI = decalPrefab.AddComponent<UIObject>();
 		decalPrefabUI.m_IsDebugObject = false;
-		decalPrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/{decalName}/icon.png" : Icons.DecalPlaceholder;
+		decalPrefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/{decalName}/icon.png" : Icons.DecalPlaceholder;
 		decalPrefabUI.m_Priority = jSONMaterail.UiPriority;
 		decalPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
-		//AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
         ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
@@ -304,9 +263,6 @@ internal class DecalsImporter
 	{
 		string fullAssetDataPath = Path.Combine(AssetDataBaseEAI.rootPath, assetDataPath);
 		if (Directory.Exists(fullAssetDataPath)) { Directory.Delete(fullAssetDataPath, true); }
-
-		//EAIAsset asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(folderPath));
-		//EAIAsset asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
 
 		Surface decalSurface = new(decalName, materialName);
 		decalSurface.AddProperty("colossal_DecalLayerMask", 1);
@@ -322,10 +278,8 @@ internal class DecalsImporter
 			foreach (string key in jSONMaterail.Vector.Keys) { decalSurface.AddProperty(key, jSONMaterail.Vector[key]); }
 		}
 
-        // if(!decalSurface.floats.ContainsKey("_DrawOrder")) decalSurface.AddProperty("_DrawOrder", 0f);
 
         DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
-
 
         ImportSettings importSettings = ImportSettings.GetDefault();
         importSettings.compressBC = true;

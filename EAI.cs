@@ -30,7 +30,7 @@ namespace ExtraAssetsImporter
 		internal static string ResourcesIcons { get; private set; }
 
 		internal static string pathModsData;
-		internal static string pathTempFolder = $"{AssetDataBaseEAI.rootPath}\\TempAssetsFolder";
+		internal static string pathTempFolder = Path.Combine(AssetDataBaseEAI.rootPath, "TempAssetsFolder");
 
 		private bool eaiIsLoaded = false;
 
@@ -38,19 +38,20 @@ namespace ExtraAssetsImporter
 		{
 			Logger.Info(nameof(OnLoad));
 
-			string oldDataPath = $"{UnityEngine.Application.streamingAssetsPath}\\Mods\\EAI";
-			string oldModsPath = $"{UnityEngine.Application.streamingAssetsPath}\\Mods";
-
+			string oldModsPath = Path.Combine(UnityEngine.Application.streamingAssetsPath, "Mods");
+            string oldDataPath = Path.Combine(oldModsPath, "EAI");
+			
             if (Directory.Exists(oldDataPath))
 			{
                 Directory.Delete(oldDataPath, true);
-				if(Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
-				{
-					Directory.Delete(oldModsPath, false);
-				}
 			}
 
-			if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
+            if (Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+            {
+                Directory.Delete(oldModsPath, false);
+            }
+
+            if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
 
             var oldLocation = Path.Combine(EnvPath.kUserDataPath, "ModSettings", nameof(ExtraAssetsImporter), "settings.coc");
@@ -175,16 +176,16 @@ namespace ExtraAssetsImporter
 
 		public static void LoadCustomAssets(string modPath)
 		{
-			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.AddCustomSurfacesFolder(modPath + "\\CustomSurfaces");
-			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.AddCustomDecalsFolder(modPath + "\\CustomDecals");
-			if (Directory.Exists(modPath + "\\CustomNetLanes")) NetLanesDecalImporter.AddCustomNetLanesFolder(modPath + "\\CustomNetLanes");
+			if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
+			if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
+			if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes")))	NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
         }
 
 		public static void UnLoadCustomAssets(string modPath)
 		{
-			if (Directory.Exists(modPath + "\\CustomSurfaces")) SurfacesImporter.RemoveCustomSurfacesFolder(modPath + "\\CustomSurfaces");
-			if (Directory.Exists(modPath + "\\CustomDecals")) DecalsImporter.RemoveCustomDecalsFolder(modPath + "\\CustomDecals");
-            if (Directory.Exists(modPath + "\\CustomNetLanes")) NetLanesDecalImporter.RemoveCustomNetLanesFolder(modPath + "\\CustomNetLanes");
+			if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.RemoveCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
+			if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.RemoveCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
+            if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes")))	NetLanesDecalImporter.RemoveCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
         }
 
 	}

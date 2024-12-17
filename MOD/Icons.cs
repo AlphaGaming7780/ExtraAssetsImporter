@@ -26,7 +26,8 @@ namespace ExtraAssetsImporter
 
             if (prefab is null) return Extra.Lib.UI.Icons.Placeholder;
 
-            if (File.Exists($"{EAI.ResourcesIcons}/{prefab.GetType().Name}/{prefab.name}.svg")) return $"{COUIBaseLocation}/Icons/{prefab.GetType().Name}/{prefab.name}.svg";
+            
+            if (File.Exists(Path.Combine(EAI.ResourcesIcons, prefab.GetType().Name, $"{prefab.name}.svg"))) return $"{COUIBaseLocation}/Icons/{prefab.GetType().Name}/{prefab.name}.svg";
 
             if (prefab is SurfacePrefab)
             {
