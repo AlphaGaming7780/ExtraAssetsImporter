@@ -52,18 +52,18 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ⚠️French 80% : aricoseco, Edou24
-- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
-- ⚠️Chinese Traditional 64% : Tiger Zhang (tiger42231)
-- ⚠️German 62% : Konsi
-- ⚠️Italian 62% : Stefano (Furios)
+- ⚠️French 77% : aricoseco, Edou24
+- ⚠️Chinese Simplified 95% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
+- ✔️Chinese Traditional 100% : Tiger Zhang (tiger42231), Source Design (source_design)
+- ⚠️German 59% : Konsi
+- ⚠️Italian 59% : Stefano (Furios)
 - ❌Japanese 0%
-- ⚠️Korean 80% : Hinanchovo
+- ⚠️Korean 77% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
-- ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
-- ⚠️Portuguese, Brazilian 80% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
-- ⚠️Russian 80% : Mihail (kaktyc), Lek0ms, MrSandcraft
-- ⚠️Spanish 80% : elGendo87
+- ⚠️Portuguese 95% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ⚠️Portuguese, Brazilian 77% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
+- ⚠️Russian 77% : Mihail (kaktyc), Lek0ms, MrSandcraft
+- ⚠️Spanish 77% : elGendo87
   </LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/EAI.png" />
@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.3.1" />
+	<ModVersion Value="1.3.2" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.2.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -82,18 +82,13 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.3.1
+# 1.3.2
 ## Improvements
-- EAI use a new Texture Importer.
-- Now support MipsMap, this will take effect on new created asset, you can force your old asset to change by deleting the DataBase (in EAI settings).
-
-## Fixes
-- Fixed the meomry leak during the texture loading creation process.
+- Use ExtraLib Initializer, reduce performance drop during mods loading in the main menu.
 
 ## Translations
-- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS)
+- ✔️Chinese Traditional 100% : Source Design (source_design)
 - ✔️Polish 100% : karmel68
-- ✔️Portuguese 100% : Tiago Correia (ti4go)
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
