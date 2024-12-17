@@ -169,7 +169,7 @@ internal class NetLanesDecalImporter
 		ExtraLib.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
-			text: $"Complete, {numberOfNetLanes - failedNetLanes} Loaded, {failedNetLanes} failed, {skipedNetLane} skiped.",
+			text: $"Complete, {numberOfNetLanes - failedNetLanes} Loaded, {failedNetLanes} failed, {skipedNetLane} skipped.",
 			progressState: ProgressState.Complete,
 			progress: 100
 		);

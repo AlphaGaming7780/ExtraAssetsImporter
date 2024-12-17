@@ -1,6 +1,8 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.Logging;
+using Colossal.PSI.Common;
 using Colossal.PSI.Environment;
+using Colossal.PSI.PdxSdk;
 using Extra.Lib;
 using Extra.Lib.Debugger;
 using Extra.Lib.Localization;
@@ -92,7 +94,8 @@ namespace ExtraAssetsImporter
 
             AssetDatabase.global.RegisterDatabase(EAIDataBaseManager.assetDataBaseEAI).Wait();
 
-			GameManager.instance.RegisterUpdater(Initialize);
+			//GameManager.instance.RegisterUpdater(Initialize);
+			ExtraLib.AddOnInitialize(Initialize);
 
 			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 		}
@@ -103,23 +106,29 @@ namespace ExtraAssetsImporter
 			ClearData();
 		}
 
-		private bool Initialize()
+		private void Initialize()
 		{
-            if (!GameManager.instance.modManager.isInitialized) return false;
+    //        if (!GameManager.instance.modManager.isInitialized || 
+				//GameManager.instance.gameMode != GameMode.MainMenu || 
+				//GameManager.instance.state == GameManager.State.Loading || 
+				//GameManager.instance.state == GameManager.State.Booting
+				//) return false;
 
             EAI.Logger.Info("Start loading custom stuff.");
 
-   //         foreach ( ModManager.ModInfo modInfo in GameManager.instance.modManager)
+			//         foreach ( ModManager.ModInfo modInfo in GameManager.instance.modManager)
 			//{
 			//	modInfo.
 			//}
+
+			//PdxSdkPlatform pdxSdkPlatform = PlatformManager.instance.GetPSI<PdxSdkPlatform>("PdxSdk");
 
             EAIDataBaseManager.LoadDataBase();
 			if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
 			if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
 			if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
 			ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
-			return true;
+			//return true;
         }
 
 		private IEnumerator WaitForCustomStuffToFinish()

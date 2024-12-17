@@ -217,7 +217,7 @@ internal class DecalsImporter
 		ExtraLib.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
-			text: $"Complete, {numberOfDecals - failedDecals} Loaded, {failedDecals} failed, {skipedDecal} skiped.",
+			text: $"Complete, {numberOfDecals - failedDecals} Loaded, {failedDecals} failed, {skipedDecal} skipped.",
 			progressState: ProgressState.Complete,
 			progress: 100
 		);
