@@ -309,7 +309,7 @@ internal class DecalsImporter
 			JSONDecalsMaterail jSONMaterail = Decoder.Decode(File.ReadAllText(folderPath + "\\decal.json")).Make<JSONDecalsMaterail>();
 			foreach (string key in jSONMaterail.Float.Keys) {
 				if (key == "UiPriority")  continue;
-				decalSurface.AddProperty(key, jSONMaterail.Float[key]); 
+				decalSurface.AddProperty(key, jSONMaterail.Float[key]);
 			}
 			foreach (string key in jSONMaterail.Vector.Keys) { decalSurface.AddProperty(key, jSONMaterail.Vector[key]); }
 		}

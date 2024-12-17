@@ -1,4 +1,5 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal.AssetPipeline.Importers;
+using Colossal.IO.AssetDatabase;
 using Colossal.Logging;
 using Colossal.PSI.Common;
 using Colossal.PSI.Environment;
@@ -13,6 +14,8 @@ using Game.SceneFlow;
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ExtraAssetsImporter
 {
@@ -110,10 +113,10 @@ namespace ExtraAssetsImporter
 
             EAI.Logger.Info("Start loading custom stuff.");
             EAIDataBaseManager.LoadDataBase();
-            if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
-            if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-            if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
-            ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+			if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+			if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+			if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+			ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
 			return true;
         }
 
