@@ -1,7 +1,5 @@
-﻿using Colossal.AssetPipeline.Importers;
-using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO.AssetDatabase;
 using Colossal.Logging;
-using Colossal.PSI.Common;
 using Colossal.PSI.Environment;
 using Extra.Lib;
 using Extra.Lib.Debugger;
@@ -14,8 +12,6 @@ using Game.SceneFlow;
 using System.Collections;
 using System.IO;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace ExtraAssetsImporter
 {
@@ -112,6 +108,12 @@ namespace ExtraAssetsImporter
             if (!GameManager.instance.modManager.isInitialized) return false;
 
             EAI.Logger.Info("Start loading custom stuff.");
+
+   //         foreach ( ModManager.ModInfo modInfo in GameManager.instance.modManager)
+			//{
+			//	modInfo.
+			//}
+
             EAIDataBaseManager.LoadDataBase();
 			if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
 			if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
