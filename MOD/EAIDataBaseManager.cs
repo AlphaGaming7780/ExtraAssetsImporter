@@ -13,7 +13,7 @@ namespace ExtraAssetsImporter;
 internal static class EAIDataBaseManager
 {
 	const int DataBaseVersion = 2;
-	private static readonly string pathToAssetsDatabase = EAI.pathModsData + "\\AssetsDataBase.json";
+	private static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
 	private static readonly List<EAIAsset> ValidateAssetsDataBase = [];
 	private static List<EAIAsset> AssetsDataBase = [];
     public static ILocalAssetDatabase assetDataBaseEAI => AssetDatabase<AssetDataBaseEAI>.instance;
@@ -182,7 +182,7 @@ internal static class EAIDataBaseManager
 		{
 			foreach(string file in Directory.GetFiles(assetPath, $"*{s}"))
 			{
-				string filePath = file.Replace(AssetDataBaseEAI.rootPath + "\\", "");
+				string filePath = file.Replace(AssetDataBaseEAI.rootPath + Path.DirectorySeparatorChar, "");
 				AssetDataPath assetDataPath = AssetDataPath.Create(filePath, EscapeStrategy.None);
                 try
 				{

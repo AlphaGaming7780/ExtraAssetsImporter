@@ -119,7 +119,7 @@ internal class NetLanesDecalImporter
 						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
 						string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
 						string fullNetLaneName = $"{modName} {catName} {netLanesName} NetLane";
-                        string assetDataPath = $"CustomNetLanes\\{modName}\\{catName}\\{netLanesName}";
+						string assetDataPath = Path.Combine("CustomNetLanes", modName, catName, netLanesName); //$"CustomNetLanes\\{modName}\\{catName}\\{netLanesName}";
 
 
                         RenderPrefab renderPrefab = null;
@@ -194,9 +194,10 @@ internal class NetLanesDecalImporter
 
         JsonNetLanes jsonNetLane = new();
 
-        if (File.Exists(folderPath + "\\netLane.json"))
+		string jsonNetLanesPath = Path.Combine(folderPath, "netLane.json");
+        if (File.Exists(jsonNetLanesPath))
         {
-            jsonNetLane = Decoder.Decode(File.ReadAllText(folderPath + "\\netLane.json")).Make<JsonNetLanes>();
+            jsonNetLane = Decoder.Decode(File.ReadAllText(jsonNetLanesPath)).Make<JsonNetLanes>();
 
             VersionCompatiblity(jsonNetLane, catName, netLanesName);
             if (jsonNetLane.prefabIdentifierInfos.Count > 0)
@@ -206,17 +207,19 @@ internal class NetLanesDecalImporter
             }
         }
 
-        if (File.Exists(folderPath + "\\icon.png"))
+		string iconPath = Path.Combine(folderPath, "icon.png");
+        if (File.Exists(iconPath))
         {
-            byte[] fileData = File.ReadAllBytes(folderPath + "\\icon.png");
+            byte[] fileData = File.ReadAllBytes(iconPath);
             Texture2D texture2D_Icon = new(1, 1);
             if (texture2D_Icon.LoadImage(fileData))
             {
                 if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
                 {
-                    TextureHelper.ResizeTexture(ref texture2D_Icon, 128, folderPath + "\\icon.png");
+                    TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
                 }
             }
+			UnityEngine.Object.Destroy(texture2D_Icon);
         }
 
 		if( jsonNetLane.curveProperties != null )
@@ -271,7 +274,7 @@ internal class NetLanesDecalImporter
 
         UIObject netLanesPrefabUI = netLanesPrefab.AddComponent<UIObject>();
         netLanesPrefabUI.m_IsDebugObject = false;
-        netLanesPrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomNetLanes/{catName}/{netLanesName}/icon.png" : Icons.NetLanesPlaceholder;
+        netLanesPrefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/CustomNetLanes/{catName}/{netLanesName}/icon.png" : Icons.NetLanesPlaceholder;
         netLanesPrefabUI.m_Priority = jsonNetLane.UiPriority;
         netLanesPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
