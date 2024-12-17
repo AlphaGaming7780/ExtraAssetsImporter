@@ -25,6 +25,6 @@
 	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "此类别包含其他网络资产。",
 	"SubServices.NAME[RoadMarking NetLanes]": "道路标线网络",
 	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "此类别包含道路标线网络资产。",
-	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes."
+	"SubServices.NAME[Roadway NetLanes]": "道路网络",
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "此类别包含道路网络资产。"
 }
