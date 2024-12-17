@@ -11,6 +11,7 @@ using Colossal.PSI.Common;
 using Colossal.Json;
 using Game.SceneFlow;
 using Colossal.Localization;
+using Extra.Lib.Helper;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -63,7 +64,13 @@ internal class NetLanesDecalImporter
 
 	internal static IEnumerator CreateCustomNetLanes()
 	{
-		if (NetLanesLoading || FolderToLoadNetLanes.Count <= 0) yield break;
+		if (NetLanesLoading) yield break;
+
+		if(FolderToLoadNetLanes.Count <= 0)
+		{
+			NetLanesLoaded = true;
+			yield break;
+		}
 
 		NetLanesLoading = true;
 
@@ -207,8 +214,7 @@ internal class NetLanesDecalImporter
             {
                 if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
                 {
-                    //ELT.ResizeTexture(texture2D_Icon, 128, folderPath + "\\icon.png");
-                    texture2D_Icon.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png");
+                    TextureHelper.ResizeTexture(ref texture2D_Icon, 128, folderPath + "\\icon.png");
                 }
             }
         }

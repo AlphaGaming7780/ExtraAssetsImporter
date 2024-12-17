@@ -82,9 +82,12 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.3.2
-## Improvements
-- Use ExtraLib Initializer, reduce performance drop during mods loading in the main menu.
+# 1.3.3
+Thanks to [krzychu124](https://mods.paradoxplaza.com/authors/krzychu124) for is help, all this bug wouldn't have been found without you.
+
+##Fixes
+- Fixed a bug where the database wans't saving if the user only as custom decals or custom net lanes, now the database is saved.
+- Fixed a bug where only Base Color Map got mip maps, now Normal Map and Mask Map also have mips map, clear the database to make it effective on current assets.
 
 ## Translations
 - ✔️Chinese Traditional 100% : Source Design (source_design)

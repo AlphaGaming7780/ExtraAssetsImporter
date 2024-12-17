@@ -12,6 +12,8 @@ using Colossal.Localization;
 using Game.SceneFlow;
 using Game.Rendering;
 using Colossal.IO.AssetDatabase;
+using Extra;
+using Extra.Lib.Helper;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -31,7 +33,7 @@ internal class SurfacesImporter
 	private static bool SurfacesIsLoading = false;
 	internal static bool SurfacesIsLoaded = false;
 
-	public static void AddCustomSurfacesFolder(string path)
+    public static void AddCustomSurfacesFolder(string path)
 	{
 		if (FolderToLoadSurface.Contains(path)) return;
 		FolderToLoadSurface.Add(path);
@@ -54,6 +56,7 @@ internal class SurfacesImporter
 		int numberOfSurfaces = 0;
 		int ammoutOfSurfacesloaded = 0;
 		int failedSurfaces = 0;
+		int skippedSurface = 0;
 
 		var notificationInfo = ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(
 			$"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(CreateCustomSurfaces)}",
@@ -82,11 +85,13 @@ internal class SurfacesImporter
 					notificationInfo.progressState = ProgressState.Progressing;
 					notificationInfo.progress = (int)(ammoutOfSurfacesloaded / (float)numberOfSurfaces * 100);
 					notificationInfo.text = $"Loading : {surfaceName}";
+
 					if (surfaceName.StartsWith("."))
 					{
-						failedSurfaces++;
+                        skippedSurface++;
 						continue;
 					}
+
 					try
 					{
 						string catName = new DirectoryInfo(surfacesCat).Name;
@@ -116,7 +121,7 @@ internal class SurfacesImporter
 		ExtraLib.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
-			text: $"Complete, {numberOfSurfaces - failedSurfaces} Loaded, {failedSurfaces} failed.",
+			text: $"Complete, {numberOfSurfaces - failedSurfaces} Loaded, {failedSurfaces} failed, {skippedSurface} skipped.",
 			progressState: ProgressState.Complete,
 			progress: 100
 		);
@@ -128,47 +133,42 @@ internal class SurfacesImporter
 	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, ExtraAssetsMenu.AssetCat assetCat)
 	{
 
-		if (!File.Exists(folderPath + "\\" + "_BaseColorMap.png")) { EAI.Logger.Error($"No _BaseColorMap.png file for the {new DirectoryInfo(folderPath).Name} surface in {catName} category in {modName}."); return; }
+		string baseColorMapPath = Path.Combine(folderPath, "_BaseColorMap.png");
 
-		//string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
+        if (!File.Exists(baseColorMapPath)) { EAI.Logger.Error($"No _BaseColorMap.png file for the {new DirectoryInfo(folderPath).Name} surface in {catName} category in {modName}."); return; }
 
-		JSONSurfacesMaterail jSONMaterail = new();
-
-		SurfacePrefab surfacePrefab = (SurfacePrefab)ScriptableObject.CreateInstance("SurfacePrefab");
+		SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
 		surfacePrefab.name = fullSurfaceName;
 		surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
 
-		SurfacePrefab surfacePrefabPlaceHolder = (SurfacePrefab)ScriptableObject.CreateInstance("SurfacePrefab");
+		SurfacePrefab surfacePrefabPlaceHolder = ScriptableObject.CreateInstance<SurfacePrefab>();
 		surfacePrefabPlaceHolder.name = surfacePrefab.name + "_Placeholder";
+
+
 
 		Material newMaterial = GetDefaultSurfaceMaterial();
 		newMaterial.name = fullSurfaceName + " Material";
 
-  //      JSONSurfacesMaterail jSONSurfacesMaterail = new JSONSurfacesMaterail();
+		newMaterial.SetFloat(ShaderPropertiesIDs.DrawOrder, GetRendererPriorityByCat(catName));
 
-  //      foreach ( string s  in newMaterial.GetPropertyNames(MaterialPropertyType.Float)) jSONSurfacesMaterail.Float.Add(s, newMaterial.GetFloat(s));
-  //      foreach (string s in newMaterial.GetPropertyNames(MaterialPropertyType.Vector)) jSONSurfacesMaterail.Vector.Add(s, newMaterial.GetVector(s));
 
-		//File.WriteAllText(folderPath + "\\test.json", Encoder.Encode(jSONSurfacesMaterail, EncodeOptions.None));
 
-		//newMaterial.SetVector("_BaseColor", new Vector4(1, 1, 1, 1));
-		//newMaterial.SetFloat("_Metallic", 0.5f);
-		//newMaterial.SetFloat("_Smoothness", 0.5f);
-		//newMaterial.SetFloat("colossal_UVScale", 0.5f);
-		newMaterial.SetFloat("_DrawOrder", GetRendererPriorityByCat(catName));
+		string jsonSurfacePath = Path.Combine(folderPath, "surface.json");
 
-		if (File.Exists(folderPath + "\\surface.json"))
+        JSONSurfacesMaterail jSONMaterail = new();
+
+        if (File.Exists(jsonSurfacePath))
 		{
-			jSONMaterail = Decoder.Decode(File.ReadAllText(folderPath + "\\surface.json")).Make<JSONSurfacesMaterail>();
+			jSONMaterail = Decoder.Decode(File.ReadAllText(jsonSurfacePath)).Make<JSONSurfacesMaterail>();
 			foreach (string key in jSONMaterail.Float.Keys)
 			{
-				if (newMaterial.HasProperty(key)) newMaterial.SetFloat(key, jSONMaterail.Float[key]);
+				if (newMaterial.HasFloat(key)) newMaterial.SetFloat(key, jSONMaterail.Float[key]);
 				else
 				{
 					if (key == "UiPriority") jSONMaterail.UiPriority = (int)jSONMaterail.Float[key];
 				}
 			}
-			foreach (string key in jSONMaterail.Vector.Keys) { newMaterial.SetVector(key, jSONMaterail.Vector[key]); }
+			foreach (string key in jSONMaterail.Vector.Keys) { if(newMaterial.HasVector(key)) newMaterial.SetVector(key, jSONMaterail.Vector[key]); }
 
 			VersionCompatiblity(jSONMaterail, catName, surfaceName);
 			if (jSONMaterail.prefabIdentifierInfos.Count > 0)
@@ -180,57 +180,52 @@ internal class SurfacesImporter
 
 		byte[] fileData;
 
-		fileData = File.ReadAllBytes(folderPath + "\\_BaseColorMap.png");
+		fileData = File.ReadAllBytes(baseColorMapPath);
 		Texture2D texture2D_BaseColorMap = new(1, 1);
-		if (!texture2D_BaseColorMap.LoadImage(fileData)) { EAI.Logger.Error($"[ELT] Failed to Load the BaseColorMap image for the {surfacePrefab.name} surface."); return; }
+		if (!texture2D_BaseColorMap.LoadImage(fileData)) {
+			EAI.Logger.Error($"[ELT] Failed to Load the BaseColorMap image for the {surfacePrefab.name} surface.");
+            UnityEngine.Object.Destroy(texture2D_BaseColorMap);
+            UnityEngine.Object.Destroy(newMaterial);
+            return; 
+		}
 
-		if (!File.Exists(folderPath + "\\icon.png")) texture2D_BaseColorMap.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png"); //ELT.ResizeTexture(texture2D_BaseColorMap, 128, folderPath + "\\icon.png");
-		// if(texture2D_BaseColorMap.width > 512 || texture2D_BaseColorMap.height > 512) texture2D_BaseColorMap = ELT.ResizeTexture(texture2D_BaseColorMap, 512, folderPath+"\\_BaseColorMap.png");
+		newMaterial.SetTexture(ShaderPropertiesIDs.BaseColorMap, texture2D_BaseColorMap);
 
-		newMaterial.SetTexture("_BaseColorMap", texture2D_BaseColorMap);
 
-		if (File.Exists(folderPath + "\\_NormalMap.png"))
+		string normalMapPath = Path.Combine(folderPath, "_NormalMap.png");
+		if (File.Exists(normalMapPath))
 		{
-			fileData = File.ReadAllBytes(folderPath + "\\_NormalMap.png");
+			fileData = File.ReadAllBytes(normalMapPath);
 			Texture2D texture2D_NormalMap = new(1, 1);
 			if (texture2D_NormalMap.LoadImage(fileData))
 			{
-				// if(texture2D_NormalMap.width > 512 || texture2D_NormalMap.height > 512) texture2D_NormalMap = ELT.ResizeTexture(texture2D_NormalMap, 512, folderPath+"\\_NormalMap.png");
-				newMaterial.SetTexture("_NormalMap", texture2D_NormalMap);
-			}
+				newMaterial.SetTexture(ShaderPropertiesIDs.NormalMap, texture2D_NormalMap);
+			} else
+			{
+                UnityEngine.Object.Destroy(texture2D_NormalMap);
+            }
 		}
 
-		if (File.Exists(folderPath + "\\_MaskMap.png"))
+        string maskMapPath = Path.Combine(folderPath, "_MaskMap.png");
+        if (File.Exists(maskMapPath))
 		{
-			fileData = File.ReadAllBytes(folderPath + "\\_MaskMap.png");
+			fileData = File.ReadAllBytes(maskMapPath);
 			Texture2D texture2D_MaskMap = new(1, 1);
 			if (texture2D_MaskMap.LoadImage(fileData))
 			{
-				// if(texture2D_MaskMap.width > 512 || texture2D_MaskMap.height > 512) texture2D_MaskMap = ELT.ResizeTexture(texture2D_MaskMap, 512, folderPath+"\\_MaskMap.png");
-
-				newMaterial.SetTexture("_MaskMap", texture2D_MaskMap);
+				newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture2D_MaskMap);
+			} else
+			{
+				UnityEngine.Object.Destroy(texture2D_MaskMap);
 			}
 		}
 
-		// try {
-		// 	Texture2D texture2D = (Texture2D)newMaterial.GetTexture("_BaseColorMap");
-		// 	Plugin.Logger.LogMessage(texture2D);
-
-
-		// 	newMaterial.SetTexture("_BaseColorMap", texture2D);
-		// } catch (Exception e) {Plugin.Logger.LogError(e);}
-
-
-		//SurfaceAsset surfaceAsset = new SurfaceAsset();
-		//surfaceAsset.SetData(newMaterial);
-		//surfaceAsset.Save();
-
 		RenderedArea renderedArea = surfacePrefabPlaceHolder.AddComponent<RenderedArea>();
-		renderedArea.m_RendererPriority = (int)newMaterial.GetFloat("_DrawOrder");
+		renderedArea.m_RendererPriority = (int)newMaterial.GetFloat(ShaderPropertiesIDs.DrawOrder);
 		renderedArea.m_LodBias = 0;
 		renderedArea.m_Roundness = jSONMaterail.m_Roundness;
 		renderedArea.m_Material = newMaterial;
-		renderedArea.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat("colossal_DecalLayerMask");
+		renderedArea.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask);
 
 		PlaceholderArea placeholderArea = surfacePrefabPlaceHolder.AddComponent<PlaceholderArea>();
 
@@ -239,36 +234,40 @@ internal class SurfacesImporter
 		spawnableArea.m_Placeholders[0] = surfacePrefabPlaceHolder;
 
 		RenderedArea renderedArea1 = surfacePrefab.AddComponent<RenderedArea>();
-		renderedArea1.m_RendererPriority = (int)newMaterial.GetFloat("_DrawOrder");
+		renderedArea1.m_RendererPriority = (int)newMaterial.GetFloat(ShaderPropertiesIDs.DrawOrder);
 		renderedArea1.m_LodBias = 0;
 		renderedArea1.m_Roundness = jSONMaterail.m_Roundness;
 		renderedArea1.m_Material = newMaterial;
-		renderedArea1.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat("colossal_DecalLayerMask");
+		renderedArea1.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask);
 
-		if (File.Exists(folderPath + "\\icon.png"))
+		string iconPath = Path.Combine(folderPath, "icon.png");
+        Texture2D texture2D_Icon = new(1, 1);
+        if (File.Exists(iconPath))
 		{
-			fileData = File.ReadAllBytes(folderPath + "\\icon.png");
-			Texture2D texture2D_Icon = new(1, 1);
+			fileData = File.ReadAllBytes(iconPath);
+
 			if (texture2D_Icon.LoadImage(fileData))
 			{
 				if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
 				{
-					//ELT.ResizeTexture(texture2D_Icon, 128, folderPath + "\\icon.png");
-					texture2D_Icon.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png");
+					TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
 				}
 			}
-
+        } else
+		{
+            UnityEngine.Object.Destroy(texture2D_Icon);
+            texture2D_Icon = texture2D_BaseColorMap;
+			TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
 		}
+        UnityEngine.Object.Destroy(texture2D_Icon);
 
-		UIObject surfacePrefabUI = surfacePrefab.AddComponent<UIObject>();
+        UIObject surfacePrefabUI = surfacePrefab.AddComponent<UIObject>();
 		surfacePrefabUI.m_IsDebugObject = false;
-		surfacePrefabUI.m_Icon = File.Exists(folderPath + "\\icon.png") ? $"{Icons.COUIBaseLocation}/CustomSurfaces/{catName}/{new DirectoryInfo(folderPath).Name}/icon.png" : Icons.GetIcon(surfacePrefab);
+		surfacePrefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/CustomSurfaces/{catName}/{new DirectoryInfo(folderPath).Name}/icon.png" : Icons.GetIcon(surfacePrefab);
 		surfacePrefabUI.m_Priority = jSONMaterail.UiPriority;
 		surfacePrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
-		//AssetDataPath prefabAssetPath = AssetDataPath.Create("Mods\\EAI\\TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
-		//AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
         ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
@@ -293,13 +292,13 @@ internal class SurfacesImporter
 	private static Material GetDefaultSurfaceMaterial()
 	{
 		Material material = new(Shader.Find("Shader Graphs/AreaDecalShader"));
-		material.SetFloat("_DecalColorMask0", 15);
-		material.SetFloat("_DecalColorMask1", 15);
-		material.SetFloat("_DecalColorMask2", 11);
-		material.SetFloat("_DecalColorMask3", 8);
-		material.SetFloat("_DecalStencilRef", 16);
-		material.SetFloat("_DecalStencilWriteMask", 16);
-		material.SetFloat("colossal_DecalLayerMask", 1);
+		material.SetFloat(ShaderPropertiesIDs.DecalColorMask0, 15);
+		material.SetFloat(ShaderPropertiesIDs.DecalColorMask1, 15);
+		material.SetFloat(ShaderPropertiesIDs.DecalColorMask2, 11);
+		material.SetFloat(ShaderPropertiesIDs.DecalColorMask3, 8);
+		material.SetFloat(ShaderPropertiesIDs.DecalStencilRef, 16);
+		material.SetFloat(ShaderPropertiesIDs.DecalStencilWriteMask, 16);
+		material.SetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask, 1);
 		material.enableInstancing = true;
 		material.shaderKeywords = ["_MATERIAL_AFFECTS_ALBEDO", "_MATERIAL_AFFECTS_MASKMAP", "_MATERIAL_AFFECTS_NORMAL"];
 		return material;

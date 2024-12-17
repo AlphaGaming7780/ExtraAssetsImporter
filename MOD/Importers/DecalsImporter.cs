@@ -21,6 +21,7 @@ using Colossal.PSI.Environment;
 using Extra.Lib.mod.ClassExtension;
 using ExtraAssetsImporter.DataBase;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
+using Extra.Lib.Helper;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -111,7 +112,13 @@ internal class DecalsImporter
 
 	internal static IEnumerator CreateCustomDecals()
 	{
-		if (DecalsLoading || FolderToLoadDecals.Count <= 0) yield break;
+		if (DecalsLoading) yield break;
+
+		if (FolderToLoadDecals.Count <= 0)
+		{
+			DecalsLoaded = true;
+			yield break;
+		}
 
 		DecalsLoading = true;
 
@@ -264,10 +271,10 @@ internal class DecalsImporter
 			{
 				if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
 				{
-					//ELT.ResizeTexture(texture2D_Icon, 128, folderPath + "\\icon.png");
-					texture2D_Icon.ResizeTexture(128).SaveTextureAsPNG(folderPath + "\\icon.png");
+					TextureHelper.ResizeTexture(ref texture2D_Icon, 128, folderPath + "\\icon.png");
 				}
 			}
+			UnityEngine.Object.Destroy(texture2D_Icon);
 		}
 
 		decalPrefab.m_Meshes = [objectMeshInfo];
