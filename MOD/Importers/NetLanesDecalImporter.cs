@@ -300,14 +300,14 @@ internal class NetLanesDecalImporter
 
 public class JsonCurveProperties
 {
-    public int TilingCount;
-    public float OverrideLength;
-    public float SmoothingDistance;
-    public bool GeometryTiling;
-    public bool StraightTiling;
-    public bool InvertCurve;
-    public bool SubFlow;
-    public bool HangingSwaying;
+    public int TilingCount = 0;
+    public float OverrideLength = 0;
+    public float SmoothingDistance = 0;
+    public bool GeometryTiling = false;
+    public bool StraightTiling = false;
+    public bool InvertCurve = false;
+    public bool SubFlow = false;
+    public bool HangingSwaying = false;
 }
 
 public class JsonUtilityLane
