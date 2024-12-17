@@ -334,7 +334,7 @@ internal class DecalsImporter
             importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
             importSettings.wrapMode = TextureWrapMode.Repeat;
             TextureImporter.Texture textureImporterNormalMap = defaultTextureImporter.Import(importSettings, folderPath + "\\_NormalMap.png");
-            textureImporterBaseColorMap.ComputeMips(true, false);
+            textureImporterNormalMap.ComputeMips(true, false);
             decalSurface.AddProperty("_NormalMap", textureImporterNormalMap);
         }
 
@@ -345,7 +345,7 @@ internal class DecalsImporter
             importSettings.alphaIsTransparency = false;
             importSettings.wrapMode = TextureWrapMode.Repeat;
             TextureImporter.Texture textureImporterMaskMap = defaultTextureImporter.Import(importSettings, folderPath + "\\_MaskMap.png");
-            textureImporterBaseColorMap.ComputeMips(true, false);
+            textureImporterMaskMap.ComputeMips(true, false);
             decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
         }
 
