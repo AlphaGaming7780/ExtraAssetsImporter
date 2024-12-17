@@ -49,7 +49,13 @@ internal class SurfacesImporter
 
 	internal static IEnumerator CreateCustomSurfaces()
 	{
-		if (SurfacesIsLoading || FolderToLoadSurface.Count <= 0) yield break;
+		if (SurfacesIsLoading) yield break;
+
+		if(FolderToLoadSurface.Count <= 0)
+		{
+			SurfacesIsLoaded = true;
+			yield break;
+		}
 
 		SurfacesIsLoading = true;
 

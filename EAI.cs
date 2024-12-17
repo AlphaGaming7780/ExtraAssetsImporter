@@ -46,7 +46,7 @@ namespace ExtraAssetsImporter
                 Directory.Delete(oldDataPath, true);
 			}
 
-            if (Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+            if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
             {
                 Directory.Delete(oldModsPath, false);
             }
