@@ -60,7 +60,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - ❌Japanese 0%
 - ⚠️Korean 77% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
-- ⚠️Portuguese 95% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
 - ⚠️Portuguese, Brazilian 77% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
 - ⚠️Russian 77% : Mihail (kaktyc), Lek0ms, MrSandcraft
 - ⚠️Spanish 77% : elGendo87
@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.3.2" />
+	<ModVersion Value="1.3.3" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.2.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -83,19 +83,18 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
 # 1.3.3
-Thanks to [krzychu124](https://mods.paradoxplaza.com/authors/krzychu124) for is help, all this bug wouldn't have been found without you.
+Thanks to [krzychu124](https://mods.paradoxplaza.com/authors/krzychu124) for his help, all these bugs would not have been found without him.
 
 ## Fixes
-- Fixed a bug where the database wans't saving if the user hasn't all the 3 type of custom asset.
+- Fixed a bug where the database wans't saving if the user didn't have all 3 type of custom asset.
 - Fixed a bug where only Base Color Map got mip maps, now Normal Map and Mask Map also have mips map, clear the database to make it effective on current assets.
-- Fixed various memory leak
+- Fixed various memory leak with texture management.
 
 ## Improments
 - Multiple code optimisation in the whole mod.
 
 ## Translations
-- ✔️Chinese Traditional 100% : Source Design (source_design)
-- ✔️Polish 100% : karmel68
+- ✔️Portuguese 100% : Tiago Correia (ti4go)
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
