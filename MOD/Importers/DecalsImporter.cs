@@ -119,15 +119,15 @@ internal class DecalsImporter
                         skipedDecal++;
 						continue;
 					}
-					
-					try
-					{
-						string catName = new DirectoryInfo(catFolder).Name;
-						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
-						string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-						string fullDecalName = $"{modName} {catName} {decalName} Decal";
-						string assetDataPath = Path.Combine("CustomDecals", modName, catName, decalName); //$"CustomDecals\\{modName}\\{catName}\\{decalName}";
 
+                    string catName = new DirectoryInfo(catFolder).Name;
+                    FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+                    string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                    string fullDecalName = $"{modName} {catName} {decalName} Decal";
+                    string assetDataPath = Path.Combine("CustomDecals", modName, catName, decalName);
+
+                    try
+					{
                         RenderPrefab renderPrefab = null;
 
 						if (!EAIDataBaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(decalsFolder))
@@ -167,6 +167,8 @@ internal class DecalsImporter
 					{
 						failedDecals++;
 						EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
+						string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.rootPath, assetDataPath);
+						if(Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
 					}
 					ammoutOfDecalsloaded++;
 					yield return null;

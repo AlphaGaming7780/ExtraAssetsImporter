@@ -12,6 +12,7 @@ using Colossal.Json;
 using Game.SceneFlow;
 using Colossal.Localization;
 using Extra.Lib.Helper;
+using ExtraAssetsImporter.DataBase;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -113,15 +114,14 @@ internal class NetLanesDecalImporter
                         continue;
                     }
 
+                    string catName = new DirectoryInfo(catFolder).Name;
+                    FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+                    string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                    string fullNetLaneName = $"{modName} {catName} {netLanesName} NetLane";
+                    string assetDataPath = Path.Combine("CustomNetLanes", modName, catName, netLanesName);
+
                     try
 					{
-						string catName = new DirectoryInfo(catFolder).Name;
-						FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
-						string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-						string fullNetLaneName = $"{modName} {catName} {netLanesName} NetLane";
-						string assetDataPath = Path.Combine("CustomNetLanes", modName, catName, netLanesName); //$"CustomNetLanes\\{modName}\\{catName}\\{netLanesName}";
-
-
                         RenderPrefab renderPrefab = null;
 
                         if (!EAIDataBaseManager.TryGetEAIAsset(fullNetLaneName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(netLanesFolder))
@@ -161,7 +161,9 @@ internal class NetLanesDecalImporter
 					{
 						failedNetLanes++;
 						EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
-					}
+                        string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.rootPath, assetDataPath);
+                        if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+                    }
 					ammoutOfNetLanesloaded++;
 					yield return null;
 				}
