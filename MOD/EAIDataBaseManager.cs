@@ -16,41 +16,41 @@ internal static class EAIDataBaseManager
 	private static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
 	private static readonly List<EAIAsset> ValidateAssetsDataBase = [];
 	private static List<EAIAsset> AssetsDataBase = [];
-    public static ILocalAssetDatabase assetDataBaseEAI => AssetDatabase<AssetDataBaseEAI>.instance;
+	public static ILocalAssetDatabase assetDataBaseEAI => AssetDatabase<AssetDataBaseEAI>.instance;
 
-    internal static void LoadDataBase()
+	internal static void LoadDataBase()
 	{
 		if (!File.Exists(pathToAssetsDatabase)) return;
 		try
 		{
-            EAIDataBase dataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDataBase>();
-            if (dataBase.DataBaseVersion != DataBaseVersion) return;
-            AssetsDataBase = dataBase.AssetsDataBase;
-        }
+			EAIDataBase dataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDataBase>();
+			if (dataBase.DataBaseVersion != DataBaseVersion) return;
+			AssetsDataBase = dataBase.AssetsDataBase;
+		}
 		catch
 		{
 
 		}
-    }
+	}
 
-    internal static void SaveValidateDataBase() 
+	internal static void SaveValidateDataBase() 
 	{
 		if (!EAI.m_Setting.DeleteNotLoadedAssets)
 		{
 			ValidateAssetsDataBase.AddRange(AssetsDataBase);
-            AssetsDataBase.Clear();
-        }
+			AssetsDataBase.Clear();
+		}
 
-        EAIDataBase dataBase = new()
+		EAIDataBase dataBase = new()
 		{
 			DataBaseVersion = DataBaseVersion,
 			AssetsDataBase =  ValidateAssetsDataBase,
-        };
-        string directoryPath = Path.GetDirectoryName(pathToAssetsDatabase);
-        if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
-        File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(dataBase, EncodeOptions.None));
+		};
+		string directoryPath = Path.GetDirectoryName(pathToAssetsDatabase);
+		if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
+		File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(dataBase, EncodeOptions.None));
 		//assetDataBaseEAI.ResaveCache().Wait();
-    }
+	}
 
 	internal static void ClearNotLoadedAssetsFromFiles()
 	{
@@ -66,8 +66,8 @@ internal static class EAIDataBaseManager
 					EAI.Logger.Warn($"Failed to remove a none loaded asset at path {path} from the data base.");
 					continue;
 				}
-                Directory.Delete(path, true);
-            }
+				Directory.Delete(path, true);
+			}
 			else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
 		}
 		EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDataBase.Count}.");
@@ -88,24 +88,24 @@ internal static class EAIDataBaseManager
 		ValidateAssets(GetEAIAsset(AssetID));
 	}
 
-    private static void ValidateAssets(EAIAsset asset)
-    {
-        if (asset == EAIAsset.Null) return;
-        AssetsDataBase.Remove(asset);
-        ValidateAssetsDataBase.Add(asset);
-    }
+	private static void ValidateAssets(EAIAsset asset)
+	{
+		if (asset == EAIAsset.Null) return;
+		AssetsDataBase.Remove(asset);
+		ValidateAssetsDataBase.Add(asset);
+	}
 
-    //   internal static void AddAssets(string AssetID, int Hash, string AssetPath)
-    //{
-    //	EAIAsset asset = new()
-    //	{
-    //		AssetID = AssetID,
-    //		AssetHash = Hash
-    //	};
-    //	AddAssets(asset);
-    //}
+	//   internal static void AddAssets(string AssetID, int Hash, string AssetPath)
+	//{
+	//	EAIAsset asset = new()
+	//	{
+	//		AssetID = AssetID,
+	//		AssetHash = Hash
+	//	};
+	//	AddAssets(asset);
+	//}
 
-    internal static void AddAssets(EAIAsset asset)
+	internal static void AddAssets(EAIAsset asset)
 	{
 		if(IsAssetsInDataBase(asset)) { 
 			EAI.Logger.Info($"Try to add {asset.AssetID} in the data base, it is already in the data base. Validating this asset instead."); 
@@ -149,10 +149,10 @@ internal static class EAIDataBaseManager
 	{
 		asset = AssetsDataBase.Find(asset => asset.AssetID == AssetID);
 		return asset != EAIAsset.Null;
-    }
+	}
 
 
-    internal static int GetAssetHash(string assetFolder)
+	internal static int GetAssetHash(string assetFolder)
 	{
 		DirectoryInfo directoryInfo = new (assetFolder);
 		int hash = 0;
@@ -163,14 +163,14 @@ internal static class EAIDataBaseManager
 		return hash;
 	}
 
-    internal static List<object> LoadAsset(string AssetID)
-    {
-		return LoadAsset(GetEAIAsset(AssetID));
-    }
-
-    internal static List<object> LoadAsset(EAIAsset asset)
+	internal static List<PrefabBase> LoadAsset(string AssetID)
 	{
-		List<object> output = [];
+		return LoadAsset(GetEAIAsset(AssetID));
+	}
+
+	internal static List<PrefabBase> LoadAsset(EAIAsset asset)
+	{
+		List<PrefabBase> output = [];
 
 		List<PrefabAsset> prefabAssets = [];
 
@@ -178,76 +178,76 @@ internal static class EAIDataBaseManager
 
 		if(!Directory.Exists(assetPath)) return output;
 
-        foreach (string s in DefaultAssetFactory.instance.GetSupportedExtensions())
+		foreach (string s in DefaultAssetFactory.instance.GetSupportedExtensions())
 		{
 			foreach(string file in Directory.GetFiles(assetPath, $"*{s}"))
 			{
 				string filePath = file.Replace(AssetDataBaseEAI.rootPath + Path.DirectorySeparatorChar, "");
 				AssetDataPath assetDataPath = AssetDataPath.Create(filePath, EscapeStrategy.None);
-                try
+				try
 				{
-                    IAssetData assetData = assetDataBaseEAI.AddAsset(assetDataPath);
+					IAssetData assetData = assetDataBaseEAI.AddAsset(assetDataPath);
 					if (assetData is PrefabAsset prefabAsset) prefabAssets.Add(prefabAsset);
-                } catch (Exception e)
+				} catch (Exception e)
 				{
 					EAI.Logger.Warn(e);
 				}
 			}
 		}
 
-		foreach(PrefabAsset prefabAsset in prefabAssets)
+		foreach (PrefabAsset prefabAsset in prefabAssets)
 		{
-            PrefabBase prefabBase = (PrefabBase)prefabAsset.Load();
+			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
 			output.Add(prefabBase);
-            ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
-        }
+			ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
+		}
 
-        ValidateAssets(asset);
+		ValidateAssets(asset);
 		return output;
-    }
+	}
 }
 
 internal class EAIDataBase()
 {
 	public int DataBaseVersion = 0;
-    public List<EAIAsset> AssetsDataBase = [];
+	public List<EAIAsset> AssetsDataBase = [];
 }
 
 public struct EAIAsset(string AssetID, int AssetHash, string AssetPath)
 {
 
-    public static EAIAsset Null => default;
-    public string AssetID = AssetID;
-    public int AssetHash = AssetHash;
-    public string AssetPath = AssetPath;
+	public static EAIAsset Null => default;
+	public string AssetID = AssetID;
+	public int AssetHash = AssetHash;
+	public string AssetPath = AssetPath;
 
-    public static bool operator ==(EAIAsset lhs, EAIAsset rhs)
-    {
-        return lhs.AssetID == rhs.AssetID;
-    }
+	public static bool operator ==(EAIAsset lhs, EAIAsset rhs)
+	{
+		return lhs.AssetID == rhs.AssetID;
+	}
 
-    public static bool operator !=(EAIAsset lhs, EAIAsset rhs)
-    {
-        return !(lhs == rhs);
-    }
+	public static bool operator !=(EAIAsset lhs, EAIAsset rhs)
+	{
+		return !(lhs == rhs);
+	}
 
-    public override readonly bool Equals(object compare)
-    {
-        if (compare is EAIAsset asset)
-        {
-            return Equals(asset);
-        }
+	public override readonly bool Equals(object compare)
+	{
+		if (compare is EAIAsset asset)
+		{
+			return Equals(asset);
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    public readonly bool Equals(EAIAsset asset)
-    {
-        return asset.AssetID == AssetID;
-    }
+	public readonly bool Equals(EAIAsset asset)
+	{
+		return asset.AssetID == AssetID;
+	}
 
-    public override readonly int GetHashCode()
-    {
-        return AssetHash;
-    }
+	public override readonly int GetHashCode()
+	{
+		return AssetHash;
+	}
 }
