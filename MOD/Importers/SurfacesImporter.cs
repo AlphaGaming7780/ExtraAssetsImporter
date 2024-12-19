@@ -209,6 +209,7 @@ internal class SurfacesImporter
 			} else
 			{
 				UnityEngine.Object.Destroy(texture2D_NormalMap);
+				EAI.Logger.Warn($"Failed to load the NormalMap texture data for the {fullSurfaceName}");
 			}
 		}
 
@@ -223,6 +224,7 @@ internal class SurfacesImporter
 			} else
 			{
 				UnityEngine.Object.Destroy(texture2D_MaskMap);
+				EAI.Logger.Warn($"Failed to load the MaskMap texture data for the {fullSurfaceName}");
 			}
 		}
 
