@@ -107,7 +107,7 @@ namespace ExtraAssetsImporter
 			ClearData();
 		}
 
-		private void Initialize()
+		internal static void Initialize()
 		{
     //        if (!GameManager.instance.modManager.isInitialized || 
 				//GameManager.instance.gameMode != GameMode.MainMenu || 
@@ -132,7 +132,7 @@ namespace ExtraAssetsImporter
 			//return true;
         }
 
-		private IEnumerator WaitForCustomStuffToFinish()
+		private static IEnumerator WaitForCustomStuffToFinish()
 		{
 			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || ( m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded)) 
 			{

@@ -58,6 +58,7 @@ internal class SurfacesImporter
 		}
 
 		SurfacesIsLoading = true;
+		SurfacesIsLoaded = false;
 
 		int numberOfSurfaces = 0;
 		int ammoutOfSurfacesloaded = 0;
@@ -83,6 +84,7 @@ internal class SurfacesImporter
 
 		foreach (string folder in FolderToLoadSurface)
 		{
+			if (!Directory.Exists(folder)) continue;
 			foreach (string surfacesCat in Directory.GetDirectories(folder))
 			{
 				foreach (string surfaceFolder in Directory.GetDirectories(surfacesCat))
@@ -134,6 +136,7 @@ internal class SurfacesImporter
 
 		//LoadLocalization();
 		SurfacesIsLoaded = true;
+		SurfacesIsLoading = false;
 	}
 
 	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, ExtraAssetsMenu.AssetCat assetCat)
@@ -278,7 +281,8 @@ internal class SurfacesImporter
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
-		ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
+		//ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
+		EAIDataBaseManager.AddPrefabToPrefabSystem(surfacePrefab);
 	}
 
 	internal static int GetRendererPriorityByCat(string cat)

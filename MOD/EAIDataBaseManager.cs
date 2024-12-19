@@ -198,12 +198,42 @@ internal static class EAIDataBaseManager
 		foreach (PrefabAsset prefabAsset in prefabAssets)
 		{
 			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+			
+			//if (ExtraLib.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase wrongPrefab))
+			//{
+			//	ExtraLib.m_PrefabSystem.RemovePrefab(wrongPrefab);
+			//	EAI.Logger.Warn($"Prefab {asset.AssetID} was already loaded in the game, removing old one and adding new one.");
+
+			//}
+			//ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
+
+			if (!AddPrefabToPrefabSystem(prefabBase)) continue;
+			
 			output.Add(prefabBase);
-			ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
 		}
 
 		ValidateAssets(asset);
 		return output;
+	}
+
+	internal static bool AddPrefabToPrefabSystem(PrefabBase prefabBase)
+	{
+		if (ExtraLib.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase wrongPrefab))
+		{
+			if (!ExtraLib.m_PrefabSystem.RemovePrefab(wrongPrefab)) 
+			{
+				EAI.Logger.Error($"Failed to remove {wrongPrefab.name} from the prefab system.");
+				return false;
+			};
+			EAI.Logger.Warn($"Prefab {prefabBase.name} was already loaded in the game, removing old one and adding new one.");
+
+		}
+
+		bool returnValue = ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
+
+		if (!returnValue) EAI.Logger.Warn($"Failed to add {prefabBase.name} to the prefab system");
+
+		return returnValue;
 	}
 }
 

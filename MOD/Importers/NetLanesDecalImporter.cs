@@ -74,6 +74,7 @@ internal class NetLanesDecalImporter
 		}
 
 		NetLanesLoading = true;
+		NetLanesLoaded = false;
 
 		int numberOfNetLanes = 0;
 		int ammoutOfNetLanesloaded = 0;
@@ -99,6 +100,7 @@ internal class NetLanesDecalImporter
 
 		foreach (string folder in FolderToLoadNetLanes)
 		{
+			if (!Directory.Exists(folder)) continue;
 			foreach (string catFolder in Directory.GetDirectories(folder))
 			{
 				foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
@@ -185,6 +187,7 @@ internal class NetLanesDecalImporter
 
 		//LoadLocalization();
 		NetLanesLoaded = true;
+		NetLanesLoading = false;
 	}
 
 	private static void CreateCustomNetLane(string folderPath, string netLanesName, string catName, string modName, string fullNetLaneName, string assetDataPath, ExtraAssetsMenu.AssetCat assetCat, RenderPrefab renderPrefab)
@@ -296,7 +299,8 @@ internal class NetLanesDecalImporter
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullNetLaneName+PrefabAsset.kExtension, EscapeStrategy.None);
 		AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
 
-		ExtraLib.m_PrefabSystem.AddPrefab(netLanesPrefab);
+		//ExtraLib.m_PrefabSystem.AddPrefab(netLanesPrefab);
+		EAIDataBaseManager.AddPrefabToPrefabSystem(netLanesPrefab);
 	}
 
 	private static void VersionCompatiblity(JsonNetLanes jSONNetLanesMaterail, string catName, string netLanesName)

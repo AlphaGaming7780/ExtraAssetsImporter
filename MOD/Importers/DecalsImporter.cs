@@ -80,6 +80,7 @@ internal class DecalsImporter
 		}
 
 		DecalsLoading = true;
+		DecalsLoaded = false;
 
 		int numberOfDecals = 0;
 		int ammoutOfDecalsloaded = 0;
@@ -105,6 +106,7 @@ internal class DecalsImporter
 
 		foreach (string folder in FolderToLoadDecals)
 		{
+			if (!Directory.Exists(folder)) continue;
 			foreach (string catFolder in Directory.GetDirectories(folder))
 			{
 				foreach (string decalsFolder in Directory.GetDirectories(catFolder))
@@ -191,6 +193,7 @@ internal class DecalsImporter
 
 		//LoadLocalization();
 		DecalsLoaded = true;
+		DecalsLoading = false;
 	}
 
 	private static void CreateCustomDecal(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, ExtraAssetsMenu.AssetCat assetCat, RenderPrefab renderPrefab)
@@ -271,7 +274,8 @@ internal class DecalsImporter
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
-		ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
+		//ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
+		EAIDataBaseManager.AddPrefabToPrefabSystem(decalPrefab);
 	}
 
 	internal static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, string materialName = "DefaultDecal")

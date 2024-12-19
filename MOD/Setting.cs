@@ -24,6 +24,9 @@ public class Setting(IMod mod) : ModSetting(mod)
     [SettingsUISection(kMainSection, kImportersGroup)]
     public bool NetLanes { get; set; } = true;
 
+    [SettingsUISection(kMainSection, kImportersGroup)]
+    public bool ReloadAssets { set { EAI.Initialize(); } }
+
     [SettingsUISection(kMainSection, kMPHGroup)]
     public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
 
