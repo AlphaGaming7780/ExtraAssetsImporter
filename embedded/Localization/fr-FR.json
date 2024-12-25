@@ -1,10 +1,10 @@
 {
 	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
-	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Principal",
+	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Général",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "Importeurs",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Surfaces personnalisées",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Charger les surfaces personnalisées, prendre effet après le redémarrage du jeu.",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Autocollants personnalisés",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Décalcomanies personnalisées",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Charger les surfaces personnalisées, prendra effet après le redémarrage du jeu.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
@@ -26,7 +26,7 @@
 	"SubServices.NAME[RoadMarking NetLanes]": "RoadMarking NetLanes",
 	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
 	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes.",
-	"SubServices.NAME[Beach NetLanes]": "Beach NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes."
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "Cette catégorie contient tous les réseaux de marquage routier.",
+	"SubServices.NAME[Beach NetLanes]": "Lignes de plage",
+	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "Cette catégorie contient toutes les NetLanes de plage."
 }
