@@ -27,6 +27,6 @@
 	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "此类别包含道路标线网络资产。",
 	"SubServices.NAME[Roadway NetLanes]": "道路网络",
 	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "此类别包含道路网络资产。",
-	"SubServices.NAME[Beach NetLanes]": "Beach NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes."
+	"SubServices.NAME[Beach NetLanes]": "沙滩网络",
+	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "此类别包含所有沙滩网络。"
 }
