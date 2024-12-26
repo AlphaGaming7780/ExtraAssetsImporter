@@ -24,9 +24,9 @@
 	"SubServices.NAME[Misc NetLanes]": "Diverses lignes(NetLanes)",
 	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "Cette catégorie contient toutes les autres lignes(NetLanes).",
 	"SubServices.NAME[RoadMarking NetLanes]": "Réseaux de marquage routier",
-	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
+	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "Cette catégorie contient tous les réseaux de marquage routier.",
 	"SubServices.NAME[Roadway NetLanes]": "Marquage routier",
-	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "Cette catégorie contient tous les marquages routier.",
+	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "Cette catégorie contient tous les marquages routiers.",
 	"SubServices.NAME[Beach NetLanes]": "Lignes(NetLanes) de plage",
 	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "Cette catégorie contient toutes les lignes(NetLanes) de plage."
 }
