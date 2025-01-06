@@ -263,8 +263,8 @@ internal class SurfacesImporter
 			}
 		} else
 		{
-			UnityEngine.Object.Destroy(texture2D_Icon);
-			texture2D_Icon = texture2D_BaseColorMap;
+            fileData = File.ReadAllBytes(baseColorMapPath);
+            texture2D_Icon.LoadImage(fileData);
 			TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
 		}
 		UnityEngine.Object.Destroy(texture2D_Icon);
