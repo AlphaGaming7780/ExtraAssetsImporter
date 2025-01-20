@@ -11,8 +11,7 @@ namespace ExtraAssetsImporter.DataBase
 {
 	public readonly struct AssetDataBaseEAI : IAssetDatabaseDescriptor<AssetDataBaseEAI>, IEquatable<AssetDataBaseEAI>
 	{
-		private static readonly string kRootPath = Path.Combine(EnvPath.kContentPath, "Mods", "EAI");
-		public static readonly string rootPath = kRootPath;
+		public static string kRootPath => Path.GetFullPath(EAIDataBaseManager.eaiDataBase.ActualDataBasePath);
 
 		public bool canWriteSettings => true;
 
@@ -41,5 +40,6 @@ namespace ExtraAssetsImporter.DataBase
 		{
 			return GetType().GetHashCode();
 		}
+
 	}
 }

@@ -29,8 +29,8 @@ namespace ExtraAssetsImporter
         internal static Setting m_Setting;
 		internal static string ResourcesIcons { get; private set; }
 
-		internal static string pathModsData;
-		internal static string pathTempFolder = Path.Combine(AssetDataBaseEAI.rootPath, "TempAssetsFolder");
+		internal static string pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
+        internal static string pathTempFolder => Path.Combine(AssetDataBaseEAI.kRootPath, "TempAssetsFolder");
 
 		private bool eaiIsLoaded = false;
 
@@ -45,6 +45,26 @@ namespace ExtraAssetsImporter
 			{
                 Directory.Delete(oldDataPath, true);
 			}
+
+            if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+            {
+                Directory.Delete(oldModsPath, false);
+            }
+
+            oldModsPath = Path.Combine(EnvPath.kContentPath, "Mods");
+            oldDataPath = Path.Combine(oldModsPath, "EAI");
+
+            if (Directory.Exists(oldDataPath))
+            {
+				try
+				{
+                    Directory.Move(oldDataPath, new EAIDataBase().ActualDataBasePath);
+                } catch 
+				{ 
+					Directory.Delete(oldDataPath, true); 
+				}
+
+            }
 
             if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
             {
@@ -77,14 +97,13 @@ namespace ExtraAssetsImporter
             m_Setting.RegisterInOptionsUI();
             AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
 
-            ClearData();
+            //ClearData();
 
             FileInfo fileInfo = new(asset.path);
 
 			ResourcesIcons = Path.Combine(fileInfo.DirectoryName, "Icons");
 			Icons.LoadIcons(fileInfo.DirectoryName);
 
-			pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
 			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
             string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
             string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
@@ -93,12 +112,10 @@ namespace ExtraAssetsImporter
 			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
 			if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
 
-            AssetDatabase.global.RegisterDatabase(EAIDataBaseManager.assetDataBaseEAI).Wait();
-
 			//GameManager.instance.RegisterUpdater(Initialize);
 			ExtraLib.AddOnInitialize(Initialize);
 
-			updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
+            updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 		}
 
 		public void OnDispose()
@@ -107,14 +124,8 @@ namespace ExtraAssetsImporter
 			ClearData();
 		}
 
-		private void Initialize()
+		internal static void Initialize()
 		{
-    //        if (!GameManager.instance.modManager.isInitialized || 
-				//GameManager.instance.gameMode != GameMode.MainMenu || 
-				//GameManager.instance.state == GameManager.State.Loading || 
-				//GameManager.instance.state == GameManager.State.Booting
-				//) return false;
-
             EAI.Logger.Info("Start loading custom stuff.");
 
 			//         foreach ( ModManager.ModInfo modInfo in GameManager.instance.modManager)
@@ -132,7 +143,7 @@ namespace ExtraAssetsImporter
 			//return true;
         }
 
-		private IEnumerator WaitForCustomStuffToFinish()
+		private static IEnumerator WaitForCustomStuffToFinish()
 		{
 			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || ( m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded)) 
 			{

@@ -58,6 +58,7 @@ internal class SurfacesImporter
 		}
 
 		SurfacesIsLoading = true;
+		SurfacesIsLoaded = false;
 
 		int numberOfSurfaces = 0;
 		int ammoutOfSurfacesloaded = 0;
@@ -73,9 +74,13 @@ internal class SurfacesImporter
 		);
 
 		foreach (string folder in FolderToLoadSurface)
-			foreach (string catFolder in Directory.GetDirectories(folder))
-				foreach (string surfaceFolder in Directory.GetDirectories(catFolder))
-					numberOfSurfaces++;
+		{
+            if (!Directory.Exists(folder)) continue;
+            foreach (string catFolder in Directory.GetDirectories(folder))
+                foreach (string surfaceFolder in Directory.GetDirectories(catFolder))
+                    numberOfSurfaces++;
+        }
+
 
 		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("Surfaces", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/Surfaces.svg");
 
@@ -83,7 +88,8 @@ internal class SurfacesImporter
 
 		foreach (string folder in FolderToLoadSurface)
 		{
-			foreach (string surfacesCat in Directory.GetDirectories(folder))
+            if (!Directory.Exists(folder)) continue;
+            foreach (string surfacesCat in Directory.GetDirectories(folder))
 			{
 				foreach (string surfaceFolder in Directory.GetDirectories(surfacesCat))
 				{
@@ -134,6 +140,7 @@ internal class SurfacesImporter
 
 		//LoadLocalization();
 		SurfacesIsLoaded = true;
+		SurfacesIsLoading = false;
 	}
 
 	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, ExtraAssetsMenu.AssetCat assetCat)

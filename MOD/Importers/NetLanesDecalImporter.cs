@@ -74,6 +74,7 @@ internal class NetLanesDecalImporter
 		}
 
 		NetLanesLoading = true;
+		NetLanesLoaded = false;
 
 		int numberOfNetLanes = 0;
 		int ammoutOfNetLanesloaded = 0;
@@ -89,9 +90,13 @@ internal class NetLanesDecalImporter
 		);
 
 		foreach (string folder in FolderToLoadNetLanes)
-			foreach (string catFolder in Directory.GetDirectories(folder))
-				foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
-					numberOfNetLanes++;
+		{
+            if (!Directory.Exists(folder)) continue;
+            foreach (string catFolder in Directory.GetDirectories(folder))
+                foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
+                    numberOfNetLanes++;
+        }
+
 
 		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("NetLanes", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/NetLanes.svg");
 
@@ -99,7 +104,8 @@ internal class NetLanesDecalImporter
 
 		foreach (string folder in FolderToLoadNetLanes)
 		{
-			foreach (string catFolder in Directory.GetDirectories(folder))
+            if (!Directory.Exists(folder)) continue;
+            foreach (string catFolder in Directory.GetDirectories(folder))
 			{
 				foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
 				{
@@ -161,7 +167,7 @@ internal class NetLanesDecalImporter
 					{
 						failedNetLanes++;
 						EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
-						string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.rootPath, assetDataPath);
+						string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
 						if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
 					}
 					ammoutOfNetLanesloaded++;
@@ -185,6 +191,7 @@ internal class NetLanesDecalImporter
 
 		//LoadLocalization();
 		NetLanesLoaded = true;
+		NetLanesLoading = false;
 	}
 
 	private static void CreateCustomNetLane(string folderPath, string netLanesName, string catName, string modName, string fullNetLaneName, string assetDataPath, ExtraAssetsMenu.AssetCat assetCat, RenderPrefab renderPrefab)

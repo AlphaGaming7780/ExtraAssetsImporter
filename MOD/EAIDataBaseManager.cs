@@ -14,24 +14,41 @@ internal static class EAIDataBaseManager
 {
 	const int DataBaseVersion = 2;
 	private static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
+	public static EAIDataBase eaiDataBase;
 	private static readonly List<EAIAsset> ValidateAssetsDataBase = [];
 	private static List<EAIAsset> AssetsDataBase = [];
+	//public static ILocalAssetDatabase assetDataBaseEAI { get; private set; } = AssetDatabase<AssetDataBaseEAI>.instance;
 	public static ILocalAssetDatabase assetDataBaseEAI => AssetDatabase<AssetDataBaseEAI>.instance;
 
-	internal static void LoadDataBase()
+    internal static void LoadDataBase()
 	{
-		if (!File.Exists(pathToAssetsDatabase)) return;
-		try
+		if (File.Exists(pathToAssetsDatabase))
 		{
-			EAIDataBase dataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDataBase>();
-			if (dataBase.DataBaseVersion != DataBaseVersion) return;
-			AssetsDataBase = dataBase.AssetsDataBase;
-		}
-		catch
-		{
+            try
+            {
+                eaiDataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDataBase>();
+                if (eaiDataBase.DataBaseVersion != DataBaseVersion) return;
+                AssetsDataBase = eaiDataBase.AssetsDataBase;
+            }
+            catch
+            {
 
+            }
+        } else
+		{
+			eaiDataBase = new();
 		}
-	}
+
+		string newPath = EAI.m_Setting.SavedDatabasePath ?? eaiDataBase.ActualDataBasePath;
+		if (newPath != eaiDataBase.ActualDataBasePath)
+		{
+			RelocateAssetDataBase(newPath);
+			EAI.m_Setting.SavedDatabasePath = null;
+			EAI.m_Setting.ApplyAndSave();
+		}
+
+        AssetDatabase.global.RegisterDatabase(assetDataBaseEAI).Wait();
+    }
 
 	internal static void SaveValidateDataBase() 
 	{
@@ -41,16 +58,19 @@ internal static class EAIDataBaseManager
 			AssetsDataBase.Clear();
 		}
 
-		EAIDataBase dataBase = new()
-		{
-			DataBaseVersion = DataBaseVersion,
-			AssetsDataBase =  ValidateAssetsDataBase,
-		};
-		string directoryPath = Path.GetDirectoryName(pathToAssetsDatabase);
-		if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
-		File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(dataBase, EncodeOptions.None));
+		eaiDataBase.DataBaseVersion = DataBaseVersion;
+        eaiDataBase.AssetsDataBase = ValidateAssetsDataBase;
+		SaveDataBase();
+
 		//assetDataBaseEAI.ResaveCache().Wait();
 	}
+
+	internal static void SaveDataBase()
+	{
+        string directoryPath = Path.GetDirectoryName(pathToAssetsDatabase);
+        if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
+        File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(eaiDataBase, EncodeOptions.None));
+    }
 
 	internal static void ClearNotLoadedAssetsFromFiles()
 	{
@@ -58,7 +78,7 @@ internal static class EAIDataBaseManager
 		EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDataBase.Count}");
 		foreach(EAIAsset asset in tempDataBase)
 		{
-			string path = Path.Combine(AssetDataBaseEAI.rootPath, asset.AssetPath);
+			string path = Path.Combine(AssetDataBaseEAI.kRootPath, asset.AssetPath);
 			if (Directory.Exists(path))
 			{
 				if (!AssetsDataBase.Remove(asset))
@@ -78,11 +98,15 @@ internal static class EAIDataBaseManager
 	internal static void DeleteDatabase()
 	{
 		EAI.Logger.Info("Deleting the database.");
-		if(File.Exists(pathToAssetsDatabase)) File.Delete(pathToAssetsDatabase);
-		if(Directory.Exists(AssetDataBaseEAI.rootPath)) Directory.Delete(AssetDataBaseEAI.rootPath, true);
+		//if(File.Exists(pathToAssetsDatabase)) File.Delete(pathToAssetsDatabase);
+		//if(Directory.Exists(AssetDataBaseEAI.kRootPath)) Directory.Delete(AssetDataBaseEAI.kRootPath, true);
+		eaiDataBase.AssetsDataBase = [];
+		ValidateAssetsDataBase.Clear();
+		AssetsDataBase.Clear();
+		SaveDataBase();
 	}
 
-	private static void ValidateAssets(string AssetID)
+    private static void ValidateAssets(string AssetID)
 	{
 		if (AssetID == null) { EAI.Logger.Warn("Try to validate an assets with a null AssetID."); return; }
 		ValidateAssets(GetEAIAsset(AssetID));
@@ -174,7 +198,7 @@ internal static class EAIDataBaseManager
 
 		List<PrefabAsset> prefabAssets = [];
 
-		string assetPath = Path.Combine(AssetDataBaseEAI.rootPath, asset.AssetPath);
+		string assetPath = Path.Combine(AssetDataBaseEAI.kRootPath, asset.AssetPath);
 
 		if(!Directory.Exists(assetPath)) return output;
 
@@ -182,7 +206,7 @@ internal static class EAIDataBaseManager
 		{
 			foreach(string file in Directory.GetFiles(assetPath, $"*{s}"))
 			{
-				string filePath = file.Replace(AssetDataBaseEAI.rootPath + Path.DirectorySeparatorChar, "");
+				string filePath = file.Replace(AssetDataBaseEAI.kRootPath + Path.DirectorySeparatorChar, "");
 				AssetDataPath assetDataPath = AssetDataPath.Create(filePath, EscapeStrategy.None);
 				try
 				{
@@ -199,18 +223,70 @@ internal static class EAIDataBaseManager
 		{
 			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
 			output.Add(prefabBase);
+			output.Add(prefabBase);
 			ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
 		}
 
 		ValidateAssets(asset);
 		return output;
 	}
+
+	public static void RemoveAllPrefab()
+	{
+		IEnumerable<IAssetData> assetsData = assetDataBaseEAI.AllAssets();
+
+		foreach(IAssetData assetData in assetsData)
+		{
+			if (assetData is not PrefabAsset prefabAsset) continue;
+
+
+			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+
+			if (ExtraLib.m_PrefabSystem.RemovePrefab(prefabBase)) continue;
+
+			EAI.Logger.Warn($"Failed to remove prefab {assetData.name} from prefab system.");
+
+		}
+    }
+
+    public static bool RelocateAssetDataBase(string newDirectory)
+    {
+        if (!Directory.Exists(newDirectory) || !Directory.Exists(eaiDataBase.ActualDataBasePath)) return false;
+
+		if(newDirectory == eaiDataBase.ActualDataBasePath) return false;
+
+		//RemoveAllPrefab();
+        //AssetDatabase.global.UnregisterDatabase(assetDataBaseEAI).Wait();
+        //assetDataBaseEAI.Dispose();
+
+        try
+        {
+			Directory.Delete(newDirectory, false);
+            Directory.Move(eaiDataBase.ActualDataBasePath, newDirectory);
+            eaiDataBase.ActualDataBasePath = newDirectory;
+            SaveDataBase();
+        }
+        catch (Exception ex)
+        {
+            EAI.Logger.Error(ex.ToString());
+			return false;
+        }
+
+		//AssetDatabase.global.RegisterDatabase(assetDataBaseEAI).Wait();
+
+		//EAI.Initialize();
+
+        return true;
+    }
+
+
 }
 
 internal class EAIDataBase()
 {
 	public int DataBaseVersion = 0;
-	public List<EAIAsset> AssetsDataBase = [];
+	public string ActualDataBasePath = Path.Combine(EAI.pathModsData, "Database");
+    public List<EAIAsset> AssetsDataBase = [];
 }
 
 public struct EAIAsset(string AssetID, int AssetHash, string AssetPath)

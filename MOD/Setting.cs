@@ -28,6 +28,12 @@ public class Setting(IMod mod) : ModSetting(mod)
     public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
 
     [SettingsUISection(kDataBaseSection, "")]
+    [SettingsUIDirectoryPicker]
+    //public string DataBasePath { get { return EAIDataBaseManager.eaiDataBase.ActualDataBasePath; } set { EAIDataBaseManager.RelocateAssetDataBase(value); } }// = "C:/";
+    public string DatabasePath { get { return EAIDataBaseManager.eaiDataBase.ActualDataBasePath; } set { SavedDatabasePath = value; } }
+    public string SavedDatabasePath = null;
+
+    [SettingsUISection(kDataBaseSection, "")]
     public bool DeleteNotLoadedAssets { get; set; } = true;
 
     [SettingsUISection(kDataBaseSection, "")]
