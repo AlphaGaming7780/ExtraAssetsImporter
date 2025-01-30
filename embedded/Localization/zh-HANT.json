@@ -10,7 +10,7 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "載入自定義網路車道，重新啟動遊戲後生效。",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "遺失預製件修復器",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "相容性修復",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "This setting have for goal to try to fix missing prefabs caused by EAI update. To use it, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save and check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "This setting have for goal to try to fix missing prefabs caused by an EAI update. To use it, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save and check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "已停用",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT2]": "ELT 2.0",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT3]": "ELT 3.0",
