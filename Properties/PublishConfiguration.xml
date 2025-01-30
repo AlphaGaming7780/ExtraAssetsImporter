@@ -52,8 +52,8 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ⚠️French 77% : aricoseco, Edou24
-- ⚠️Chinese Simplified 95% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
+- ✔️French 100% : aricoseco, Edou24
+- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204
 - ✔️Chinese Traditional 100% : Tiger Zhang (tiger42231), Source Design (source_design)
 - ⚠️German 59% : Konsi
 - ⚠️Italian 59% : Stefano (Furios)
@@ -63,7 +63,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
 - ⚠️Portuguese, Brazilian 77% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
 - ⚠️Russian 77% : Mihail (kaktyc), Lek0ms, MrSandcraft
-- ⚠️Spanish 77% : elGendo87
+- ✔️Spanish 100% : elGendo87
   </LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/EAI.png" />
@@ -82,12 +82,17 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.3.5
+# 1.4
+## Improvements
+- You can now choice the location where the database will be.
+
 ## Fixes
-- Fixed a bug where the mask map wasn't working for surfaces.
+- Surface icon generation making the base color map white.
 
 ## Translations
-- ✔️Chinese Traditional 100% : Source Design (source_design)
+- ✔️French 100% : Edou24
+- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS)
+- ✔️Spanish 100% : elGendo87
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />

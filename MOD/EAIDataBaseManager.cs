@@ -49,8 +49,12 @@ internal static class EAIDataBaseManager
 
 		if (newPath != eaiDataBase.ActualDataBasePath)
 		{
-			RelocateAssetDataBase(newPath);
-		}
+			if(!RelocateAssetDataBase(newPath))
+			{
+                EAI.m_Setting.SavedDatabasePath = eaiDataBase.ActualDataBasePath;
+                EAI.m_Setting.ApplyAndSave();
+            }
+        }
 
         AssetDatabase.global.RegisterDatabase(assetDataBaseEAI).Wait();
     }
