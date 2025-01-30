@@ -16,7 +16,7 @@
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT3]": "ELT 3.0",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[LocalAsset]": "Obiekty lokalne",
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "Baza danych",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "Database location",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "Lokalizacja bazy danych",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Usuń niezaładowane obiekty.",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Usuń pliki obiektów z dysku, jeśli nie zostały załadowane (np. wyłączony mod).",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Usuń bazę danych przy wyłączaniu gry",
