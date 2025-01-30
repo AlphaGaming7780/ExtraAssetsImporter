@@ -51,26 +51,6 @@ namespace ExtraAssetsImporter
                 Directory.Delete(oldModsPath, false);
             }
 
-            oldModsPath = Path.Combine(EnvPath.kContentPath, "Mods");
-            oldDataPath = Path.Combine(oldModsPath, "EAI");
-
-            if (Directory.Exists(oldDataPath))
-            {
-				try
-				{
-                    Directory.Move(oldDataPath, new EAIDataBase().ActualDataBasePath);
-                } catch 
-				{ 
-					Directory.Delete(oldDataPath, true); 
-				}
-
-            }
-
-            if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
-            {
-                Directory.Delete(oldModsPath, false);
-            }
-
             if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
 
@@ -97,7 +77,28 @@ namespace ExtraAssetsImporter
             m_Setting.RegisterInOptionsUI();
             AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
 
-            //ClearData();
+			// MOVE DATABASE OUT FROM THE GAME FOLDER
+            oldModsPath = Path.Combine(EnvPath.kContentPath, "Mods");
+            oldDataPath = Path.Combine(oldModsPath, "EAI");
+
+            if (Directory.Exists(oldDataPath))
+            {
+                try
+                {
+                    Directory.Move(oldDataPath, m_Setting.DatabasePath ?? new EAIDataBase().ActualDataBasePath);
+                }
+                catch
+                {
+                    Directory.Delete(oldDataPath, true);
+                }
+            }
+
+            if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+            {
+                Directory.Delete(oldModsPath, false);
+            }
+
+
 
             FileInfo fileInfo = new(asset.path);
 
