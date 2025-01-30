@@ -40,11 +40,16 @@ internal static class EAIDataBaseManager
 		}
 
 		string newPath = EAI.m_Setting.SavedDatabasePath ?? eaiDataBase.ActualDataBasePath;
+
+		if(EAI.m_Setting.SavedDatabasePath == null)
+		{
+			EAI.m_Setting.SavedDatabasePath = newPath;
+			EAI.m_Setting.ApplyAndSave();
+		}
+
 		if (newPath != eaiDataBase.ActualDataBasePath)
 		{
 			RelocateAssetDataBase(newPath);
-			EAI.m_Setting.SavedDatabasePath = null;
-			EAI.m_Setting.ApplyAndSave();
 		}
 
         AssetDatabase.global.RegisterDatabase(assetDataBaseEAI).Wait();
@@ -251,9 +256,16 @@ internal static class EAIDataBaseManager
 
     public static bool RelocateAssetDataBase(string newDirectory)
     {
-        if (!Directory.Exists(newDirectory) || !Directory.Exists(eaiDataBase.ActualDataBasePath)) return false;
+        if (!Directory.Exists(newDirectory)) return false;
 
 		if(newDirectory == eaiDataBase.ActualDataBasePath) return false;
+
+		if(!Directory.Exists(eaiDataBase.ActualDataBasePath))
+		{
+            eaiDataBase.ActualDataBasePath = newDirectory;
+            SaveDataBase();
+            return true;
+		}
 
 		//RemoveAllPrefab();
         //AssetDatabase.global.UnregisterDatabase(assetDataBaseEAI).Wait();

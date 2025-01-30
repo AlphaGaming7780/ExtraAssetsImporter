@@ -18,6 +18,8 @@
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[LocalAsset]": "Local Assets",
 
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "DataBase",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "Database location",
+	//"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "Let you chose the location of the database, the database need to be in an empty folder.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Delete not loaded assets.",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Delete the asset files from the disk if they haven't been loaded (for example, disabled mod).",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Delete database on close",

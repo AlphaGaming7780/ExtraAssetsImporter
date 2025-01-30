@@ -11,7 +11,7 @@ namespace ExtraAssetsImporter.DataBase
 {
 	public readonly struct AssetDataBaseEAI : IAssetDatabaseDescriptor<AssetDataBaseEAI>, IEquatable<AssetDataBaseEAI>
 	{
-		public static string kRootPath => Path.GetFullPath(EAIDataBaseManager.eaiDataBase.ActualDataBasePath);
+		public static string kRootPath => EAIDataBaseManager.eaiDataBase.ActualDataBasePath;
 
 		public bool canWriteSettings => true;
 

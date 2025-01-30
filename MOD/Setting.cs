@@ -1,6 +1,7 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Game.Modding;
 using Game.Settings;
+using System.IO;
 
 namespace ExtraAssetsImporter;
 
@@ -30,7 +31,7 @@ public class Setting(IMod mod) : ModSetting(mod)
     [SettingsUISection(kDataBaseSection, "")]
     [SettingsUIDirectoryPicker]
     //public string DataBasePath { get { return EAIDataBaseManager.eaiDataBase.ActualDataBasePath; } set { EAIDataBaseManager.RelocateAssetDataBase(value); } }// = "C:/";
-    public string DatabasePath { get { return EAIDataBaseManager.eaiDataBase.ActualDataBasePath; } set { SavedDatabasePath = value; } }
+    public string DatabasePath { get { if (EAIDataBaseManager.eaiDataBase == null || EAIDataBaseManager.eaiDataBase.ActualDataBasePath == null) return ""; return EAIDataBaseManager.eaiDataBase.ActualDataBasePath; } set { SavedDatabasePath = Path.GetDirectoryName(value); } }
     public string SavedDatabasePath = null;
 
     [SettingsUISection(kDataBaseSection, "")]
