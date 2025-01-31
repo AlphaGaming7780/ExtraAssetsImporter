@@ -372,8 +372,15 @@ internal class DecalsImporter
 		geometryAsset.SetData(meshes);
 		geometryAsset.Save(false);
 
-		RenderPrefab renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
-		renderPrefab.name = $"{fullDecalName}_RenderPrefab";
+		//RenderPrefab renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
+		PrefabID prefabID = new PrefabID(typeof(RenderPrefab).Name, $"{fullDecalName}_RenderPrefab");
+
+        if (!ExtraLib.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) || prefabBase is not RenderPrefab renderPrefab)
+		{
+            renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
+        }
+
+        renderPrefab.name = $"{fullDecalName}_RenderPrefab";
 		renderPrefab.geometryAsset = geometryAsset;//new AssetReference<GeometryAsset>(geometryAsset.guid);
 		renderPrefab.surfaceAssets = [surfaceAsset];
 		renderPrefab.bounds = new(new(-MeshSize.x * 0.5f, -MeshSize.y * 0.5f, -MeshSize.z * 0.5f), new(MeshSize.x * 0.5f, MeshSize.y * 0.5f, MeshSize.z * 0.5f));
@@ -382,7 +389,7 @@ internal class DecalsImporter
 		renderPrefab.indexCount = 1;
 		renderPrefab.manualVTRequired = false;
 
-		DecalProperties decalProperties = renderPrefab.AddComponent<DecalProperties>();
+		DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
 		decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
 		decalProperties.m_LayerMask = (DecalLayers)decalSurface.GetFloatProperty("colossal_DecalLayerMask");
 		decalProperties.m_RendererPriority = (int)(decalSurface.HasProperty("_DrawOrder") ? decalSurface.GetFloatProperty("_DrawOrder") : 0);

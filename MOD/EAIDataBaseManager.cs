@@ -230,10 +230,14 @@ internal static class EAIDataBaseManager
 
 		foreach (PrefabAsset prefabAsset in prefabAssets)
 		{
-			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+            PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+			if (ExtraLib.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase prefabBase1)) {
+				prefabBase = prefabBase1;
+			} else
+			{
+                ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
+            }
 			output.Add(prefabBase);
-			output.Add(prefabBase);
-			ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
 		}
 
 		ValidateAssets(asset);
