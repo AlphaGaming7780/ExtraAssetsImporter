@@ -13,7 +13,7 @@ namespace ExtraAssetsImporter.DataBase
 	{
 		public static string kRootPath => EAIDataBaseManager.eaiDataBase.ActualDataBasePath;
 
-		public bool canWriteSettings => true;
+		public bool canWriteSettings => false;
 
 		public string uiUri => null;
 
