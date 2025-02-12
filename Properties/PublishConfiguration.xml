@@ -60,7 +60,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - ❌Japanese 0%
 - ⚠️Korean 35% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
-- ⚠️Portuguese 58% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
 - ⚠️Portuguese, Brazilian 35% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
 - ⚠️Russian 35% : Mihail (kaktyc), Lek0ms, MrSandcraft
 - ✔️Spanish 100% : elGendo87
@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.4.1" />
+	<ModVersion Value="1.4.2" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.2.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -82,15 +82,13 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.4.1
+# 1.4.2
 
 ## Fixes
-- Huge amount of duplicate prefabs warnings.
+- NetLane prefabs where saved in the wrong folder when saved with the editor.
 
 ## Translations
-- ✔️Chinese Simplified 100% : Kelvin Ong (kelvinspaces), RilkeXS(无手文) (RilkeXS) 
-- ✔️Chinese Traditional 100% : Kelvin Ong (kelvinspaces),
-- ✔️Spanish 100% : elGendo87
+- ✔️Portuguese 100% : Tiago Correia (ti4go)
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
