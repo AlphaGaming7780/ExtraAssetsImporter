@@ -301,7 +301,7 @@ internal class NetLanesDecalImporter
 		netLanesPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullNetLaneName+PrefabAsset.kExtension, EscapeStrategy.None);
-		AssetDatabase.game.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
+        EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
 
 		ExtraLib.m_PrefabSystem.AddPrefab(netLanesPrefab);
 	}
