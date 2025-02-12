@@ -288,7 +288,7 @@ internal static class EAIDataBaseManager
         }
         catch (Exception ex)
         {
-            EAI.Logger.Error(ex.ToString());
+            EAI.Logger.Warn($"Failed to relocate the asset database, this could be because you try to move the database in a non empty folder.\nActual path : {eaiDataBase.ActualDataBasePath},\nthe target new path : {newDirectory}. \nHere is the error {ex.ToString()}");
 			return false;
         }
 
