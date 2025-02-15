@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using Extra.Lib;
-using Extra.Lib.UI;
+using ExtraLib;
+using ExtraLib.Systems.UI;
 using Colossal.PSI.Common;
 using System.Collections;
 using Colossal.Json;
@@ -12,8 +12,7 @@ using Colossal.Localization;
 using Game.SceneFlow;
 using Game.Rendering;
 using Colossal.IO.AssetDatabase;
-using Extra;
-using Extra.Lib.Helper;
+using ExtraLib.Helpers;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -65,7 +64,7 @@ internal class SurfacesImporter
 		int failedSurfaces = 0;
 		int skippedSurface = 0;
 
-		var notificationInfo = ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(
+		var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotification(
 			$"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(CreateCustomSurfaces)}",
 			title: "EAI, Importing the custom surfaces.",
 			progressState: ProgressState.Indeterminate,
@@ -130,7 +129,7 @@ internal class SurfacesImporter
 			GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
 		}
 
-		ExtraLib.m_NotificationUISystem.RemoveNotification(
+        EL.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
 			text: $"Complete, {numberOfSurfaces - failedSurfaces} Loaded, {failedSurfaces} failed, {skippedSurface} skipped.",
@@ -285,7 +284,7 @@ internal class SurfacesImporter
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
-		ExtraLib.m_PrefabSystem.AddPrefab(surfacePrefab);
+        EL.m_PrefabSystem.AddPrefab(surfacePrefab);
 	}
 
 	internal static int GetRendererPriorityByCat(string cat)

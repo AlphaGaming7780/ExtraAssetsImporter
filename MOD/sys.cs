@@ -1,6 +1,6 @@
 ﻿using Colossal.Entities;
 using Colossal.Serialization.Entities;
-using Extra.Lib;
+using ExtraLib;
 using Game;
 using Game.Prefabs;
 using Unity.Collections;
@@ -31,14 +31,14 @@ namespace ExtraAssetsImporter
 
                 EntityQuery entityQuery = GetEntityQuery(surfaceEntityQueryDesc);
 
-                if (ExtraLib.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(InfoviewPrefab), "None"), out PrefabBase p1) && p1 is InfoviewPrefab infoviewPrefab)
+                if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(InfoviewPrefab), "None"), out PrefabBase p1) && p1 is InfoviewPrefab infoviewPrefab)
                 {
-                    Entity entity1 = ExtraLib.m_PrefabSystem.GetEntity(infoviewPrefab);
+                    Entity entity1 = EL.m_PrefabSystem.GetEntity(infoviewPrefab);
                     foreach (Entity entity in entityQuery.ToEntityArray(Allocator.Temp))
                     {
                         DynamicBuffer<PlaceableInfoviewItem> stuff;
 
-                        stuff = ExtraLib.m_EntityManager.TryGetBuffer(entity, false, out stuff) ? stuff : ExtraLib.m_EntityManager.AddBuffer<PlaceableInfoviewItem>(entity);
+                        stuff = EL.m_EntityManager.TryGetBuffer(entity, false, out stuff) ? stuff : EL.m_EntityManager.AddBuffer<PlaceableInfoviewItem>(entity);
                         stuff.Clear();
                         PlaceableInfoviewItem placeableInfoviewItem = new()
                         {

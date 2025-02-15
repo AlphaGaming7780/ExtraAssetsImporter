@@ -1,27 +1,24 @@
-﻿using Colossal.AssetPipeline.Importers;
+﻿using Colossal.AssetPipeline;
+using Colossal.AssetPipeline.Importers;
 using Colossal.IO.AssetDatabase;
+using Colossal.Json;
+using Colossal.Localization;
+using Colossal.PSI.Common;
+using ExtraAssetsImporter.DataBase;
+using ExtraLib;
+using ExtraLib.ClassExtension;
+using ExtraLib.Helpers;
+using ExtraLib.Systems.UI;
 using Game.Prefabs;
 using Game.Rendering;
+using Game.SceneFlow;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine.Experimental.Rendering;
-using UnityEngine;
-using Colossal.AssetPipeline;
 using Unity.Mathematics;
-using Extra.Lib;
-using Extra.Lib.UI;
-using System.Collections;
-using Colossal.PSI.Common;
-using Colossal.Json;
-using Unity.Entities;
-using Game.SceneFlow;
-using Colossal.Localization;
-using Colossal.PSI.Environment;
-using Extra.Lib.mod.ClassExtension;
-using ExtraAssetsImporter.DataBase;
+using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
-using Extra.Lib.Helper;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -87,7 +84,7 @@ internal class DecalsImporter
 		int failedDecals = 0;
 		int skipedDecal = 0;
 
-		var notificationInfo = ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(
+		var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotification(
 			$"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(CreateCustomDecals)}",
 			title: "EAI, Importing the custom decals.",
 			progressState: ProgressState.Indeterminate,
@@ -118,7 +115,7 @@ internal class DecalsImporter
 					notificationInfo.progressState = ProgressState.Progressing;
 					notificationInfo.progress = (int)(ammoutOfDecalsloaded / (float)numberOfDecals * 100);
 					notificationInfo.text = $"Loading : {decalName}";
-					ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
+					EL.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
 
 					if(decalName.StartsWith(".")) {
 						skipedDecal++;
@@ -188,7 +185,7 @@ internal class DecalsImporter
 			GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
 		}
 
-		ExtraLib.m_NotificationUISystem.RemoveNotification(
+        EL.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
 			text: $"Complete, {numberOfDecals - failedDecals} Loaded, {failedDecals} failed, {skipedDecal} skipped.",
@@ -279,7 +276,7 @@ internal class DecalsImporter
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
-		ExtraLib.m_PrefabSystem.AddPrefab(decalPrefab);
+        EL.m_PrefabSystem.AddPrefab(decalPrefab);
 	}
 
 	internal static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, string materialName = "DefaultDecal")
@@ -375,7 +372,7 @@ internal class DecalsImporter
 		//RenderPrefab renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
 		PrefabID prefabID = new PrefabID(typeof(RenderPrefab).Name, $"{fullDecalName}_RenderPrefab");
 
-        if (!ExtraLib.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) || prefabBase is not RenderPrefab renderPrefab)
+        if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) || prefabBase is not RenderPrefab renderPrefab)
 		{
             renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
         }

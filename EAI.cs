@@ -3,9 +3,9 @@ using Colossal.Logging;
 using Colossal.PSI.Common;
 using Colossal.PSI.Environment;
 using Colossal.PSI.PdxSdk;
-using Extra.Lib;
-using Extra.Lib.Debugger;
-using Extra.Lib.Localization;
+using ExtraLib;
+using ExtraLib.Debugger;
+using ExtraLib.Helpers;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using Game;
@@ -114,7 +114,7 @@ namespace ExtraAssetsImporter
 			if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
 
 			//GameManager.instance.RegisterUpdater(Initialize);
-			ExtraLib.AddOnInitialize(Initialize);
+			EL.AddOnInitialize(Initialize);
 
             updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 		}
@@ -137,10 +137,10 @@ namespace ExtraAssetsImporter
 			//PdxSdkPlatform pdxSdkPlatform = PlatformManager.instance.GetPSI<PdxSdkPlatform>("PdxSdk");
 
             EAIDataBaseManager.LoadDataBase();
-			if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
-			if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-			if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
-			ExtraLib.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+			if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+			if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+			if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+			EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
 			//return true;
         }
 

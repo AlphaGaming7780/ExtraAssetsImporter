@@ -1,7 +1,7 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.PSI.Environment;
-using Extra.Lib;
+using ExtraLib;
 using ExtraAssetsImporter.DataBase;
 using Game.Prefabs;
 using System;
@@ -231,11 +231,11 @@ internal static class EAIDataBaseManager
 		foreach (PrefabAsset prefabAsset in prefabAssets)
 		{
             PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
-			if (ExtraLib.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase prefabBase1)) {
+			if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase prefabBase1)) {
 				prefabBase = prefabBase1;
 			} else
 			{
-                ExtraLib.m_PrefabSystem.AddPrefab(prefabBase);
+                EL.m_PrefabSystem.AddPrefab(prefabBase);
             }
 			output.Add(prefabBase);
 		}
@@ -255,7 +255,7 @@ internal static class EAIDataBaseManager
 
 			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
 
-			if (ExtraLib.m_PrefabSystem.RemovePrefab(prefabBase)) continue;
+			if (EL.m_PrefabSystem.RemovePrefab(prefabBase)) continue;
 
 			EAI.Logger.Warn($"Failed to remove prefab {assetData.name} from prefab system.");
 

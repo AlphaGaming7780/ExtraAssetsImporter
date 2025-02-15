@@ -4,14 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using Extra.Lib;
-using Extra.Lib.UI;
+using ExtraLib;
+using ExtraLib.Systems.UI;
 using System.Collections;
 using Colossal.PSI.Common;
 using Colossal.Json;
 using Game.SceneFlow;
 using Colossal.Localization;
-using Extra.Lib.Helper;
+using ExtraLib.Helpers;
 using ExtraAssetsImporter.DataBase;
 
 namespace ExtraAssetsImporter.Importers;
@@ -81,7 +81,7 @@ internal class NetLanesDecalImporter
 		int failedNetLanes = 0;
 		int skipedNetLane = 0;
 
-		var notificationInfo = ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(
+		var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotification(
 			$"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(CreateCustomNetLanes)}",
 			title: "EAI, Importing the custom net lanes.",
 			progressState: ProgressState.Indeterminate,
@@ -181,7 +181,7 @@ internal class NetLanesDecalImporter
 			GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
 		}
 
-		ExtraLib.m_NotificationUISystem.RemoveNotification(
+        EL.m_NotificationUISystem.RemoveNotification(
 			identifier: notificationInfo.id,
 			delay: 5f,
 			text: $"Complete, {numberOfNetLanes - failedNetLanes} Loaded, {failedNetLanes} failed, {skipedNetLane} skipped.",
@@ -264,7 +264,7 @@ internal class NetLanesDecalImporter
 		netLanesPrefab.m_Meshes = [objectMeshInfo];
 
 		if (jsonNetLane.PathfindPrefab != null) {
-			if (ExtraLib.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(PathfindPrefab), jsonNetLane.PathfindPrefab), out PrefabBase prefabBase) && prefabBase is PathfindPrefab pathfindPrefab)
+			if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(PathfindPrefab), jsonNetLane.PathfindPrefab), out PrefabBase prefabBase) && prefabBase is PathfindPrefab pathfindPrefab)
 			{
 				netLanesPrefab.m_PathfindPrefab = pathfindPrefab;
 			}
@@ -303,7 +303,7 @@ internal class NetLanesDecalImporter
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullNetLaneName+PrefabAsset.kExtension, EscapeStrategy.None);
         EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
 
-		ExtraLib.m_PrefabSystem.AddPrefab(netLanesPrefab);
+        EL.m_PrefabSystem.AddPrefab(netLanesPrefab);
 	}
 
 	private static void VersionCompatiblity(JsonNetLanes jSONNetLanesMaterail, string catName, string netLanesName)
