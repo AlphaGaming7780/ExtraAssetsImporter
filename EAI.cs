@@ -51,6 +51,33 @@ namespace ExtraAssetsImporter
                 Directory.Delete(oldModsPath, false);
             }
 
+
+            var oldLocation = Path.Combine(EnvPath.kUserDataPath, "ModsSettings", nameof(ExtraAssetsImporter), "settings.coc");
+
+            if (File.Exists(oldLocation))
+            {
+                var correctLocation = Path.Combine(EnvPath.kUserDataPath, $"{nameof(ExtraAssetsImporter)}.coc");
+
+                if (File.Exists(correctLocation))
+                {
+                    File.Delete(oldLocation);
+                }
+                else
+                {
+                    //Directory.CreateDirectory(Path.GetDirectoryName(correctLocation));
+					File.Move(oldLocation, correctLocation);
+                }
+
+                string parent = Path.GetDirectoryName(oldLocation);
+
+                Directory.Delete(parent, true);
+                //if (Directory.GetDirectories(Path.GetDirectoryName(parent)).Length == 0 && Directory.GetFiles(Path.GetDirectoryName(parent)).Length == 0)
+                //{
+                //    Directory.Delete(parent);
+                //}
+
+            }
+
             if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
 			Logger.Info($"Current mod asset at {asset.path}");
 
