@@ -336,10 +336,10 @@ internal class DecalsImporter
 		AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(assetDataPath, $"{decalName}_SurfaceAsset", EscapeStrategy.None);
 		SurfaceAsset surfaceAsset = new()
 		{
-			guid = Guid.NewGuid(),
-			database = EAIDataBaseManager.assetDataBaseEAI
+			id = new Identifier(Guid.NewGuid()),
+            database = EAIDataBaseManager.assetDataBaseEAI
 		};
-		surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.guid);
+		surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
 		surfaceAsset.SetData(decalSurface);
 		surfaceAsset.Save(force: false, saveTextures: true, vt: false);
 
@@ -365,10 +365,10 @@ internal class DecalsImporter
 		AssetDataPath geometryAssetDataPath = AssetDataPath.Create(assetDataPath, "GeometryAsset", EscapeStrategy.None);
 		GeometryAsset geometryAsset = new()
 		{
-			guid = Guid.NewGuid(),
+			id = new Identifier(Guid.NewGuid()),
 			database = EAIDataBaseManager.assetDataBaseEAI
 		};
-		geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.guid);
+		geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
 		geometryAsset.SetData(meshes);
 		geometryAsset.Save(false);
 

@@ -32,7 +32,7 @@ namespace ExtraAssetsImporter
 		internal static string pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
         internal static string pathTempFolder => Path.Combine(AssetDataBaseEAI.kRootPath, "TempAssetsFolder");
 
-		private bool eaiIsLoaded = false;
+		//private bool eaiIsLoaded = false;
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
