@@ -22,6 +22,10 @@ using Extra.Lib.mod.ClassExtension;
 using ExtraAssetsImporter.DataBase;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
 using Extra.Lib.Helper;
+using System.Threading.Tasks;
+using static Extra.Lib.UI.ExtraAssetsMenu;
+using Game.UI.InGame;
+using Game.UI.Menu;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -109,8 +113,8 @@ internal class DecalsImporter
 
 		foreach (string folder in FolderToLoadDecals)
 		{
-            if (!Directory.Exists(folder)) continue;
-            foreach (string catFolder in Directory.GetDirectories(folder))
+			if (!Directory.Exists(folder)) continue;
+			foreach (string catFolder in Directory.GetDirectories(folder))
 			{
 				foreach (string decalsFolder in Directory.GetDirectories(catFolder))
 				{
@@ -120,7 +124,8 @@ internal class DecalsImporter
 					notificationInfo.text = $"Loading : {decalName}";
 					ExtraLib.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
 
-					if(decalName.StartsWith(".")) {
+					if (decalName.StartsWith("."))
+					{
 						skipedDecal++;
 						continue;
 					}
@@ -144,8 +149,8 @@ internal class DecalsImporter
 						}
 						else
 						{
-                            EAI.Logger.Info($"Cahed data for {fullDecalName}, loading the cache.");
-                            List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
+							EAI.Logger.Info($"Cahed data for {fullDecalName}, loading the cache.");
+							List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
 							foreach (PrefabBase prefabBase in loadedObject)
 							{
 								if (prefabBase is RenderPrefab renderPrefab1)
@@ -155,7 +160,7 @@ internal class DecalsImporter
 								}
 							}
 
-							if(renderPrefab == null)
+							if (renderPrefab == null)
 							{
 								EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
 								renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
@@ -175,7 +180,7 @@ internal class DecalsImporter
 						failedDecals++;
 						EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
 						string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
-						if(Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+						if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
 					}
 					ammoutOfDecalsloaded++;
 					yield return null;
@@ -396,7 +401,7 @@ internal class DecalsImporter
 		decalProperties.m_EnableInfoviewColor = false;
 
 		AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(assetDataPath, $"{decalName}_RenderPrefab", EscapeStrategy.None);
-		PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset(renderPrefabAssetPath, renderPrefab);
+		PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Colossal.Hash128.CreateGuid(fullDecalName));
 		renderPrefabAsset.Save();
 
 		decalSurface.Dispose();
