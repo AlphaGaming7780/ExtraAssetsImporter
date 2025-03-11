@@ -15,10 +15,6 @@ namespace ExtraAssetsImporter.DataBase
 
 		public bool canWriteSettings => false;
 
-		public string uiUri => null;
-
-		public string uiPath => null;
-
 		public string name => "EAI";
 
 		public IAssetFactory assetFactory => DefaultAssetFactory.instance;
