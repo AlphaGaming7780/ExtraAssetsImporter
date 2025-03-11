@@ -12,7 +12,7 @@ namespace ExtraAssetsImporter;
 
 internal static class EAIDataBaseManager
 {
-	const int DataBaseVersion = 2;
+	const int DataBaseVersion = 3;
 	private static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
 	public static EAIDataBase eaiDataBase;
 	private static readonly List<EAIAsset> ValidateAssetsDataBase = [];
