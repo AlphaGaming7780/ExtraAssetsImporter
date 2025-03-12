@@ -11,6 +11,7 @@ using ExtraAssetsImporter.Importers;
 using Game;
 using Game.Modding;
 using Game.SceneFlow;
+using System;
 using System.Collections;
 using System.IO;
 using System.Reflection;
@@ -36,97 +37,105 @@ namespace ExtraAssetsImporter
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
-			Logger.Info(nameof(OnLoad));
-
-			string oldModsPath = Path.Combine(UnityEngine.Application.streamingAssetsPath, "Mods");
-            string oldDataPath = Path.Combine(oldModsPath, "EAI");
-			
-            if (Directory.Exists(oldDataPath))
+			try
 			{
-                Directory.Delete(oldDataPath, true);
-			}
+                Logger.Info(nameof(OnLoad));
 
-            if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
-            {
-                Directory.Delete(oldModsPath, false);
-            }
+                string oldModsPath = Path.Combine(UnityEngine.Application.streamingAssetsPath, "Mods");
+                string oldDataPath = Path.Combine(oldModsPath, "EAI");
 
-
-            var oldLocation = Path.Combine(EnvPath.kUserDataPath, "ModsSettings", nameof(ExtraAssetsImporter), "settings.coc");
-
-            if (File.Exists(oldLocation))
-            {
-                var correctLocation = Path.Combine(EnvPath.kUserDataPath, $"{nameof(ExtraAssetsImporter)}.coc");
-
-                if (File.Exists(correctLocation))
-                {
-                    File.Delete(oldLocation);
-                }
-                else
-                {
-                    //Directory.CreateDirectory(Path.GetDirectoryName(correctLocation));
-					File.Move(oldLocation, correctLocation);
-                }
-
-                string parent = Path.GetDirectoryName(oldLocation);
-
-                Directory.Delete(parent, true);
-                //if (Directory.GetDirectories(Path.GetDirectoryName(parent)).Length == 0 && Directory.GetFiles(Path.GetDirectoryName(parent)).Length == 0)
-                //{
-                //    Directory.Delete(parent);
-                //}
-
-            }
-
-            if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
-			Logger.Info($"Current mod asset at {asset.path}");
-
-            ExtraLocalization.LoadLocalization(Logger, Assembly.GetExecutingAssembly(), false);
-
-            m_Setting = new Setting(this);
-            m_Setting.RegisterInOptionsUI();
-            AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
-
-			// MOVE DATABASE OUT FROM THE GAME FOLDER
-            oldModsPath = Path.Combine(EnvPath.kContentPath, "Mods");
-            oldDataPath = Path.Combine(oldModsPath, "EAI");
-
-            if (Directory.Exists(oldDataPath))
-            {
-                try
-                {
-                    Directory.Move(oldDataPath, m_Setting.DatabasePath ?? new EAIDataBase().ActualDataBasePath);
-                }
-                catch
+                if (Directory.Exists(oldDataPath))
                 {
                     Directory.Delete(oldDataPath, true);
                 }
-            }
 
-            if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+                if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+                {
+                    Directory.Delete(oldModsPath, false);
+                }
+
+
+                var oldLocation = Path.Combine(EnvPath.kUserDataPath, "ModsSettings", nameof(ExtraAssetsImporter), "settings.coc");
+
+                if (File.Exists(oldLocation))
+                {
+                    var correctLocation = Path.Combine(EnvPath.kUserDataPath, $"{nameof(ExtraAssetsImporter)}.coc");
+
+                    if (File.Exists(correctLocation))
+                    {
+                        File.Delete(oldLocation);
+                    }
+                    else
+                    {
+                        //Directory.CreateDirectory(Path.GetDirectoryName(correctLocation));
+                        File.Move(oldLocation, correctLocation);
+                    }
+
+                    string parent = Path.GetDirectoryName(oldLocation);
+
+                    Directory.Delete(parent, true);
+                    //if (Directory.GetDirectories(Path.GetDirectoryName(parent)).Length == 0 && Directory.GetFiles(Path.GetDirectoryName(parent)).Length == 0)
+                    //{
+                    //    Directory.Delete(parent);
+                    //}
+
+                }
+
+                if (!GameManager.instance.modManager.TryGetExecutableAsset(this, out var asset)) return;
+                Logger.Info($"Current mod asset at {asset.path}");
+
+                ExtraLocalization.LoadLocalization(Logger, Assembly.GetExecutingAssembly(), false);
+
+                m_Setting = new Setting(this);
+                m_Setting.RegisterInOptionsUI();
+                AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
+
+                // MOVE DATABASE OUT OF THE GAME FOLDER
+                oldModsPath = Path.Combine(EnvPath.kContentPath, "Mods");
+                oldDataPath = Path.Combine(oldModsPath, "EAI");
+
+                if (Directory.Exists(oldDataPath))
+                {
+                    try
+                    {
+                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? new EAIDataBase().ActualDataBasePath);
+                    }
+                    catch
+                    {
+                        Directory.Delete(oldDataPath, true);
+                    }
+                }
+
+                if (Directory.Exists(oldModsPath) && Directory.GetDirectories(oldModsPath).Length == 0 && Directory.GetFiles(oldModsPath).Length == 0)
+                {
+                    Directory.Delete(oldModsPath, false);
+                }
+
+
+
+                FileInfo fileInfo = new(asset.path);
+
+                ResourcesIcons = Path.Combine(fileInfo.DirectoryName, "Icons");
+                Icons.LoadIcons(fileInfo.DirectoryName);
+
+                string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
+                string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
+                string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
+
+                if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+                if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
+                if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
+
+                //GameManager.instance.RegisterUpdater(Initialize);
+                ExtraLib.AddOnInitialize(Initialize);
+
+                updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
+            } catch (Exception ex)
             {
-                Directory.Delete(oldModsPath, false);
+                EAI.Logger.Error(ex); // Doing this, because the game isn't logging any error.
+                throw ex; // This should still send the error to the game and so start the OnDispose.
             }
 
-
-
-            FileInfo fileInfo = new(asset.path);
-
-			ResourcesIcons = Path.Combine(fileInfo.DirectoryName, "Icons");
-			Icons.LoadIcons(fileInfo.DirectoryName);
-
-			string pathToDataCustomDecals = Path.Combine(pathModsData, "CustomDecals");
-            string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
-            string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
-
-            if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
-			if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
-			if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
-
-			//GameManager.instance.RegisterUpdater(Initialize);
-			ExtraLib.AddOnInitialize(Initialize);
-
-            updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 		}
 
 		public void OnDispose()
