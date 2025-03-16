@@ -39,22 +39,7 @@ internal static class EAIDataBaseManager
 			eaiDataBase = new();
 		}
 
-		string newPath = EAI.m_Setting.SavedDatabasePath ?? eaiDataBase.ActualDataBasePath;
-
-		if(EAI.m_Setting.SavedDatabasePath == null)
-		{
-			EAI.m_Setting.SavedDatabasePath = newPath;
-			EAI.m_Setting.ApplyAndSave();
-		}
-
-		if (newPath != eaiDataBase.ActualDataBasePath)
-		{
-			if(!RelocateAssetDataBase(newPath))
-			{
-                EAI.m_Setting.SavedDatabasePath = eaiDataBase.ActualDataBasePath;
-                EAI.m_Setting.ApplyAndSave();
-            }
-        }
+        CheckIfDataBaseNeedToBeRelocated();
 
         AssetDatabase.global.RegisterDatabase(assetDataBaseEAI).Wait();
     }
@@ -215,10 +200,11 @@ internal static class EAIDataBaseManager
 		{
 			foreach(string file in Directory.GetFiles(assetPath, $"*{s}"))
 			{
-				string filePath = file.Replace(AssetDataBaseEAI.kRootPath + Path.DirectorySeparatorChar, "");
-				AssetDataPath assetDataPath = AssetDataPath.Create(filePath, EscapeStrategy.None);
-				try
-				{
+				//string filePath = file.Replace(AssetDataBaseEAI.kRootPath + Path.DirectorySeparatorChar, "");
+				AssetDataPath assetDataPath = AssetDataPath.Create(Path.GetDirectoryName(file), Path.GetFileName(file), EscapeStrategy.None);
+                try
+                {
+					//if (!assetDataBaseEAI.Exists(assetDataPath, out IAssetData assetData)) continue;
 					IAssetData assetData = assetDataBaseEAI.AddAsset(assetDataPath);
 					if (assetData is PrefabAsset prefabAsset) prefabAssets.Add(prefabAsset);
 				} catch (Exception e)
@@ -230,8 +216,13 @@ internal static class EAIDataBaseManager
 
 		foreach (PrefabAsset prefabAsset in prefabAssets)
 		{
-            PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
-			if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase prefabBase1)) {
+			if (!prefabAsset.isValid)
+			{
+				EAI.Logger.Info($"Prefab Asset wasn't valid, prefab asset path: {prefabAsset.path}, prefab asset id: {prefabAsset.id} ");
+				continue;
+			}
+			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+			if (ExtraLib.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase prefabBase1)) {
 				prefabBase = prefabBase1;
 			} else
 			{
@@ -252,7 +243,6 @@ internal static class EAIDataBaseManager
 		{
 			if (assetData is not PrefabAsset prefabAsset) continue;
 
-
 			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
 
 			if (EL.m_PrefabSystem.RemovePrefab(prefabBase)) continue;
@@ -260,6 +250,26 @@ internal static class EAIDataBaseManager
 			EAI.Logger.Warn($"Failed to remove prefab {assetData.name} from prefab system.");
 
 		}
+    }
+
+    internal static void CheckIfDataBaseNeedToBeRelocated()
+    {
+        string newPath = EAI.m_Setting.SavedDatabasePath ?? eaiDataBase.ActualDataBasePath;
+
+        if (EAI.m_Setting.SavedDatabasePath == null)
+        {
+            EAI.m_Setting.SavedDatabasePath = newPath;
+            EAI.m_Setting.ApplyAndSave();
+        }
+
+        if (newPath != eaiDataBase.ActualDataBasePath)
+        {
+            if (!RelocateAssetDataBase(newPath))
+            {
+                EAI.m_Setting.SavedDatabasePath = eaiDataBase.ActualDataBasePath;
+                EAI.m_Setting.ApplyAndSave();
+            }
+        }
     }
 
     public static bool RelocateAssetDataBase(string newDirectory)
@@ -298,8 +308,6 @@ internal static class EAIDataBaseManager
 
         return true;
     }
-
-
 }
 
 internal class EAIDataBase()

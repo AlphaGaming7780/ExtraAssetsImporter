@@ -74,11 +74,11 @@ internal class SurfacesImporter
 
 		foreach (string folder in FolderToLoadSurface)
 		{
-            if (!Directory.Exists(folder)) continue;
-            foreach (string catFolder in Directory.GetDirectories(folder))
-                foreach (string surfaceFolder in Directory.GetDirectories(catFolder))
-                    numberOfSurfaces++;
-        }
+			if (!Directory.Exists(folder)) continue;
+			foreach (string catFolder in Directory.GetDirectories(folder))
+				foreach (string surfaceFolder in Directory.GetDirectories(catFolder))
+					numberOfSurfaces++;
+		}
 
 
 		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("Surfaces", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/Surfaces.svg");
@@ -87,8 +87,8 @@ internal class SurfacesImporter
 
 		foreach (string folder in FolderToLoadSurface)
 		{
-            if (!Directory.Exists(folder)) continue;
-            foreach (string surfacesCat in Directory.GetDirectories(folder))
+			if (!Directory.Exists(folder)) continue;
+			foreach (string surfacesCat in Directory.GetDirectories(folder))
 			{
 				foreach (string surfaceFolder in Directory.GetDirectories(surfacesCat))
 				{
@@ -269,8 +269,8 @@ internal class SurfacesImporter
 			}
 		} else
 		{
-            fileData = File.ReadAllBytes(baseColorMapPath);
-            texture2D_Icon.LoadImage(fileData);
+			fileData = File.ReadAllBytes(baseColorMapPath);
+			texture2D_Icon.LoadImage(fileData);
 			TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
 		}
 		UnityEngine.Object.Destroy(texture2D_Icon);

@@ -5,7 +5,8 @@ using System.IO;
 
 namespace ExtraAssetsImporter;
 
-[FileLocation($"ModsSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
+//[FileLocation($"ModsSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
+[FileLocation("ExtraAssetsImporter")]
 [SettingsUIGroupOrder(kImportersGroup, kMPHGroup)]
 [SettingsUIShowGroupName(kImportersGroup, kMPHGroup)]
 public class Setting(IMod mod) : ModSetting(mod)

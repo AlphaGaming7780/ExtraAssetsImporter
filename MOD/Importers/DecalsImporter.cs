@@ -94,11 +94,11 @@ internal class DecalsImporter
 
 		foreach (string folder in FolderToLoadDecals)
 		{
-            if (!Directory.Exists(folder)) continue;
-            foreach (string catFolder in Directory.GetDirectories(folder))
-                foreach (string decalsFolder in Directory.GetDirectories(catFolder))
-                    numberOfDecals++;
-        }
+			if (!Directory.Exists(folder)) continue;
+			foreach (string catFolder in Directory.GetDirectories(folder))
+				foreach (string decalsFolder in Directory.GetDirectories(catFolder))
+					numberOfDecals++;
+		}
 
 		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("Decals", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/Decals.svg");
 
@@ -106,8 +106,8 @@ internal class DecalsImporter
 
 		foreach (string folder in FolderToLoadDecals)
 		{
-            if (!Directory.Exists(folder)) continue;
-            foreach (string catFolder in Directory.GetDirectories(folder))
+			if (!Directory.Exists(folder)) continue;
+			foreach (string catFolder in Directory.GetDirectories(folder))
 			{
 				foreach (string decalsFolder in Directory.GetDirectories(catFolder))
 				{
@@ -117,7 +117,8 @@ internal class DecalsImporter
 					notificationInfo.text = $"Loading : {decalName}";
 					EL.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
 
-					if(decalName.StartsWith(".")) {
+					if (decalName.StartsWith("."))
+					{
 						skipedDecal++;
 						continue;
 					}
@@ -141,18 +142,22 @@ internal class DecalsImporter
 						}
 						else
 						{
-                            EAI.Logger.Info($"Cahed data for {fullDecalName}, loading the cache.");
-                            List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
-							foreach (PrefabBase prefabBase in loadedObject)
+							try
 							{
-								if (prefabBase is RenderPrefab renderPrefab1)
+								EAI.Logger.Info($"Cahed data for {fullDecalName}, loading the cache.");
+								List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
+								foreach (PrefabBase prefabBase in loadedObject)
 								{
-									renderPrefab = renderPrefab1;
-									break;
+									if (prefabBase is RenderPrefab renderPrefab1)
+									{
+										renderPrefab = renderPrefab1;
+										break;
+									}
 								}
 							}
-
-							if(renderPrefab == null)
+							catch (Exception e) { }
+							
+							if (renderPrefab == null)
 							{
 								EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
 								renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
@@ -172,7 +177,7 @@ internal class DecalsImporter
 						failedDecals++;
 						EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
 						string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
-						if(Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+						if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
 					}
 					ammoutOfDecalsloaded++;
 					yield return null;
@@ -315,7 +320,7 @@ internal class DecalsImporter
 			importSettings.alphaIsTransparency = false;
 			importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
 			importSettings.wrapMode = TextureWrapMode.Repeat;
-            TextureImporter.Texture textureImporterNormalMap = defaultTextureImporter.Import(importSettings, normalMapPath);
+			TextureImporter.Texture textureImporterNormalMap = defaultTextureImporter.Import(importSettings, normalMapPath);
 			decalSurface.AddProperty("_NormalMap", textureImporterNormalMap);
 		}
 
@@ -326,17 +331,17 @@ internal class DecalsImporter
 			importSettings.normalMap = false;
 			importSettings.alphaIsTransparency = false;
 			importSettings.wrapMode = TextureWrapMode.Repeat;
-            TextureImporter.Texture textureImporterMaskMap = defaultTextureImporter.Import(importSettings, maskMapPath);
+			TextureImporter.Texture textureImporterMaskMap = defaultTextureImporter.Import(importSettings, maskMapPath);
 			decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
 		}
 
 		AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(assetDataPath, $"{decalName}_SurfaceAsset", EscapeStrategy.None);
 		SurfaceAsset surfaceAsset = new()
 		{
-			guid = Guid.NewGuid(),
+			id = new Identifier(Guid.NewGuid()),
 			database = EAIDataBaseManager.assetDataBaseEAI
 		};
-		surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.guid);
+		surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
 		surfaceAsset.SetData(decalSurface);
 		surfaceAsset.Save(force: false, saveTextures: true, vt: false);
 
@@ -362,10 +367,10 @@ internal class DecalsImporter
 		AssetDataPath geometryAssetDataPath = AssetDataPath.Create(assetDataPath, "GeometryAsset", EscapeStrategy.None);
 		GeometryAsset geometryAsset = new()
 		{
-			guid = Guid.NewGuid(),
+			id = new Identifier(Guid.NewGuid()),
 			database = EAIDataBaseManager.assetDataBaseEAI
 		};
-		geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.guid);
+		geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
 		geometryAsset.SetData(meshes);
 		geometryAsset.Save(false);
 
@@ -374,10 +379,10 @@ internal class DecalsImporter
 
         if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) || prefabBase is not RenderPrefab renderPrefab)
 		{
-            renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
-        }
+			renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
+		}
 
-        renderPrefab.name = $"{fullDecalName}_RenderPrefab";
+		renderPrefab.name = $"{fullDecalName}_RenderPrefab";
 		renderPrefab.geometryAsset = geometryAsset;//new AssetReference<GeometryAsset>(geometryAsset.guid);
 		renderPrefab.surfaceAssets = [surfaceAsset];
 		renderPrefab.bounds = new(new(-MeshSize.x * 0.5f, -MeshSize.y * 0.5f, -MeshSize.z * 0.5f), new(MeshSize.x * 0.5f, MeshSize.y * 0.5f, MeshSize.z * 0.5f));
@@ -393,8 +398,9 @@ internal class DecalsImporter
 		decalProperties.m_EnableInfoviewColor = false;
 
 		AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(assetDataPath, $"{decalName}_RenderPrefab", EscapeStrategy.None);
-		PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset(renderPrefabAssetPath, renderPrefab);
+		PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); // Colossal.Hash128.CreateGuid(fullDecalName)
 		renderPrefabAsset.Save();
+		//EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
 
 		decalSurface.Dispose();
 		geometryAsset.Unload();

@@ -91,11 +91,11 @@ internal class NetLanesDecalImporter
 
 		foreach (string folder in FolderToLoadNetLanes)
 		{
-            if (!Directory.Exists(folder)) continue;
-            foreach (string catFolder in Directory.GetDirectories(folder))
-                foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
-                    numberOfNetLanes++;
-        }
+			if (!Directory.Exists(folder)) continue;
+			foreach (string catFolder in Directory.GetDirectories(folder))
+				foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
+					numberOfNetLanes++;
+		}
 
 
 		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("NetLanes", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/NetLanes.svg");
@@ -104,8 +104,8 @@ internal class NetLanesDecalImporter
 
 		foreach (string folder in FolderToLoadNetLanes)
 		{
-            if (!Directory.Exists(folder)) continue;
-            foreach (string catFolder in Directory.GetDirectories(folder))
+			if (!Directory.Exists(folder)) continue;
+			foreach (string catFolder in Directory.GetDirectories(folder))
 			{
 				foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
 				{
@@ -139,15 +139,19 @@ internal class NetLanesDecalImporter
 						}
 						else
 						{
-							List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullNetLaneName);
-							foreach (PrefabBase prefabBase in loadedObject)
+							try
 							{
-								if (prefabBase is RenderPrefab renderPrefab1)
+								List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullNetLaneName);
+								foreach (PrefabBase prefabBase in loadedObject)
 								{
-									renderPrefab = renderPrefab1;
-									break;
+									if (prefabBase is RenderPrefab renderPrefab1)
+									{
+										renderPrefab = renderPrefab1;
+										break;
+									}
 								}
 							}
+							catch (Exception e) { }
 
 							if (renderPrefab == null)
 							{
@@ -301,7 +305,7 @@ internal class NetLanesDecalImporter
 		netLanesPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullNetLaneName+PrefabAsset.kExtension, EscapeStrategy.None);
-        EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
+		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
 
         EL.m_PrefabSystem.AddPrefab(netLanesPrefab);
 	}
