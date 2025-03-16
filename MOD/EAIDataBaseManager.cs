@@ -222,7 +222,7 @@ internal static class EAIDataBaseManager
 				continue;
 			}
 			PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
-			if (ExtraLib.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase prefabBase1)) {
+			if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase prefabBase1)) {
 				prefabBase = prefabBase1;
 			} else
 			{

@@ -13,6 +13,7 @@ using Game.SceneFlow;
 using Colossal.Localization;
 using ExtraLib.Helpers;
 using ExtraAssetsImporter.DataBase;
+using ExtraLib.Prefabs;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -98,7 +99,7 @@ internal class NetLanesDecalImporter
 		}
 
 
-		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("NetLanes", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/NetLanes.svg");
+		UIAssetParentCategoryPrefab assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab("NetLanes");
 
 		Dictionary<string, string> csLocalisation = [];
 
@@ -198,7 +199,7 @@ internal class NetLanesDecalImporter
 		NetLanesLoading = false;
 	}
 
-	private static void CreateCustomNetLane(string folderPath, string netLanesName, string catName, string modName, string fullNetLaneName, string assetDataPath, ExtraAssetsMenu.AssetCat assetCat, RenderPrefab renderPrefab)
+	private static void CreateCustomNetLane(string folderPath, string netLanesName, string catName, string modName, string fullNetLaneName, string assetDataPath, UIAssetParentCategoryPrefab assetCat, RenderPrefab renderPrefab)
 	{
 		if(renderPrefab == null) throw new NullReferenceException("RenderPrefab is NULL.");
 
@@ -302,7 +303,7 @@ internal class NetLanesDecalImporter
 		netLanesPrefabUI.m_IsDebugObject = false;
 		netLanesPrefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/CustomNetLanes/{catName}/{netLanesName}/icon.png" : Icons.NetLanesPlaceholder;
 		netLanesPrefabUI.m_Priority = jsonNetLane.UiPriority;
-		netLanesPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
+		netLanesPrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}");
 
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullNetLaneName+PrefabAsset.kExtension, EscapeStrategy.None);
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));

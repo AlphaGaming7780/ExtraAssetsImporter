@@ -13,6 +13,7 @@ using Game.SceneFlow;
 using Game.Rendering;
 using Colossal.IO.AssetDatabase;
 using ExtraLib.Helpers;
+using ExtraLib.Prefabs;
 
 namespace ExtraAssetsImporter.Importers;
 
@@ -81,7 +82,7 @@ internal class SurfacesImporter
 		}
 
 
-		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("Surfaces", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/Surfaces.svg");
+		UIAssetParentCategoryPrefab assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab("Surfaces");
 
 		Dictionary<string, string> csLocalisation = [];
 
@@ -142,7 +143,7 @@ internal class SurfacesImporter
 		SurfacesIsLoading = false;
 	}
 
-	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, ExtraAssetsMenu.AssetCat assetCat)
+	private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, UIAssetParentCategoryPrefab assetCat)
 	{
 
 		string baseColorMapPath = Path.Combine(folderPath, "_BaseColorMap.png");
@@ -279,7 +280,7 @@ internal class SurfacesImporter
 		surfacePrefabUI.m_IsDebugObject = false;
 		surfacePrefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/CustomSurfaces/{catName}/{new DirectoryInfo(folderPath).Name}/icon.png" : Icons.GetIcon(surfacePrefab);
 		surfacePrefabUI.m_Priority = jSONMaterail.UiPriority;
-		surfacePrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
+		surfacePrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}");
 
 		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));

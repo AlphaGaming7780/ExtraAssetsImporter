@@ -8,6 +8,7 @@ using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.ClassExtension;
 using ExtraLib.Helpers;
+using ExtraLib.Prefabs;
 using ExtraLib.Systems.UI;
 using Game.Prefabs;
 using Game.Rendering;
@@ -100,7 +101,7 @@ internal class DecalsImporter
 					numberOfDecals++;
 		}
 
-		ExtraAssetsMenu.AssetCat assetCat = ExtraAssetsMenu.GetOrCreateNewAssetCat("Decals", $"{Icons.COUIBaseLocation}/Icons/UIAssetCategoryPrefab/Decals.svg");
+        UIAssetParentCategoryPrefab assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab("Decals");
 
 		Dictionary<string, string> csLocalisation = [];
 
@@ -166,7 +167,6 @@ internal class DecalsImporter
 							}
 						}
 
-						ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
 						CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
 
 						if (!csLocalisation.ContainsKey($"Assets.NAME[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullDecalName}]")) csLocalisation.Add($"Assets.NAME[{fullDecalName}]", decalName);
@@ -203,7 +203,7 @@ internal class DecalsImporter
 		DecalsLoading = false;
 	}
 
-	private static void CreateCustomDecal(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, ExtraAssetsMenu.AssetCat assetCat, RenderPrefab renderPrefab)
+	private static void CreateCustomDecal(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, UIAssetParentCategoryPrefab assetCat, RenderPrefab renderPrefab)
 	{
 		if(renderPrefab == null) throw new NullReferenceException("RenderPrefab is NULL.");
 
@@ -272,13 +272,15 @@ internal class DecalsImporter
 		SpawnableObject spawnableObject = decalPrefab.AddComponent<SpawnableObject>();
 		spawnableObject.m_Placeholders = [placeholder];
 
+		string catIconPath = Path.Combine(Directory.GetParent(folderPath).FullName, "icon.svg");
+
 		UIObject decalPrefabUI = decalPrefab.AddComponent<UIObject>();
 		decalPrefabUI.m_IsDebugObject = false;
 		decalPrefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/{decalName}/icon.png" : Icons.DecalPlaceholder;
 		decalPrefabUI.m_Priority = jSONMaterail.UiPriority;
-		decalPrefabUI.m_Group = ExtraAssetsMenu.GetOrCreateNewUIAssetCategoryPrefab(catName, Icons.GetIcon, assetCat);
+		decalPrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/icon.svg" : null);
 
-		AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
+        AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName+PrefabAsset.kExtension, EscapeStrategy.None);
 		EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
         EL.m_PrefabSystem.AddPrefab(decalPrefab);
