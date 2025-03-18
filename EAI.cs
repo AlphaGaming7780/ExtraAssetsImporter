@@ -139,7 +139,7 @@ namespace ExtraAssetsImporter
                 }
 
                 EAIDataBaseManager.LoadDataBase();
-                ExtraLib.AddOnInitialize(Initialize);
+                EL.AddOnInitialize(Initialize);
                 textureStreamingSystem = updateSystem.World.GetOrCreateSystemManaged<TextureStreamingSystem>(); // to use VT, should not be used normally.
 
                 EAIDataBaseManager.LoadDataBase();
