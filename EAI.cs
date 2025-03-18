@@ -127,6 +127,7 @@ namespace ExtraAssetsImporter
                 if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
 
                 //GameManager.instance.RegisterUpdater(Initialize);
+                EAIDataBaseManager.LoadDataBase();
                 ExtraLib.AddOnInitialize(Initialize);
 
                 updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
@@ -156,7 +157,6 @@ namespace ExtraAssetsImporter
 
 			//PdxSdkPlatform pdxSdkPlatform = PlatformManager.instance.GetPSI<PdxSdkPlatform>("PdxSdk");
 
-            EAIDataBaseManager.LoadDataBase();
 			if (m_Setting.Decals) ExtraLib.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
 			if (m_Setting.Surfaces) ExtraLib.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
 			if (m_Setting.NetLanes) ExtraLib.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());

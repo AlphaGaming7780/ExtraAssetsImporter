@@ -41,6 +41,8 @@ internal static class EAIDataBaseManager
         CheckIfDataBaseNeedToBeRelocated();
 
         AssetDatabase.global.RegisterDatabase(assetDataBaseEAI).Wait();
+
+		EAI.Logger.Info($"DataBase Location : {assetDataBaseEAI.rootPath}.");
     }
 
 	internal static void SaveValidateDataBase() 
