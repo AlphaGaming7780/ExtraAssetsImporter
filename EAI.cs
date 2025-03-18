@@ -130,17 +130,18 @@ namespace ExtraAssetsImporter
                 AssetsImporterManager.AddImporter<NetLanesDecalImporterNew>();
                 AssetsImporterManager.AddImporter<SurfacesImporterNew>();
 
-                AssetsImporterManager.AddAssetFolder(pathModsData);
+                if (m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(pathModsData);
+                else
+                {
+                    if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+                    if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
+                    if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
+                }
 
-                //if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
-                if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
-                //if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
+                textureStreamingSystem = updateSystem.World.GetOrCreateSystemManaged<TextureStreamingSystem>(); // to use VT, should not be used normally.
 
-
-                textureStreamingSystem = updateSystem.World.GetOrCreateSystemManaged<TextureStreamingSystem>();
-
-			    //GameManager.instance.RegisterUpdater(Initialize);
-			    EL.AddOnInitialize(Initialize);
+                EAIDataBaseManager.LoadDataBase();
+                EL.AddOnInitialize(Initialize);
                 updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 
             } catch (Exception ex)
@@ -169,13 +170,16 @@ namespace ExtraAssetsImporter
 
 			//PdxSdkPlatform pdxSdkPlatform = PlatformManager.instance.GetPSI<PdxSdkPlatform>("PdxSdk");
 
-            EAIDataBaseManager.LoadDataBase();
-            AssetsImporterManager.LoadCustomAssets();
-			//if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
-			//if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-			//if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
-			//EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
-			//return true;
+            //EAIDataBaseManager.LoadDataBase();
+            if(m_Setting.UseNewImporters) AssetsImporterManager.LoadCustomAssets();
+            else
+            {
+                if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+                if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+                if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+                EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+            }
+            //return true;
         }
 
 		private static IEnumerator WaitForCustomStuffToFinish()
@@ -222,10 +226,14 @@ namespace ExtraAssetsImporter
 
 		public static void LoadCustomAssets(string modPath)
 		{
-            AssetsImporterManager.AddAssetFolder(modPath);
-            //if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
-			//if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
-			//if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) Importers.NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
+            if(m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(modPath);
+            else
+            {
+                if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
+                if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
+                if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) Importers.NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
+            }
+
         }
 
         [Obsolete("Not needed anymore, you can remove this")]

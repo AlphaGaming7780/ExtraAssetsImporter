@@ -19,12 +19,19 @@ public class Setting(IMod mod) : ModSetting(mod)
     internal bool DeleteDataBase { get; private set; } = false;
 
     [SettingsUISection(kMainSection, kImportersGroup)]
+    public bool UseNewImporters { get; set; } = false;
+    public bool DisableCondition_UseNewImporters => UseNewImporters;
+
+    [SettingsUISection(kMainSection, kImportersGroup)]
+    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(UseNewImporters))]
     public bool Surfaces { get; set; } = true;
 
     [SettingsUISection(kMainSection, kImportersGroup)]
+    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(UseNewImporters))]
     public bool Decals { get; set; } = true;
 
     [SettingsUISection(kMainSection, kImportersGroup)]
+    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(UseNewImporters))]
     public bool NetLanes { get; set; } = true;
 
     [SettingsUISection(kMainSection, kMPHGroup)]
