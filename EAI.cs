@@ -138,6 +138,8 @@ namespace ExtraAssetsImporter
                     if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
                 }
 
+                EAIDataBaseManager.LoadDataBase();
+                ExtraLib.AddOnInitialize(Initialize);
                 textureStreamingSystem = updateSystem.World.GetOrCreateSystemManaged<TextureStreamingSystem>(); // to use VT, should not be used normally.
 
                 EAIDataBaseManager.LoadDataBase();

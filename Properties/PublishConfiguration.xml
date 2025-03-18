@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.4.3" />
+	<ModVersion Value="1.4.4" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.2.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -82,14 +82,10 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-# 1.4.3
+# 1.4.4
 
 ## Fixes
-- Fixe issue related to game update (1.2.4f1)
-
-## Translations
-- ✔️Korean 100% : Hinanchovo
-- ✔️Portuguese, Brazilian 100% : davi (dvzz)
+- Possible fix for the Collection was modified error. (EAI now register is database on mod OnLoad.)
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
