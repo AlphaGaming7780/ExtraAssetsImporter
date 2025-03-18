@@ -1,11 +1,5 @@
 ﻿using Colossal.IO.AssetDatabase;
-using Colossal.PSI.Environment;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ExtraAssetsImporter.DataBase
 {

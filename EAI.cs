@@ -1,13 +1,15 @@
 ﻿using Colossal.IO.AssetDatabase;
+using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Logging;
-using Colossal.PSI.Common;
 using Colossal.PSI.Environment;
-using Colossal.PSI.PdxSdk;
+using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Importers;
+using ExtraAssetsImporter.MOD.AssetImporter.Importers;
 using ExtraLib;
 using ExtraLib.Debugger;
 using ExtraLib.Helpers;
-using ExtraAssetsImporter.DataBase;
-using ExtraAssetsImporter.Importers;
 using Game;
 using Game.Modding;
 using Game.SceneFlow;
@@ -32,6 +34,8 @@ namespace ExtraAssetsImporter
 
 		internal static string pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
         internal static string pathTempFolder => Path.Combine(AssetDataBaseEAI.kRootPath, "TempAssetsFolder");
+
+        internal static TextureStreamingSystem textureStreamingSystem;
 
 		//private bool eaiIsLoaded = false;
 
@@ -122,14 +126,23 @@ namespace ExtraAssetsImporter
                 string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
                 string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
 
-                if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+                AssetsImporterManager.AddImporter<DecalsImporterNew>();
+                AssetsImporterManager.AddImporter<NetLanesDecalImporterNew>();
+                AssetsImporterManager.AddImporter<SurfacesImporterNew>();
+
+                AssetsImporterManager.AddAssetFolder(pathModsData);
+
+                //if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
                 if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
-                if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
+                //if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
 
-			//GameManager.instance.RegisterUpdater(Initialize);
-			EL.AddOnInitialize(Initialize);
 
+                textureStreamingSystem = updateSystem.World.GetOrCreateSystemManaged<TextureStreamingSystem>();
+
+			    //GameManager.instance.RegisterUpdater(Initialize);
+			    EL.AddOnInitialize(Initialize);
                 updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
+
             } catch (Exception ex)
             {
                 EAI.Logger.Error(ex); // Doing this, because the game isn't logging any error.
@@ -157,16 +170,17 @@ namespace ExtraAssetsImporter
 			//PdxSdkPlatform pdxSdkPlatform = PlatformManager.instance.GetPSI<PdxSdkPlatform>("PdxSdk");
 
             EAIDataBaseManager.LoadDataBase();
-			if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
-			if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-			if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
-			EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+            AssetsImporterManager.LoadCustomAssets();
+			//if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+			//if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+			//if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+			//EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
 			//return true;
         }
 
 		private static IEnumerator WaitForCustomStuffToFinish()
 		{
-			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || ( m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || ( m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded)) 
+			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || (m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || (m_Setting.NetLanes && !Importers.NetLanesDecalImporter.NetLanesLoaded)) 
 			{
 				yield return null;
 			}
@@ -175,25 +189,25 @@ namespace ExtraAssetsImporter
             EAIDataBaseManager.SaveValidateDataBase();
 			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
 
-			//foreach (MaterialLibrary.MaterialDescription material in AssetDatabase.global.resources.materialLibrary.m_Materials)
-			//{
-			//	Logger.Info(material.m_Material.name);
+            //foreach (MaterialLibrary.MaterialDescription material in AssetDatabase.global.resources.materialLibrary.m_Materials)
+            //{
+            //    Logger.Info(material.m_Material.name);
 
-			//	Logger.Info($"{material.m_Material.name} | Shader name : {material.m_Material.shader.name}");
+            //    Logger.Info($"{material.m_Material.name} | Shader name : {material.m_Material.shader.name}");
 
-			//	if (material.m_Material.name != "DefaultDecal" && material.m_Material.name != "CurvedDecal") continue;
+            //    if (material.m_Material.name != "DefaultDecal" && material.m_Material.name != "CurvedDecal") continue;
 
-			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Int)) { Logger.Info($"{material.m_Material.name} | Int : {s}"); }
-			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Float)) { Logger.Info($"{material.m_Material.name} | Float : {s}"); }
-			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Vector)) { Logger.Info($"{material.m_Material.name} | Vector : {s}"); }
-			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Texture)) { Logger.Info($"{material.m_Material.name} | Texture : {s}"); }
-			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Matrix)) { Logger.Info($"{material.m_Material.name} | Matrix : {s}"); }
-			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ConstantBuffer)) { Logger.Info($"{material.m_Material.name} | ConstantBuffer : {s}"); }
-			//	foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ComputeBuffer)) { Logger.Info($"{material.m_Material.name} | ComputeBuffer : {s}"); }
+            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Int)) { Logger.Info($"{material.m_Material.name} | Int : {s}"); }
+            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Float)) { Logger.Info($"{material.m_Material.name} | Float : {s}"); }
+            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Vector)) { Logger.Info($"{material.m_Material.name} | Vector : {s}"); }
+            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Texture)) { Logger.Info($"{material.m_Material.name} | Texture : {s}"); }
+            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Matrix)) { Logger.Info($"{material.m_Material.name} | Matrix : {s}"); }
+            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ConstantBuffer)) { Logger.Info($"{material.m_Material.name} | ConstantBuffer : {s}"); }
+            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ComputeBuffer)) { Logger.Info($"{material.m_Material.name} | ComputeBuffer : {s}"); }
 
-			//}
+            //}
 
-			yield break;
+            yield break;
 		}
 
 
@@ -208,16 +222,18 @@ namespace ExtraAssetsImporter
 
 		public static void LoadCustomAssets(string modPath)
 		{
-			if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
-			if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
-			if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes")))	NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
+            AssetsImporterManager.AddAssetFolder(modPath);
+            //if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
+			//if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
+			//if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) Importers.NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
         }
 
+        [Obsolete("Not needed anymore, you can remove this")]
 		public static void UnLoadCustomAssets(string modPath)
 		{
-			if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.RemoveCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
-			if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.RemoveCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
-            if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes")))	NetLanesDecalImporter.RemoveCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
+			//if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.RemoveCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
+			//if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.RemoveCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
+            //if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) Importers.NetLanesDecalImporter.RemoveCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
         }
 
 	}

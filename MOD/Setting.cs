@@ -1,4 +1,5 @@
 ﻿using Colossal.IO.AssetDatabase;
+using ExtraAssetsImporter.DataBase;
 using Game.Modding;
 using Game.Settings;
 using System.IO;

@@ -9,7 +9,6 @@ using ExtraLib;
 using ExtraLib.ClassExtension;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
-using ExtraLib.Systems.UI;
 using Game.Prefabs;
 using Game.Rendering;
 using Game.SceneFlow;
@@ -216,8 +215,9 @@ internal class DecalsImporter
 
 		StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 		decalPrefab.name = fullDecalName;
+        decalPrefab.m_Meshes = [objectMeshInfo];
 
-		JSONDecalsMaterail jSONMaterail = new();
+        JSONDecalsMaterail jSONMaterail = new();
 
 		string jsonDecalPath = Path.Combine(folderPath, "decal.json");
 		if (File.Exists(jsonDecalPath))
@@ -261,8 +261,6 @@ internal class DecalsImporter
 			}
 		}
 		UnityEngine.Object.Destroy(texture2D_Icon);
-
-		decalPrefab.m_Meshes = [objectMeshInfo];
 
 		StaticObjectPrefab placeholder = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 		placeholder.name = $"{fullDecalName}_Placeholder";

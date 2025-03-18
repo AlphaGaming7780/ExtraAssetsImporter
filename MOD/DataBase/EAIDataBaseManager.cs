@@ -1,14 +1,12 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.Json;
-using Colossal.PSI.Environment;
 using ExtraLib;
-using ExtraAssetsImporter.DataBase;
 using Game.Prefabs;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace ExtraAssetsImporter;
+namespace ExtraAssetsImporter.DataBase;
 
 internal static class EAIDataBaseManager
 {

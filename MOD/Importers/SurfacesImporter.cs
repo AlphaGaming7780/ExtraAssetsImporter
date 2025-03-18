@@ -14,6 +14,7 @@ using Game.Rendering;
 using Colossal.IO.AssetDatabase;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
+using ExtraAssetsImporter.DataBase;
 
 namespace ExtraAssetsImporter.Importers;
 
