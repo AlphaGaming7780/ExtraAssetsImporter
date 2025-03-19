@@ -36,7 +36,7 @@ namespace ExtraAssetsImporter.AssetImporter
         protected int ammoutOfAssetsloaded;
         protected int failedAssets;
         protected int skipedAsset;
-
+        
         public virtual void AddCustomAssetsFolder(string path)
         {
             if (_FolderToLoadAssets.Contains(path)) return;

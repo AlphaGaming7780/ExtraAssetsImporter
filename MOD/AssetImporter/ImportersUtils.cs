@@ -20,8 +20,14 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static RenderPrefabBase GetRenderPrefab(ImportData data)
         {
-            if (EAIDataBaseManager.TryGetEAIAsset(data.FullAssetName, out EAIAsset asset) && asset.AssetHash == EAIDataBaseManager.GetAssetHash(data.FolderPath))
+            if (EAIDataBaseManager.TryGetEAIAsset(data.FullAssetName, out EAIAsset asset))
             {
+                if(asset.AssetHash != EAIDataBaseManager.GetAssetHash(data.FolderPath))
+                {
+                    EAI.Logger.Info($"Need to update the cached data for {data.FullAssetName}.");
+                    return null;
+                }
+
                 try
                 {
                     EAI.Logger.Info($"Cached data for {data.FullAssetName}, loading the cache.");
@@ -38,6 +44,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 {
                     EAI.Logger.Warn($"Failed to load the cached data for {data.FullAssetName}.");
                 }
+
             }
 
             EAI.Logger.Info($"No cached data for {data.FullAssetName}.");

@@ -1,13 +1,10 @@
 ﻿using Colossal.Json;
-using ExtraAssetsImporter.Importers;
-using Game.Prefabs;
+using Colossal.Localization;
+using Game.SceneFlow;
 using Game.UI.Menu;
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
@@ -18,17 +15,31 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public override string FolderName => "Localization";
 
-        public override string AssetEndName => ".local";
+        public override string AssetEndName => "local";
 
-        protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
+        public override bool PreImporter => true;
+
+        protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
-            throw new NotImplementedException();
+
+            foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+            {
+                string path = Path.Combine(folder, $"{localeID}.json");
+                Task<Dictionary<string, string>> task = LoadJson<Dictionary<string, string>>(path);
+
+                while (!task.IsCompleted) yield return null;
+
+                GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(task.Result));
+            }
+
         }
 
 
         protected Task<T> LoadJson<T>(string path) where T : class
         {
-            return new Task<T>(() => Decoder.Decode(File.ReadAllText(path)).Make<T>());            
+            Task<T> task = new Task<T>(() => Decoder.Decode(File.ReadAllText(path)).Make<T>());
+            task.Start();
+            return task;
         }
 
     }
