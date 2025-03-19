@@ -126,6 +126,7 @@ namespace ExtraAssetsImporter
                 string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
                 string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
 
+                AssetsImporterManager.AddImporter<AssetPackImporter>();
                 AssetsImporterManager.AddImporter<DecalsImporterNew>();
                 AssetsImporterManager.AddImporter<NetLanesDecalImporterNew>();
                 AssetsImporterManager.AddImporter<SurfacesImporterNew>();
@@ -138,12 +139,11 @@ namespace ExtraAssetsImporter
                     if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
                 }
 
-                EAIDataBaseManager.LoadDataBase();
-                EL.AddOnInitialize(Initialize);
                 textureStreamingSystem = updateSystem.World.GetOrCreateSystemManaged<TextureStreamingSystem>(); // to use VT, should not be used normally.
-
+                
                 EAIDataBaseManager.LoadDataBase();
                 EL.AddOnInitialize(Initialize);
+
                 updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 
             } catch (Exception ex)

@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -11,6 +12,7 @@ namespace ExtraAssetsImporter.AssetImporter
     {
 
         private static readonly Dictionary<Type, ImporterBase> s_Importers = [];
+        private static readonly Dictionary<Type, ImporterBase> s_PreImporters = [];
         private static readonly List<string> s_AddAssetFolder = [];
 
 
@@ -20,12 +22,13 @@ namespace ExtraAssetsImporter.AssetImporter
 
             T importer = new T();
 
-            s_Importers.Add(typeof(T), importer);
+            if(importer.PreImporter) s_PreImporters.Add(typeof(T), importer);
+            else s_Importers.Add(typeof(T), importer);
 
             foreach(string path in s_AddAssetFolder)
             {
                 string folder = Path.Combine(path, importer.FolderName);
-                if (!Directory.Exists(folder)) continue;
+                if (!Directory.Exists(folder) && !( importer.IsFileName && File.Exists(folder) ) ) continue;
                 importer.AddCustomAssetsFolder(folder);
             }
 
@@ -36,10 +39,10 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             if (s_AddAssetFolder.Contains(path)) return false;
 
-            foreach( ImporterBase importer in s_Importers.Values )
+            foreach( ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values) )
             {
                 string folder = Path.Combine(path, importer.FolderName);
-                if (!Directory.Exists(folder)) continue;
+                if (!Directory.Exists(folder) && !( importer.IsFileName && File.Exists(folder) ) ) continue;
                 importer.AddCustomAssetsFolder(folder);
             }
 
@@ -49,36 +52,71 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void LoadCustomAssets()
         {
-            EAIDataBaseManager.LoadDataBase();
 
-            foreach(ImporterBase importer in s_Importers.Values)
+            foreach (ImporterBase importer in s_PreImporters.Values)
             {
-               EL.extraLibMonoScript.StartCoroutine(importer.CreateCustomAssets());
+                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets());
             }
 
-            EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+            EL.extraLibMonoScript.StartCoroutine(WaitForPreImportersToFinish());
+
         }
 
-        private static IEnumerator WaitForCustomStuffToFinish()
+        private static IEnumerator WaitForPreImportersToFinish()
         {
-            bool areDone = false;
-            while(!areDone)
+            //bool areDone = false;
+            while (!HasImporterFinished(s_PreImporters.Values.ToArray()))
             {
-                areDone = true;
-                foreach (ImporterBase importer in s_Importers.Values)
-                {
-                    if (importer.AssetsLoaded) continue;
-                    areDone = false;
-                }
+                //areDone = true;
+                //foreach (ImporterBase importer in s_PreImporters.Values)
+                //{
+                //    if (importer.AssetsLoaded) continue;
+                //    areDone = false;
+                //}
                 yield return null;
             }
 
-            EAI.Logger.Info("The loading of custom stuff as finished.");
+            EAI.Logger.Info("The loading of pre importers as finished.");
+
+            foreach (ImporterBase importer in s_Importers.Values)
+            {
+                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets());
+            }
+
+            EL.extraLibMonoScript.StartCoroutine(WaitForImportersToFinish());
+        }
+
+        private static IEnumerator WaitForImportersToFinish()
+        {
+            //bool areDone = false;
+            while(!HasImporterFinished(s_Importers.Values.ToArray()))
+            {
+                //areDone = true;
+                //foreach (ImporterBase importer in s_Importers.Values)
+                //{
+                //    if (importer.AssetsLoaded) continue;
+                //    areDone = false;
+                //}
+                yield return null;
+            }
+
+            EAI.Logger.Info("The loading of importers as finished.");
             EAI.m_Setting.ResetCompatibility();
             EAIDataBaseManager.SaveValidateDataBase();
             EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
 
             yield break;
+        }
+
+        private static bool HasImporterFinished(ImporterBase[] importers )
+        {
+            bool areDone = true;
+            foreach (ImporterBase importer in importers)
+            {
+                if (importer.AssetsLoaded) continue;
+                areDone = false;
+            }
+            return areDone;
         }
 
     }

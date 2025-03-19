@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
 {
-    class NetLanesDecalImporterNew : ImporterBase
+    class NetLanesDecalImporterNew : PrefabImporterBase
     {
         public override string ImporterId => "NetLanes";
 

@@ -14,7 +14,7 @@ using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
 
 namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
 {
-    class SurfacesImporterNew : ImporterBase
+    class SurfacesImporterNew : PrefabImporterBase
     {
         public override string ImporterId => "Surfaces";
 
