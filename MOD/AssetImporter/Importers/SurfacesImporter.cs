@@ -1,13 +1,10 @@
 ﻿using Colossal.AssetPipeline.Importers;
-using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
@@ -22,8 +19,15 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
 
         public override string AssetEndName => "Surface";
 
-        protected override PrefabBase Import(ImportData data)
+        protected override IEnumerator<PrefabBase> Import(ImportData data)
         {
+            ImportSettings importSettings = default;
+            importSettings.compressBC = false;
+
+            Task<TextureImporter.Texture> baseColorMapTask = ImportersUtils.AsyncImportTexture_BaseColorMap(data, importSettings);
+            Task<TextureImporter.Texture> normalMapTask = ImportersUtils.AsyncImportTexture_NormalMap(data, importSettings);
+            Task<TextureImporter.Texture> maskMapTask = ImportersUtils.AsyncImportTexture_MaskMap(data, importSettings);
+
             SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
             surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
 
@@ -32,6 +36,16 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
 
             newMaterial.SetFloat(ShaderPropertiesIDs.DrawOrder, GetRendererPriorityByCat(data.CatName));
 
+            //IEnumerator<JSONSurfacesMaterail> enumerator = AsyncLoadJSON(data);
+
+            //bool value = true;
+            //while (enumerator.Current == null && value)
+            //{
+            //    yield return null;
+            //    value = enumerator.MoveNext();
+            //}
+
+            //JSONSurfacesMaterail surfacesMaterail = enumerator.Current;
             JSONSurfacesMaterail surfacesMaterail = LoadJSON(data);
 
             foreach (string key in surfacesMaterail.Float.Keys)
@@ -51,11 +65,13 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
                 obsoleteIdentifiers.m_PrefabIdentifiers = [.. surfacesMaterail.prefabIdentifierInfos];
             }
 
-            ImportSettings importSettings = default;
-            importSettings.compressBC = false;
+            while (!baseColorMapTask.IsCompleted || !normalMapTask.IsCompleted || !maskMapTask.IsCompleted) yield return null;
 
-            var baseColorMap = ImportersUtils.ImportTexture_BaseColorMap(data, importSettings);
+            var baseColorMap = baseColorMapTask.Result;
+            var normalMap = normalMapTask.Result;
+            var maskMap = maskMapTask.Result;
 
+            //var baseColorMap = ImportersUtils.ImportTexture_BaseColorMap(data, importSettings);
             if (baseColorMap != null)
             {
                 Texture2D texture = (Texture2D)baseColorMap.ToUnityTexture(false);
@@ -63,7 +79,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
                 newMaterial.SetTexture(ShaderPropertiesIDs.BaseColorMap, texture);
             }
 
-            var normalMap = ImportersUtils.ImportTexture_NormalMap(data, importSettings);
+            //var normalMap = ImportersUtils.ImportTexture_NormalMap(data, importSettings);
             if (normalMap != null)
             {
                 Texture2D texture = (Texture2D)normalMap.ToUnityTexture(false);
@@ -71,7 +87,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
                 newMaterial.SetTexture(ShaderPropertiesIDs.NormalMap, texture);
             }
 
-            var maskMap = ImportersUtils.ImportTexture_MaskMap(data, importSettings);
+            //var maskMap = ImportersUtils.ImportTexture_MaskMap(data, importSettings);
             if (maskMap != null)
             {
                 Texture2D texture = (Texture2D)maskMap.ToUnityTexture(false);
@@ -88,7 +104,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
 
             ImportersUtils.SetupUIObject(this, data, surfacePrefab, surfacesMaterail.UiPriority);
 
-            return surfacePrefab;
+            yield return surfacePrefab;
         }
 
         private int GetRendererPriorityByCat(string cat)
@@ -122,6 +138,24 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             return material;
         }
 
+        public static IEnumerator<JSONSurfacesMaterail> AsyncLoadJSON(ImportData data)
+        {
+            JSONSurfacesMaterail surfacesMaterail = new();
+
+            string jsonSurfacePath = Path.Combine(data.FolderPath, "surface.json");
+
+            if (File.Exists(jsonSurfacePath))
+            {
+                Task<JSONSurfacesMaterail> task = ImportersUtils.AsyncLoadJson<JSONSurfacesMaterail>(jsonSurfacePath);
+
+                while (!task.IsCompleted) yield return null;
+
+                surfacesMaterail = task.Result;
+
+            }
+            yield return surfacesMaterail;
+        }
+
         public static JSONSurfacesMaterail LoadJSON(ImportData data)
         {
             JSONSurfacesMaterail surfacesMaterail = new();
@@ -130,7 +164,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
 
             if (File.Exists(jsonSurfacePath))
             {
-                surfacesMaterail = Decoder.Decode(File.ReadAllText(jsonSurfacePath)).Make<JSONSurfacesMaterail>();
+                surfacesMaterail = ImportersUtils.LoadJson<JSONSurfacesMaterail>(jsonSurfacePath);
             }
             return surfacesMaterail;
         }

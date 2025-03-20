@@ -1,12 +1,11 @@
 ﻿using Colossal.AssetPipeline;
-using Colossal.IO.AssetDatabase;
-using Colossal.Json;
 using ExtraAssetsImporter.ClassExtension;
-using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using ExtraLib;
 using Game.Prefabs;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
@@ -19,9 +18,24 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public override string AssetEndName => "NetLane";
 
-        protected override PrefabBase Import(ImportData data)
+        protected override IEnumerator<PrefabBase> Import(ImportData data)
         {
             NetLaneGeometryPrefab netLanesPrefab = ScriptableObject.CreateInstance<NetLaneGeometryPrefab>();
+
+            //IEnumerator<JsonNetLanes> enumeratorNetLanes = AsyncLoadJSON(data);
+            //IEnumerator<JSONDecalsMaterail> enumeratorDecal = DecalsImporterNew.AsyncLoadJSON(data);
+
+            //bool valueDecal = true;
+            //bool valueNetLane = true;
+            //while ((enumeratorDecal.Current == null && valueDecal) || ( enumeratorNetLanes.Current == null && valueNetLane))
+            //{
+            //    yield return null;
+            //    valueDecal = enumeratorDecal.MoveNext();
+            //    valueNetLane = enumeratorNetLanes.MoveNext();
+            //}
+
+            //JsonNetLanes jsonNetLanes = enumeratorNetLanes.Current;
+            //JSONDecalsMaterail decalsMaterail = enumeratorDecal.Current;
 
             JsonNetLanes jsonNetLanes = LoadJSON(data);
             JSONDecalsMaterail decalsMaterail = DecalsImporterNew.LoadJSON(data);
@@ -39,7 +53,18 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (renderPrefab == null)
             {
 
-                Surface surface = DecalsImporterNew.CreateSurface(data, decalsMaterail, "CurvedDecal");
+                IEnumerator<Surface> enumerator = DecalsImporterNew.AsyncCreateSurface(data, decalsMaterail, "CurvedDecal");
+
+                bool value = true;
+                while (enumerator.Current == null && value)
+                {
+                    yield return null;
+                    value = enumerator.MoveNext();
+                }
+
+                Surface surface = enumerator.Current;
+
+                //Surface surface = DecalsImporterNew.CreateSurface(data, decalsMaterail, "CurvedDecal");
                 Mesh[] meshes = DecalsImporterNew.CreateMeshes(surface);
 
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, DecalsImporterNew.SetupDecalRenderPrefab);
@@ -85,7 +110,24 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", data.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
             //EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(data.FullAssetName));
 
-            return netLanesPrefab;
+            yield return netLanesPrefab;
+        }
+
+        private IEnumerator<JsonNetLanes> AsyncLoadJSON(ImportData data)
+        {
+            JsonNetLanes jsonNetLane = new();
+
+            string jsonNetLanesPath = Path.Combine(data.FolderPath, "netLane.json");
+            if (File.Exists(jsonNetLanesPath))
+            {
+                Task<JsonNetLanes> task = ImportersUtils.AsyncLoadJson<JsonNetLanes>(jsonNetLanesPath);
+
+                while (!task.IsCompleted) yield return null;
+
+                jsonNetLane = task.Result;
+            }
+
+            yield return jsonNetLane;
         }
 
         private JsonNetLanes LoadJSON(ImportData data)
@@ -95,7 +137,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             string jsonNetLanesPath = Path.Combine(data.FolderPath, "netLane.json");
             if (File.Exists(jsonNetLanesPath))
             {
-                jsonNetLane = Decoder.Decode(File.ReadAllText(jsonNetLanesPath)).Make<JsonNetLanes>();
+                jsonNetLane = ImportersUtils.LoadJson<JsonNetLanes>(jsonNetLanesPath);
             }
 
             return jsonNetLane;

@@ -1,8 +1,6 @@
 ﻿using Colossal.Json;
-using Colossal.Localization;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraLib;
-using ExtraLib.Prefabs;
 using Game.Prefabs;
 using Game.SceneFlow;
 using Game.UI.Menu;

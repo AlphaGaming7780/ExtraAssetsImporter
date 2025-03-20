@@ -1,12 +1,11 @@
 ﻿using Colossal.AssetPipeline;
-using Colossal.IO.AssetDatabase;
-using Colossal.Json;
 using ExtraAssetsImporter.ClassExtension;
-using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
@@ -17,10 +16,20 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public override string FolderName => "CustomDecals";
         public override string AssetEndName => "Decal";
 
-        protected override PrefabBase Import(ImportData data)
+        protected override IEnumerator<PrefabBase> Import(ImportData data)
         {
             StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 
+            //IEnumerator<JSONDecalsMaterail> enumerator = AsyncLoadJSON(data);
+
+            //bool value = true;
+            //while (enumerator.Current == null && value)
+            //{
+            //    yield return null;
+            //    value = enumerator.MoveNext();
+            //}
+
+            //JSONDecalsMaterail decalsMaterail = enumerator.Current;
             JSONDecalsMaterail decalsMaterail = LoadJSON(data);
 
             VersionCompatiblity(decalsMaterail, data.CatName, data.AssetName);
@@ -36,7 +45,17 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (renderPrefab == null)
             {
 
-                Surface surface = CreateSurface(data, decalsMaterail);
+                IEnumerator<Surface> enumerator = AsyncCreateSurface(data, decalsMaterail);
+
+                bool value = true;
+                while (enumerator.Current == null && value)
+                {
+                    yield return null;
+                    value = enumerator.MoveNext();
+                }
+
+                Surface surface = enumerator.Current;
+                //Surface surface = CreateSurface(data, decalsMaterail);
                 Mesh[] meshes = CreateMeshes(surface);
 
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, SetupDecalRenderPrefab);
@@ -47,7 +66,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", data.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
             //EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(data.FullAssetName));
 
-            return decalPrefab;
+            yield return decalPrefab;
         }
 
         public static void SetupDecalRenderPrefab(ImportData data, RenderPrefab renderPrefab, Surface surface, Mesh[] meshes)
@@ -82,6 +101,32 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return decalSurface;
         }
 
+        public static IEnumerator<Surface> AsyncCreateSurface(ImportData data, JSONDecalsMaterail decalsMaterail, string materialName = "DefaultDecal")
+        {
+
+            IEnumerator<Surface> enumerator = ImportersUtils.AsyncCreateSurface(data, materialName);
+
+            bool value = true;
+            while (enumerator.Current == null && value)
+            {
+                yield return null;
+                value = enumerator.MoveNext();
+            }
+
+            Surface decalSurface = enumerator.Current;
+
+            decalSurface.AddProperty("colossal_DecalLayerMask", 1);
+
+            foreach (string key in decalsMaterail.Float.Keys)
+            {
+                if (key == "UiPriority") continue;
+                decalSurface.AddProperty(key, decalsMaterail.Float[key]);
+            }
+            foreach (string key in decalsMaterail.Vector.Keys) { decalSurface.AddProperty(key, decalsMaterail.Vector[key]); }
+
+            yield return decalSurface;
+        }
+
         private static void VersionCompatiblity(JSONDecalsMaterail jSONDecalsMaterail, string catName, string decalName)
         {
             if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
@@ -104,6 +149,24 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             }
         }
 
+        public static IEnumerator<JSONDecalsMaterail> AsyncLoadJSON(ImportData data)
+        {
+            JSONDecalsMaterail decalsMaterail = new();
+            string jsonDecalPath = Path.Combine(data.FolderPath, "decal.json");
+            if (File.Exists(jsonDecalPath))
+            {
+                Task<JSONDecalsMaterail> task = ImportersUtils.AsyncLoadJson<JSONDecalsMaterail>(jsonDecalPath);
+
+                while (!task.IsCompleted) yield return null;
+
+                decalsMaterail = task.Result;
+
+                if (decalsMaterail.Float.ContainsKey("UiPriority")) decalsMaterail.UiPriority = (int)decalsMaterail.Float["UiPriority"];
+            }
+
+            yield return decalsMaterail;
+
+        }
 
         public static JSONDecalsMaterail LoadJSON(ImportData data)
         {
@@ -112,7 +175,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             string jsonDecalPath = Path.Combine(data.FolderPath, "decal.json");
             if (File.Exists(jsonDecalPath))
             {
-                decalsMaterail = Decoder.Decode(File.ReadAllText(jsonDecalPath)).Make<JSONDecalsMaterail>();
+                decalsMaterail = ImportersUtils.LoadJson<JSONDecalsMaterail>(jsonDecalPath);
 
                 if (decalsMaterail.Float.ContainsKey("UiPriority")) decalsMaterail.UiPriority = (int)decalsMaterail.Float["UiPriority"];
             }

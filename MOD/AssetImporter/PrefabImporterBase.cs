@@ -19,12 +19,6 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     abstract class PrefabImporterBase : ImporterBase
     {
-        public override string ImporterId => throw new NotImplementedException();
-
-        public override string FolderName => throw new NotImplementedException();
-
-        public override string AssetEndName => throw new NotImplementedException();
-
         private UIAssetParentCategoryPrefab assetCat = null;
 
         protected override void PreLoadCustomAssetFolder()
@@ -55,12 +49,41 @@ namespace ExtraAssetsImporter.AssetImporter
                     string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
                     string assetDataPath = Path.Combine(FolderName, modName, catName, assetName);
 
+                    ImportData importData = new(assetFolder, assetName, catName, modName, fullAssetName, assetDataPath, assetCat);
+                    IEnumerator<PrefabBase> enumerator = null;
+
                     try
                     {
 
-                        ImportData importData = new(assetFolder, assetName, catName, modName, fullAssetName, assetDataPath, assetCat);
+                        enumerator = Import(importData);
 
-                        PrefabBase prefab = Import(importData);
+                    }
+                    catch (Exception e)
+                    {
+                        ImportFailed(assetFolder, assetDataPath, e);
+                    }
+
+                    bool value = true;
+                    while(enumerator.Current == null && value)
+                    {
+                        yield return null;
+                        try
+                        {
+                            value = enumerator.MoveNext();
+                        }
+                        catch (Exception e)
+                        {
+                            ImportFailed(assetFolder, assetDataPath, e);
+                        }
+                    }
+
+                    if (enumerator.Current == null) yield return null;
+
+                    try
+                    {
+                        if (enumerator.Current is not PrefabBase prefab) throw new Exception("Import didn't return a PrefabBase.");
+
+                        //PrefabBase prefab = pre
                         prefab.name = importData.FullAssetName;
 
                         EditorAssetCategoryOverride categoryOverride = prefab.AddComponent<EditorAssetCategoryOverride>();
@@ -79,21 +102,28 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if (!localisation.ContainsKey($"Assets.NAME[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullAssetName}]")) localisation.Add($"Assets.NAME[{fullAssetName}]", assetName);
                         if (!localisation.ContainsKey($"Assets.DESCRIPTION[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullAssetName}]")) localisation.Add($"Assets.DESCRIPTION[{fullAssetName}]", assetName);
-                    }
+
+                    } 
                     catch (Exception e)
                     {
-                        failedAssets++;
-                        EAI.Logger.Error($"Failed to load the custom asset at {assetFolder} | ERROR : {e}");
-                        string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
-                        if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+                        ImportFailed(assetFolder, assetDataPath, e);
                     }
+
                     ammoutOfAssetsloaded++;
                     yield return null;
                 }
             }
         }
 
-        protected abstract PrefabBase Import(ImportData data);
+        protected abstract IEnumerator<PrefabBase> Import(ImportData data);
+
+        internal void ImportFailed(string assetFolder, string assetDataPath, Exception e)
+        {
+            failedAssets++;
+            EAI.Logger.Error($"Failed to load the custom asset at {assetFolder} | ERROR : {e}");
+            string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
+            if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+        }
 
     }
 }

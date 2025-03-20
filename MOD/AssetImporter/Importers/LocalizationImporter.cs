@@ -1,5 +1,4 @@
-﻿using Colossal.Json;
-using Colossal.Localization;
+﻿using Colossal.Localization;
 using Game.SceneFlow;
 using Game.UI.Menu;
 using System.Collections;
@@ -22,24 +21,21 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
 
-            foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-            {
-                string path = Path.Combine(folder, $"{localeID}.json");
-                Task<Dictionary<string, string>> task = LoadJson<Dictionary<string, string>>(path);
+            Task task = Task.Run(() => LoadLocalization(folder));
 
-                while (!task.IsCompleted) yield return null;
-
-                GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(task.Result));
-            }
+            while (!task.IsCompleted) yield return null;
 
         }
 
-
-        protected Task<T> LoadJson<T>(string path) where T : class
+        private void LoadLocalization(string folder)
         {
-            Task<T> task = new Task<T>(() => Decoder.Decode(File.ReadAllText(path)).Make<T>());
-            task.Start();
-            return task;
+            foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+            {
+                string path = Path.Combine(folder, $"{localeID}.json");
+                Dictionary<string, string> local = ImportersUtils.LoadJson<Dictionary<string, string>>(path);
+
+                GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(local));
+            }
         }
 
     }
