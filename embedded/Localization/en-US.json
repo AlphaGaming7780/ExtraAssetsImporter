@@ -34,5 +34,7 @@
 	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
 	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes.",
 	"SubServices.NAME[Beach NetLanes]": "Beach NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes."
+	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes.",
+
+	"Assets.NAME[ExtraAssetsImporter AssetPack]": "EAI Local Assets Pack"
 }

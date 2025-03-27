@@ -126,8 +126,9 @@ namespace ExtraAssetsImporter
                 string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
                 string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
 
-                AssetsImporterManager.AddImporter<AssetPackImporter>();
                 AssetsImporterManager.AddImporter<LocalizationImporter>();
+                AssetsImporterManager.AddImporter<AssetPackImporter>();
+
                 AssetsImporterManager.AddImporter<DecalsImporterNew>();
                 AssetsImporterManager.AddImporter<NetLanesDecalImporterNew>();
                 AssetsImporterManager.AddImporter<SurfacesImporterNew>();

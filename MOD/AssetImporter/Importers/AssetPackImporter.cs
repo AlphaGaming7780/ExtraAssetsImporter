@@ -54,8 +54,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
-            EAI.Logger.Info($"AssetPack {modName}");
-
+            EAI.Logger.Info($"{modName} {AssetEndName}");
+            
             AssetPackJson assetPackJson = LoadJSON(folder);
 
             AssetPackPrefab assetPackPrefab = ScriptableObject.CreateInstance<AssetPackPrefab>();
@@ -64,7 +64,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             assetPackPrefab.name = fullAssetName;
 
             UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
-            assetPackUI.m_Icon = $"{Icons.COUIBaseLocation}/{modName}.svg";
+            assetPackUI.m_Icon = File.Exists(Path.Combine( Path.GetDirectoryName(folder), $"{modName}.svg" )) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
 
             EL.m_PrefabSystem.AddPrefab(assetPackPrefab);
 

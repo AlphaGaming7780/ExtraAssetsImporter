@@ -1,10 +1,13 @@
-﻿using ExtraAssetsImporter.DataBase;
+﻿using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.DataBase;
 using ExtraLib;
+using Game.Prefabs;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -52,6 +55,8 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void LoadCustomAssets()
         {
+
+            CreateEAILocalAssetPackPrefab();
 
             foreach (ImporterBase importer in s_PreImporters.Values)
             {
@@ -117,6 +122,17 @@ namespace ExtraAssetsImporter.AssetImporter
                 areDone = false;
             }
             return areDone;
+        }
+
+        private static void CreateEAILocalAssetPackPrefab()
+        {
+            AssetPackPrefab assetPackPrefab = ScriptableObject.CreateInstance<AssetPackPrefab>();
+            assetPackPrefab.name = $"ExtraAssetsImporter {AssetPackImporter.kAssetEndName}";
+
+            UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
+            assetPackUI.m_Icon = Icons.GetIcon(assetPackPrefab);
+
+            EL.m_PrefabSystem.AddPrefab(assetPackPrefab);
         }
 
     }

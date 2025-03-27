@@ -31,6 +31,12 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             foreach (string catFolder in Directory.GetDirectories(folder))
             {
+                string catName = new DirectoryInfo(catFolder).Name;
+                if (catName.StartsWith("."))
+                {
+                    continue;
+                }
+
                 foreach (string assetFolder in Directory.GetDirectories(catFolder))
                 {
                     string assetName = new DirectoryInfo(assetFolder).Name;
@@ -39,13 +45,13 @@ namespace ExtraAssetsImporter.AssetImporter
                     notificationInfo.text = $"Loading : {assetName}";
                     EL.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
 
-                    if (assetName.StartsWith("."))
+                    if (assetName.StartsWith(".")) // || catName.StartsWith(".")
                     {
                         skipedAsset++;
+                        //yield return null;
                         continue;
                     }
 
-                    string catName = new DirectoryInfo(catFolder).Name;
                     string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
                     string assetDataPath = Path.Combine(FolderName, modName, catName, assetName);
 
