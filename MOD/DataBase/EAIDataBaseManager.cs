@@ -252,14 +252,14 @@ internal static class EAIDataBaseManager
 		}
     }
 
-    internal static void CheckIfDataBaseNeedToBeRelocated()
+    internal static void CheckIfDataBaseNeedToBeRelocated(bool saveSettings = true)
     {
         string newPath = EAI.m_Setting.SavedDatabasePath ?? eaiDataBase.ActualDataBasePath;
 
         if (EAI.m_Setting.SavedDatabasePath == null)
         {
             EAI.m_Setting.SavedDatabasePath = newPath;
-            EAI.m_Setting.ApplyAndSave();
+            if(saveSettings) EAI.m_Setting.ApplyAndSave();
         }
 
         if (newPath != eaiDataBase.ActualDataBasePath)
@@ -267,7 +267,7 @@ internal static class EAIDataBaseManager
             if (!RelocateAssetDataBase(newPath))
             {
                 EAI.m_Setting.SavedDatabasePath = eaiDataBase.ActualDataBasePath;
-                EAI.m_Setting.ApplyAndSave();
+                if(saveSettings) EAI.m_Setting.ApplyAndSave();
             }
         }
     }
