@@ -142,7 +142,7 @@ namespace ExtraAssetsImporter
 		public void OnDispose()
 		{
 			Logger.Info(nameof(OnDispose));
-			EAIDataBaseManager.CheckIfDataBaseNeedToBeRelocated();
+			EAIDataBaseManager.CheckIfDataBaseNeedToBeRelocated(false);
             ClearData();
 		}
 
