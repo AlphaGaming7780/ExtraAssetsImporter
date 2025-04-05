@@ -122,9 +122,14 @@ namespace ExtraAssetsImporter
                 string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
                 string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
 
-                if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
-                if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
-                if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
+                // Create the directories
+                Directory.CreateDirectory(pathToDataCustomDecals);
+                Directory.CreateDirectory(pathToDataCustomSurfaces);
+                Directory.CreateDirectory(pathToDataCustomNetLanes);
+
+                if (Directory.GetDirectories(pathToDataCustomDecals  ).Length > 0 ) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+                if (Directory.GetDirectories(pathToDataCustomSurfaces).Length > 0 ) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
+                if (Directory.GetDirectories(pathToDataCustomNetLanes).Length > 0 ) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
 
                 //GameManager.instance.RegisterUpdater(Initialize);
                 EAIDataBaseManager.LoadDataBase();
