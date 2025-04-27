@@ -11,17 +11,15 @@ using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
 {
-    class AssetPackImporter : ImporterBase
+    class AssetPackImporter : FileImporter
     {
         public const string kAssetEndName = "AssetPack";
 
         public override string ImporterId => "AssetPackPrefab";
 
-        public override string FolderName => "AssetPack.json";
+        public override string FileName => "AssetPack.json";
 
         public override string AssetEndName => kAssetEndName;
-
-        public override bool IsFileName => true;
 
         public override bool PreImporter => true;
 

@@ -13,7 +13,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
     class DecalsImporterNew : PrefabImporterBase
     {
         public override string ImporterId => "Decals";
-        public override string FolderName => "CustomDecals";
         public override string AssetEndName => "Decal";
 
         protected override IEnumerator<PrefabBase> Import(ImportData data)

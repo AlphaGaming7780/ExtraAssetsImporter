@@ -1,21 +1,12 @@
-﻿using Colossal.IO.AssetDatabase;
-using Colossal.Localization;
-using Colossal.PSI.Common;
-using ExtraAssetsImporter.AssetImporter.Importers;
-using ExtraAssetsImporter.DataBase;
-using ExtraLib;
-using ExtraLib.ClassExtension;
-using ExtraLib.Helpers;
-using ExtraLib.Prefabs;
-using Game.Prefabs;
-using Game.PSI;
-using Game.SceneFlow;
-using Game.UI.Menu;
-using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
+using Colossal.Localization;
+using Colossal.PSI.Common;
+using ExtraLib;
+using ExtraLib.Prefabs;
+using Game.SceneFlow;
+using Game.UI.Menu;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -23,9 +14,8 @@ namespace ExtraAssetsImporter.AssetImporter
     {
 
         public abstract string ImporterId { get; }
-        public abstract string FolderName { get; }
+
         public abstract string AssetEndName { get; }
-        public virtual bool IsFileName { get; } = false;
         public virtual bool PreImporter { get; } = false;
 
         internal List<string> _FolderToLoadAssets = [];
@@ -73,7 +63,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotification(
                 $"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(LoadCustomAssets)}.{ImporterId}",
-                title: $"EAI, Importing the custom {ImporterId}.",
+                title: $"EAI, Importing {ImporterId}.",
                 progressState: ProgressState.Indeterminate,
                 thumbnail: $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/{ImporterId}.svg",
                 progress: 0
@@ -93,11 +83,21 @@ namespace ExtraAssetsImporter.AssetImporter
 
             foreach (string folder in _FolderToLoadAssets)
             {
-                if (!Directory.Exists(folder) && !(IsFileName && File.Exists(folder)) ) continue;
 
-                FileInfo[] fileInfos;
-                if (IsFileName) fileInfos = new FileInfo(folder).Directory.GetFiles("*.dll");
-                else fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+                FileInfo[] fileInfos = [];
+
+                // Note: This is a workaround for the fact that the FolderImporter and FileImporter are not compatible with each other.
+                if (this is FolderImporter)
+                {
+                    if(!Directory.Exists(folder)) continue;
+                    fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+
+                } else if (this is FileImporter)
+                {
+                    if(!File.Exists(folder)) continue;
+                    fileInfos = new FileInfo(folder).Directory.GetFiles("*.dll");
+                }
+
                 string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
 
                 yield return LoadCustomAssetFolder(folder, modName, csLocalisation, notificationInfo);

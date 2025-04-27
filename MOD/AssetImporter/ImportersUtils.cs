@@ -46,7 +46,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 }
                 catch (Exception e) 
                 {
-                    EAI.Logger.Warn($"Failed to load the cached data for {data.FullAssetName}.");
+                    EAI.Logger.Warn($"Failed to load the cached data for {data.FullAssetName}.\nException:{e}.");
                 }
 
             }
@@ -265,7 +265,7 @@ namespace ExtraAssetsImporter.AssetImporter
             return Decoder.Decode(File.ReadAllText(path)).Make<T>();
         }
 
-        public static UIObject SetupUIObject( ImporterBase importer, ImportData data, PrefabBase prefab, int UiPriority)
+        public static UIObject SetupUIObject( FolderImporter importer, ImportData data, PrefabBase prefab, int UiPriority)
         {
 
             string iconPath = Path.Combine(data.FolderPath, "icon.png");

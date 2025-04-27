@@ -12,11 +12,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 {
     class NetLanesDecalImporterNew : PrefabImporterBase
     {
-        public override string ImporterId => "NetLanes";
+        public override string ImporterId => "NetLanesDecal";
 
-        public override string FolderName => "CustomNetLanes";
+        public override string AssetEndName => "NetLaneDecal";
 
-        public override string AssetEndName => "NetLane";
+        public override string CatName => "NetLanes";
 
         protected override IEnumerator<PrefabBase> Import(ImportData data)
         {

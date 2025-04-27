@@ -15,8 +15,6 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
     {
         public override string ImporterId => "Surfaces";
 
-        public override string FolderName => "CustomSurfaces";
-
         public override string AssetEndName => "Surface";
 
         protected override IEnumerator<PrefabBase> Import(ImportData data)

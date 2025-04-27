@@ -8,30 +8,35 @@ namespace ExtraAssetsImporter;
 
 //[FileLocation($"ModsSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
 [FileLocation("ExtraAssetsImporter")]
-[SettingsUIGroupOrder(kImportersGroup, kMPHGroup)]
-[SettingsUIShowGroupName(kImportersGroup, kMPHGroup)]
+[SettingsUIGroupOrder(kNewImportersGroup, kOldImportersGroup, kMPHGroup)]
+[SettingsUIShowGroupName(kNewImportersGroup, kOldImportersGroup, kMPHGroup)]
 public class Setting(IMod mod) : ModSetting(mod)
 {
     public const string kMainSection = "Main";
     public const string kDataBaseSection = "DataBase";
-    public const string kImportersGroup = "Importers";
-    public const string kMPHGroup = "Missing Prefab Helper";
+    public const string kNewImportersGroup = "NewImporters";
+    public const string kOldImportersGroup = "OldImporters";
+    public const string kMPHGroup = "MissingPrefabHelper";
     internal bool DeleteDataBase { get; private set; } = false;
 
-    [SettingsUISection(kMainSection, kImportersGroup)]
-    public bool UseNewImporters { get; set; } = false;
+    [SettingsUISection(kMainSection, kNewImportersGroup)]
+    public bool UseNewImporters { get; set; } = true;
     public bool DisableCondition_UseNewImporters => UseNewImporters;
 
-    [SettingsUISection(kMainSection, kImportersGroup)]
-    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(UseNewImporters))]
+    [SettingsUISection(kMainSection, kOldImportersGroup)]
+    public bool UseOldImporters { get; set; } = true;
+    public bool DisableCondition_UseOldImporters => !UseOldImporters;
+
+    [SettingsUISection(kMainSection, kOldImportersGroup)]
+    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(DisableCondition_UseOldImporters))]
     public bool Surfaces { get; set; } = true;
 
-    [SettingsUISection(kMainSection, kImportersGroup)]
-    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(UseNewImporters))]
+    [SettingsUISection(kMainSection, kOldImportersGroup)]
+    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(DisableCondition_UseOldImporters))]
     public bool Decals { get; set; } = true;
 
-    [SettingsUISection(kMainSection, kImportersGroup)]
-    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(UseNewImporters))]
+    [SettingsUISection(kMainSection, kOldImportersGroup)]
+    [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(DisableCondition_UseOldImporters))]
     public bool NetLanes { get; set; } = true;
 
     [SettingsUISection(kMainSection, kMPHGroup)]

@@ -30,9 +30,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             foreach(string path in s_AddAssetFolder)
             {
-                string folder = Path.Combine(path, importer.FolderName);
-                if (!Directory.Exists(folder) && !( importer.IsFileName && File.Exists(folder) ) ) continue;
-                importer.AddCustomAssetsFolder(folder);
+                importer.AddCustomAssetsFolder(path);
             }
 
             return true;
@@ -44,9 +42,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             foreach( ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values) )
             {
-                string folder = Path.Combine(path, importer.FolderName);
-                if (!Directory.Exists(folder) && !( importer.IsFileName && File.Exists(folder) ) ) continue;
-                importer.AddCustomAssetsFolder(folder);
+                importer.AddCustomAssetsFolder(path);
             }
 
             return true;

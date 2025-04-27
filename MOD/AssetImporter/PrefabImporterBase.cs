@@ -8,6 +8,7 @@ using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
 using Game.SceneFlow;
+using Game.UI.Editor;
 using Game.UI.Menu;
 using System;
 using System.Collections;
@@ -17,14 +18,16 @@ using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
-    abstract class PrefabImporterBase : ImporterBase
+    abstract class PrefabImporterBase : FolderImporter
     {
         private UIAssetParentCategoryPrefab assetCat = null;
+
+        virtual public string CatName { get; } = null;
 
         protected override void PreLoadCustomAssetFolder()
         {
             base.PreLoadCustomAssetFolder();
-            assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab(ImporterId);
+            assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab( CatName ?? ImporterId );
         }
 
         protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)

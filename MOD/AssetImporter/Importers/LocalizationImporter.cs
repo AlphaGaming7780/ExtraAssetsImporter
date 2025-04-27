@@ -8,11 +8,9 @@ using System.Threading.Tasks;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
 {
-    class LocalizationImporter : ImporterBase
+    class LocalizationImporter : FolderImporter
     {
         public override string ImporterId => "Localization";
-
-        public override string FolderName => "Localization";
 
         public override string AssetEndName => "local";
 
@@ -32,6 +30,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
             {
                 string path = Path.Combine(folder, $"{localeID}.json");
+                if(!File.Exists(path)) continue;
                 Dictionary<string, string> local = ImportersUtils.LoadJson<Dictionary<string, string>>(path);
 
                 GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(local));

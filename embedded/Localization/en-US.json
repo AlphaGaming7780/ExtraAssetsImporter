@@ -1,16 +1,21 @@
 {
 	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Main",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "Importers",
+
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "New Importers",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use New EAI Importers",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Enbale this to use the new importers.",
+
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.OldImporters]": "Old Importers",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseOldImporters]": "Use Old EAI Importers",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseOldImporters]": "Enbale this to use the old importers.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Custom Surfaces",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Load the custom surfaces, take effect after restarting the game.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Custom Decals",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Load the custom decals, take effect after restarting the game.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Missing Prefab Helper]": "Missing Prefab Fixer",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Missing Prefab Fixer",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Compatibility Fix",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "This setting have for goal to try to fix missing prefabs caused by an EAI update. To use it, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save and check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
 
@@ -26,15 +31,10 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Delete database on close",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Delete the database when you close the game, useful when uninstalling the mod.",
 
-	"SubServices.NAME[NetLanes]": "NetLanes",
-	"SubServices.NAME[Misc NetLanes]": "Misc NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Misc NetLanes]": "This category contains all the Misc NetLanes.",
-	"SubServices.NAME[RoadMarking NetLanes]": "RoadMarking NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[RoadMarking NetLanes]": "This category contains all the RoadMarking NetLanes.",
-	"SubServices.NAME[Roadway NetLanes]": "Roadway NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes.",
-	"SubServices.NAME[Beach NetLanes]": "Beach NetLanes",
-	"Assets.SUB_SERVICE_DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes.",
+	"Assets.NAME[Roadway NetLanes]": "Roadway NetLanes",
+	"Assets.DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes.",
+	"Assets.NAME[Beach NetLanes]": "Beach NetLanes",
+	"Assets.DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes.",
 
 	"Assets.NAME[ExtraAssetsImporter AssetPack]": "EAI Local Assets Pack"
 }
