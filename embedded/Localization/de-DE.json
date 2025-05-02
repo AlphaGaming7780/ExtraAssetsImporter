@@ -1,6 +1,6 @@
 {
 	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
-	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Hauptsete",
+	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Hauptseite",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Importers]": "Importer",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Benutzerdefinierte Oberflächen",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "Lädt benutzerdefinierte Oberflächen, erfordert Neustart des Spiels.",
