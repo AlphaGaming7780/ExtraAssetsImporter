@@ -1,4 +1,8 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using Colossal.IO.AssetDatabase;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.DataBase;
@@ -8,12 +12,7 @@ using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
 using Game.SceneFlow;
-using Game.UI.Editor;
 using Game.UI.Menu;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter
