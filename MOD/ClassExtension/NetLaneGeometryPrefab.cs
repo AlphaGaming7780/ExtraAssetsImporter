@@ -8,7 +8,7 @@ namespace ExtraAssetsImporter.ClassExtension
     {
         public static void AddNetLaneMeshInfo(this NetLaneGeometryPrefab prefab, RenderPrefab renderPrefab)
         {
-            prefab.m_Meshes ??= [];
+            prefab.m_Meshes ??= new NetLaneMeshInfo[0];
 
             NetLaneMeshInfo netLaneMeshInfo = new()
             {

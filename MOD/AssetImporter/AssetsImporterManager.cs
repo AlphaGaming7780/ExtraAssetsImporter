@@ -14,9 +14,9 @@ namespace ExtraAssetsImporter.AssetImporter
     static class AssetsImporterManager
     {
 
-        private static readonly Dictionary<Type, ImporterBase> s_Importers = [];
-        private static readonly Dictionary<Type, ImporterBase> s_PreImporters = [];
-        private static readonly List<string> s_AddAssetFolder = [];
+        private static readonly Dictionary<Type, ImporterBase> s_Importers = new();
+        private static readonly Dictionary<Type, ImporterBase> s_PreImporters = new();
+        private static readonly List<string> s_AddAssetFolder = new();
 
 
         public static bool AddImporter<T>() where T : ImporterBase, new()

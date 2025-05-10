@@ -96,12 +96,12 @@ namespace ExtraAssetsImporter.AssetImporter
                         prefab.name = importData.FullAssetName;
 
                         EditorAssetCategoryOverride categoryOverride = prefab.AddComponent<EditorAssetCategoryOverride>();
-                        categoryOverride.m_IncludeCategories = [$"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}"];
+                        categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
 
                         if (AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab))
                         {
                             AssetPackItem assetPackItem = prefab.AddComponent<AssetPackItem>();
-                            assetPackItem.m_Packs = [assetPackPrefab];
+                            assetPackItem.m_Packs = new[] { assetPackPrefab };
                         }
 
                         AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);

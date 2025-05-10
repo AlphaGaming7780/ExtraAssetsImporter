@@ -44,7 +44,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (jsonNetLanes.prefabIdentifierInfos.Count > 0)
             {
                 ObsoleteIdentifiers obsoleteIdentifiers = netLanesPrefab.AddComponent<ObsoleteIdentifiers>();
-                obsoleteIdentifiers.m_PrefabIdentifiers = [.. jsonNetLanes.prefabIdentifierInfos];
+                obsoleteIdentifiers.m_PrefabIdentifiers = jsonNetLanes.prefabIdentifierInfos.ToArray();
             }
 
             ImportersUtils.SetupUIObject(this, data, netLanesPrefab, jsonNetLanes.UiPriority );

@@ -10,7 +10,7 @@ namespace ExtraAssetsImporter.ClassExtension
     {
         public static void AddObjectMeshInfo(this ObjectGeometryPrefab prefab, RenderPrefabBase renderPrefab, float3 position = new(), ObjectState objectState = ObjectState.None)
         {
-            prefab.m_Meshes ??= [];
+            prefab.m_Meshes ??= new ObjectMeshInfo[0];
 
             ObjectMeshInfo objectMeshInfo = new()
             {

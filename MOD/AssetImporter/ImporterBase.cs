@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Colossal.Localization;
@@ -18,7 +19,7 @@ namespace ExtraAssetsImporter.AssetImporter
         public abstract string AssetEndName { get; }
         public virtual bool PreImporter { get; } = false;
 
-        internal List<string> _FolderToLoadAssets = [];
+        internal List<string> _FolderToLoadAssets = new();
         private bool AssetsLoading = false;
         internal bool AssetsLoaded = false;
 
@@ -79,12 +80,12 @@ namespace ExtraAssetsImporter.AssetImporter
 
             PreLoadCustomAssetFolder();
 
-            Dictionary<string, string> csLocalisation = [];
+            Dictionary<string, string> csLocalisation = new();
 
             foreach (string folder in _FolderToLoadAssets)
             {
 
-                FileInfo[] fileInfos = [];
+                FileInfo[] fileInfos = new FileInfo[0];
 
                 // Note: This is a workaround for the fact that the FolderImporter and FileImporter are not compatible with each other.
                 if (this is FolderImporter)

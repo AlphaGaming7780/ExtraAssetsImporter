@@ -60,7 +60,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             if (surfacesMaterail.prefabIdentifierInfos.Count > 0)
             {
                 ObsoleteIdentifiers obsoleteIdentifiers = surfacePrefab.AddComponent<ObsoleteIdentifiers>();
-                obsoleteIdentifiers.m_PrefabIdentifiers = [.. surfacesMaterail.prefabIdentifierInfos];
+                obsoleteIdentifiers.m_PrefabIdentifiers = surfacesMaterail.prefabIdentifierInfos.ToArray();
             }
 
             while (!baseColorMapTask.IsCompleted || !normalMapTask.IsCompleted || !maskMapTask.IsCompleted) yield return null;
@@ -132,7 +132,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             material.SetFloat(ShaderPropertiesIDs.DecalStencilWriteMask, 16);
             material.SetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask, 1);
             material.enableInstancing = true;
-            material.shaderKeywords = ["_MATERIAL_AFFECTS_ALBEDO", "_MATERIAL_AFFECTS_MASKMAP", "_MATERIAL_AFFECTS_NORMAL"];
+            material.shaderKeywords = new[] { "_MATERIAL_AFFECTS_ALBEDO", "_MATERIAL_AFFECTS_MASKMAP", "_MATERIAL_AFFECTS_NORMAL" };
             return material;
         }
 

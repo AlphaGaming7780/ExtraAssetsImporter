@@ -35,7 +35,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (decalsMaterail.prefabIdentifierInfos.Count > 0)
             {
                 ObsoleteIdentifiers obsoleteIdentifiers = decalPrefab.AddComponent<ObsoleteIdentifiers>();
-                obsoleteIdentifiers.m_PrefabIdentifiers = [.. decalsMaterail.prefabIdentifierInfos];
+                obsoleteIdentifiers.m_PrefabIdentifiers = decalsMaterail.prefabIdentifierInfos.ToArray();
             }
 
             ImportersUtils.SetupUIObject(this, data, decalPrefab, decalsMaterail.UiPriority);
@@ -82,7 +82,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public static Mesh[] CreateMeshes(Surface surface)
         {
             Vector4 MeshSize = surface.GetVectorProperty("colossal_MeshSize");
-            return [ImportersUtils.CreateBoxMesh(MeshSize.x, MeshSize.y, MeshSize.z)];
+            return new[] { ImportersUtils.CreateBoxMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
         }
 
         public static Surface CreateSurface(ImportData data, JSONDecalsMaterail decalsMaterail, string materialName = "DefaultDecal")

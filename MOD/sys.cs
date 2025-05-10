@@ -24,8 +24,8 @@ namespace ExtraAssetsImporter
 
                 EntityQueryDesc surfaceEntityQueryDesc = new()
                 {
-                    All = [ComponentType.ReadOnly<SurfaceData>()],
-                    None = [ComponentType.ReadOnly<PlaceholderObjectElement>()]
+                    All = new[] { ComponentType.ReadOnly<SurfaceData>() },
+                    None = new[] { ComponentType.ReadOnly<PlaceholderObjectElement>() }
 
                 };
 

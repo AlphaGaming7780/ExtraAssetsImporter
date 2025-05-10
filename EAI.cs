@@ -37,7 +37,7 @@ namespace ExtraAssetsImporter
 
         internal static TextureStreamingSystem textureStreamingSystem;
 
-		//private bool eaiIsLoaded = false;
+        //private bool eaiIsLoaded = false;
 
         public void OnLoad(UpdateSystem updateSystem)
 		{

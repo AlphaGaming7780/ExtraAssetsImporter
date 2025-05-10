@@ -84,7 +84,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             renderPrefab.name = $"{data.FullAssetName}_RenderPrefab";
             renderPrefab.geometryAsset = geometryAsset;//new AssetReference<GeometryAsset>(geometryAsset.guid);
-            renderPrefab.surfaceAssets = [surfaceAsset];
+            renderPrefab.surfaceAssets = new[] { surfaceAsset };
             renderPrefab.bounds = new(new(-MeshSize.x * 0.5f, -MeshSize.y * 0.5f, -MeshSize.z * 0.5f), new(MeshSize.x * 0.5f, MeshSize.y * 0.5f, MeshSize.z * 0.5f));
             renderPrefab.meshCount = geometryAsset.data.meshCount;
             renderPrefab.vertexCount = geometryAsset.GetVertexCount(0);
@@ -233,12 +233,12 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 //VT Stuff
                 VirtualTexturingConfig virtualTexturingConfig = EAI.textureStreamingSystem.virtualTexturingConfig; //(VirtualTexturingConfig)ScriptableObject.CreateInstance("VirtualTexturingConfig");
-                Dictionary<Colossal.IO.AssetDatabase.TextureAsset, List<SurfaceAsset>> textureReferencesMap = [];
+                Dictionary<Colossal.IO.AssetDatabase.TextureAsset, List<SurfaceAsset>> textureReferencesMap = new();
 
                 foreach (Colossal.IO.AssetDatabase.TextureAsset asset in surfaceAsset.textures.Values)
                 {
                     asset.Save();
-                    textureReferencesMap.Add(asset, [surfaceAsset]);
+                    textureReferencesMap.Add(asset, new() { surfaceAsset });
                 }
 
                 surfaceAsset.Save(force: false, saveTextures: false, vt: true, virtualTexturingConfig: virtualTexturingConfig, textureReferencesMap: textureReferencesMap, tileSize: virtualTexturingConfig.tileSize, nbMidMipLevelsRequested: 0);
@@ -318,9 +318,8 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             Mesh mesh = new();
 
-            //3) Define the co-ordinates of each Corner of the cube 
-            Vector3[] c =
-            [
+            Vector3[] c = new[]
+            {
                 new Vector3(-length * .5f, -height * .5f, width * .5f),
                 new Vector3(length * .5f, -height * .5f, width * .5f),
                 new Vector3(length * .5f, -height * .5f, -width * .5f),
@@ -329,22 +328,22 @@ namespace ExtraAssetsImporter.AssetImporter
                 new Vector3(length * .5f, height * .5f, width * .5f),
                 new Vector3(length * .5f, height * .5f, -width * .5f),
                 new Vector3(-length * .5f, height * .5f, -width * .5f),
-            ];
+            };
 
 
             //4) Define the vertices that the cube is composed of:
             //I have used 16 vertices (4 vertices per side). 
             //This is because I want the vertices of each side to have separate normals.
             //(so the object renders light/shade correctly) 
-            Vector3[] vertices =
-            [
+            Vector3[] vertices = new[]
+            {
                 c[0], c[1], c[2], c[3], // Bottom
 			    c[7], c[4], c[0], c[3], // Left
 			    c[4], c[5], c[1], c[0], // Front
 			    c[6], c[7], c[3], c[2], // Back
 			    c[5], c[6], c[2], c[1], // Right
 			    c[7], c[6], c[5], c[4]  // Top
-            ];
+            };
 
 
             //5) Define each vertex's Normal
@@ -356,15 +355,15 @@ namespace ExtraAssetsImporter.AssetImporter
             Vector3 right = Vector3.right;
 
 
-            Vector3[] normals =
-            [
+            Vector3[] normals = new[]
+            {
                 down, down, down, down,             // Bottom
 			    left, left, left, left,             // Left
 			    forward, forward, forward, forward,	// Front
 			    back, back, back, back,             // Back
 			    right, right, right, right,         // Right
 			    up, up, up, up                      // Top
-            ];
+            };
 
             //6) Define each vertex's UV co-ordinates
             Vector2 uv00 = new(0f, 0f);
@@ -372,30 +371,30 @@ namespace ExtraAssetsImporter.AssetImporter
             Vector2 uv01 = new(0f, 1f);
             Vector2 uv11 = new(1f, 1f);
 
-            Vector2[] uvs =
-            [
+            Vector2[] uvs = new[]
+            {
                 uv11, uv01, uv00, uv10, // Bottom
 			    uv11, uv01, uv00, uv10, // Left
 			    uv11, uv01, uv00, uv10, // Front
 			    uv11, uv01, uv00, uv10, // Back	        
 			    uv11, uv01, uv00, uv10, // Right 
 			    uv11, uv01, uv00, uv10  // Top
-            ];
+            };
 
 
             //7) Define the Polygons (triangles) that make up the our Mesh (cube)
             //IMPORTANT: Unity uses a 'Clockwise Winding Order' for determining front-facing polygons.
             //This means that a polygon's vertices must be defined in 
             //a clockwise order (relative to the camera) in order to be rendered/visible.
-            int[] triangles =
-            [
+            int[] triangles = new[]
+            {
                 3, 1, 0,        3, 2, 1,        // Bottom	
 			    7, 5, 4,        7, 6, 5,        // Left
 			    11, 9, 8,       11, 10, 9,      // Front
 			    15, 13, 12,     15, 14, 13,     // Back
 			    19, 17, 16,     19, 18, 17,	    // Right
-			    23, 21, 20,     23, 22, 21,	    // Top
-		    ];
+			    23, 21, 20,     23, 22, 21,     // Top
+            };
 
 
             //8) Build the Mesh
