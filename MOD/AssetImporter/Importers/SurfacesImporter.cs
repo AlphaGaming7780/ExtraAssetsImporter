@@ -73,6 +73,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             if (baseColorMap != null)
             {
                 Texture2D texture = (Texture2D)baseColorMap.ToUnityTexture(false);
+                baseColorMap.Dispose();
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.BaseColorMap, texture);
             }
@@ -81,6 +82,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             if (normalMap != null)
             {
                 Texture2D texture = (Texture2D)normalMap.ToUnityTexture(false);
+                normalMap.Dispose();
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.NormalMap, texture);
             }
@@ -89,6 +91,7 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             if (maskMap != null)
             {
                 Texture2D texture = (Texture2D)maskMap.ToUnityTexture(false);
+                maskMap.Dispose();
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture);
             }
