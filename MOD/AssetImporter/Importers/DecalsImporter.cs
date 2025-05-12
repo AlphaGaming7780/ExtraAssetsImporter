@@ -54,16 +54,12 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 }
 
                 Surface surface = enumerator.Current;
-                //Surface surface = CreateSurface(data, decalsMaterail);
                 Mesh[] meshes = CreateMeshes(surface);
 
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, SetupDecalRenderPrefab);
             }
 
             decalPrefab.AddObjectMeshInfo(renderPrefab);
-
-            //AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", data.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
-            //EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(data.FullAssetName));
 
             yield return decalPrefab;
         }

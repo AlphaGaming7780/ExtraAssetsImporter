@@ -116,12 +116,6 @@ namespace ExtraAssetsImporter.AssetImporter
 
             Surface surface = new(data.AssetName, materialName);
 
-            //while (!baseColorMapTask.IsCompleted || !normalMapTask.IsCompleted || !maskMapTask.IsCompleted) yield return null;
-
-            //var baseColorMap = baseColorMapTask.Result;
-            //var normalMap = normalMapTask.Result;
-            //var maskMap = maskMapTask.Result;
-
             while (!baseColorMapTask.IsCompleted) yield return null;
             var baseColorMap = baseColorMapTask.Result;
             if (baseColorMap != null) surface.AddProperty("_BaseColorMap", baseColorMap);

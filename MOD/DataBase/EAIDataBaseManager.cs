@@ -203,8 +203,9 @@ namespace ExtraAssetsImporter.DataBase
             {
                 foreach (string file in Directory.GetFiles(assetPath, $"*{s}"))
                 {
-                    //string filePath = file.Replace(AssetDataBaseEAI.kRootPath + Path.DirectorySeparatorChar, "");
-                    AssetDataPath assetDataPath = AssetDataPath.Create(Path.GetDirectoryName(file), Path.GetFileName(file), true, EscapeStrategy.None);
+                    string assetSubPath = assetPath.Replace(AssetDataBaseEAI.kRootPath + Path.DirectorySeparatorChar, "");
+                    AssetDataPath assetDataPath = AssetDataPath.Create(assetSubPath, Path.GetFileName(file), true, EscapeStrategy.None); //Path.GetDirectoryName(file)
+                    //EAI.Logger.Info($"Loading asset {assetDataPath}.");
                     try
                     {
                         //if (!assetDataBaseEAI.Exists(assetDataPath, out IAssetData assetData)) continue;
@@ -225,6 +226,7 @@ namespace ExtraAssetsImporter.DataBase
                     EAI.Logger.Info($"Prefab Asset wasn't valid, prefab asset path: {prefabAsset.path}, prefab asset id: {prefabAsset.id} ");
                     continue;
                 }
+                //EAI.Logger.Info($"Loading prefab {prefabAsset.path} subPath {prefabAsset.subPath}.");
                 PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
                 if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase prefabBase1))
                 {
