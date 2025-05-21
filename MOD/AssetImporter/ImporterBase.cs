@@ -132,7 +132,7 @@ namespace ExtraAssetsImporter.AssetImporter
     }
 
 
-    struct ImportData
+    public struct ImportData
     {
 
         public ImportData(string folderPath, string assetName, string catName, string modName, string fullAssetName, string assetDataPath, UIAssetParentCategoryPrefab assetCat)

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Colossal.AssetPipeline;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
@@ -83,15 +84,18 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public static Surface CreateSurface(ImportData data, JSONDecalsMaterail decalsMaterail, string materialName = "DefaultDecal")
         {
-            Surface decalSurface = ImportersUtils.CreateSurface(data, materialName);
-            decalSurface.AddProperty("colossal_DecalLayerMask", 1);
+            Surface decalSurface = SurfaceImporterUtils.CreateSurface(data);
 
-            foreach (string key in decalsMaterail.Float.Keys)
-            {
-                if (key == "UiPriority") continue;
-                decalSurface.AddProperty(key, decalsMaterail.Float[key]);
-            }
-            foreach (string key in decalsMaterail.Vector.Keys) { decalSurface.AddProperty(key, decalsMaterail.Vector[key]); }
+            if (!decalSurface.HasProperty("colossal_DecalLayerMask")) decalSurface.AddProperty("colossal_DecalLayerMask", 1);
+
+            //decalSurface.AddProperty("colossal_DecalLayerMask", 1);
+
+            //foreach (string key in decalsMaterail.Float.Keys)
+            //{
+            //    if (key == "UiPriority") continue;
+            //    decalSurface.AddProperty(key, decalsMaterail.Float[key]);
+            //}
+            //foreach (string key in decalsMaterail.Vector.Keys) { decalSurface.AddProperty(key, decalsMaterail.Vector[key]); }
 
             return decalSurface;
         }
@@ -99,25 +103,23 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public static IEnumerator<Surface> AsyncCreateSurface(ImportData data, JSONDecalsMaterail decalsMaterail, string materialName = "DefaultDecal")
         {
 
-            IEnumerator<Surface> enumerator = ImportersUtils.AsyncCreateSurface(data, materialName);
+            //IEnumerator<Surface> enumerator = TexturesImporterUtils.AsyncCreateSurface(data, materialName);s
+            Task<Surface> task = SurfaceImporterUtils.AsyncCreateSurface(data);
 
-            bool value = true;
-            while (enumerator.Current == null && value)
-            {
-                yield return null;
-                value = enumerator.MoveNext();
-            }
+            //bool value = true;
+            //while (enumerator.Current == null && value)
+            //{
+            //    yield return null;
+            //    value = enumerator.MoveNext();
+            //}
 
-            Surface decalSurface = enumerator.Current;
+            //Surface decalSurface = enumerator.Current;
 
-            decalSurface.AddProperty("colossal_DecalLayerMask", 1);
+            while (!task.IsCompleted) yield return null;
 
-            foreach (string key in decalsMaterail.Float.Keys)
-            {
-                if (key == "UiPriority") continue;
-                decalSurface.AddProperty(key, decalsMaterail.Float[key]);
-            }
-            foreach (string key in decalsMaterail.Vector.Keys) { decalSurface.AddProperty(key, decalsMaterail.Vector[key]); }
+            Surface decalSurface = task.Result;
+
+            if (!decalSurface.HasProperty("colossal_DecalLayerMask")) decalSurface.AddProperty("colossal_DecalLayerMask", 1);
 
             yield return decalSurface;
         }
