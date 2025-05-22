@@ -1,5 +1,6 @@
 ﻿using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Importers;
 using ExtraLib;
 using Game.Prefabs;
 using System;
@@ -18,6 +19,8 @@ namespace ExtraAssetsImporter.AssetImporter
         private static readonly Dictionary<Type, ImporterBase> s_PreImporters = new();
         private static readonly List<string> s_AddAssetFolder = new();
 
+        private static bool hasFinised = false;
+        public static bool HasFinished => hasFinised;
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
@@ -51,6 +54,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void LoadCustomAssets()
         {
+            hasFinised = false;
 
             CreateEAILocalAssetPackPrefab();
 
@@ -89,22 +93,35 @@ namespace ExtraAssetsImporter.AssetImporter
 
         private static IEnumerator WaitForImportersToFinish()
         {
-            //bool areDone = false;
-            while(!HasImporterFinished(s_Importers.Values.ToArray()))
+
+            while (
+                (EAI.m_Setting.Decals && !DecalsImporter.DecalsLoaded) ||
+                (EAI.m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) ||
+                (EAI.m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded) ||
+                !HasImporterFinished(s_Importers.Values.ToArray())
+            )
             {
-                //areDone = true;
-                //foreach (ImporterBase importer in s_Importers.Values)
-                //{
-                //    if (importer.AssetsLoaded) continue;
-                //    areDone = false;
-                //}
                 yield return null;
             }
+
+            ////bool areDone = false;
+            //while (!HasImporterFinished(s_Importers.Values.ToArray()))
+            //{
+            //    //areDone = true;
+            //    //foreach (ImporterBase importer in s_Importers.Values)
+            //    //{
+            //    //    if (importer.AssetsLoaded) continue;
+            //    //    areDone = false;
+            //    //}
+            //    yield return null;
+            //}
 
             EAI.Logger.Info("The loading of importers as finished.");
             EAI.m_Setting.ResetCompatibility();
             EAIDataBaseManager.SaveValidateDataBase();
             EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
+
+            hasFinised = true;
 
             yield break;
         }

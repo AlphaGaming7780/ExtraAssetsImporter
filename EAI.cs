@@ -172,13 +172,17 @@ namespace ExtraAssetsImporter
             if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
             if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
             if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
-            EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
+            //EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
    
         }
 
 		private static IEnumerator WaitForCustomStuffToFinish()
 		{
-			while( (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || (m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || (m_Setting.NetLanes && !Importers.NetLanesDecalImporter.NetLanesLoaded)) 
+			while( 
+                (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || 
+                (m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || 
+                (m_Setting.NetLanes && !Importers.NetLanesDecalImporter.NetLanesLoaded) || 
+                !AssetsImporterManager.HasFinished) 
 			{
 				yield return null;
 			}
