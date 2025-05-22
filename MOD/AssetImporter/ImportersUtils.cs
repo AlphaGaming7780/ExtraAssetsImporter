@@ -18,7 +18,6 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     static class ImportersUtils
     {
-
         public static RenderPrefabBase GetRenderPrefab(ImportData data)
         {
             if (EAIDataBaseManager.TryGetEAIAsset(data.FullAssetName, out EAIAsset asset))
