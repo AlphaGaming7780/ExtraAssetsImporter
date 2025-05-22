@@ -6,6 +6,7 @@ using Colossal.AssetPipeline;
 using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.Helpers;
@@ -56,7 +57,7 @@ namespace ExtraAssetsImporter.AssetImporter
         public static RenderPrefab CreateRenderPrefab(ImportData data, Surface surface, Mesh[] meshes, Action<ImportData, RenderPrefab, Surface, Mesh[]> setupRenderPrefab, bool useVT = false)
         {
             EAI.Logger.Info($"Creating RenderPrefab for {data.FullAssetName}.");
-            SurfaceAsset surfaceAsset = SetupSurfaceAsset(data, surface, useVT);
+            SurfaceAsset surfaceAsset =  SurfaceImporterUtils.SetupSurfaceAsset(data, surface, useVT);
 
             Vector4 MeshSize = surface.GetVectorProperty("colossal_MeshSize");
 
@@ -104,49 +105,9 @@ namespace ExtraAssetsImporter.AssetImporter
             return renderPrefab;
         }
 
-
-
-        public static SurfaceAsset SetupSurfaceAsset(ImportData data, Surface surface, bool useVT = false)
-        {
-            AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(data.AssetDataPath, $"{data.AssetName}_SurfaceAsset", EscapeStrategy.None);
-            SurfaceAsset surfaceAsset = new()
-            {
-                id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.assetDataBaseEAI
-            };
-            surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
-            surfaceAsset.SetData(surface);
-
-
-            if (useVT)
-            {
-                //VT Stuff
-                VirtualTexturingConfig virtualTexturingConfig = EAI.textureStreamingSystem.virtualTexturingConfig; //(VirtualTexturingConfig)ScriptableObject.CreateInstance("VirtualTexturingConfig");
-                Dictionary<Colossal.IO.AssetDatabase.TextureAsset, List<SurfaceAsset>> textureReferencesMap = new();
-
-                foreach (Colossal.IO.AssetDatabase.TextureAsset asset in surfaceAsset.textures.Values)
-                {
-                    asset.Save();
-                    textureReferencesMap.Add(asset, new() { surfaceAsset });
-                }
-
-                surfaceAsset.Save(force: false, saveTextures: false, vt: true, virtualTexturingConfig: virtualTexturingConfig, textureReferencesMap: textureReferencesMap, tileSize: virtualTexturingConfig.tileSize, nbMidMipLevelsRequested: 0);
-
-                //END OF VT Stuff.
-            }
-            else
-            {
-                surfaceAsset.Save(force: false, saveTextures: true, vt: false);
-            }
-
-            return surfaceAsset;
-        }
-
         public static Task<T> AsyncLoadJson<T>(string path) where T : class
         {
-            Task<T> task = new Task<T>(() => LoadJson<T>(path));
-            task.Start();
-            return task;
+            return Task.Run(() => LoadJson<T>(path));
         }
 
         public static T LoadJson<T>(string path) where T : class

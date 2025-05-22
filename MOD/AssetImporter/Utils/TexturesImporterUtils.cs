@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using Colossal.AssetPipeline;
 using Colossal.AssetPipeline.Importers;
@@ -13,6 +12,27 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
         //private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetInstance<DefaultTextureImporter>();
 
+        public const string BaseColorMapName = "_BaseColorMap.png";
+        public const string NormalMapName = "_NormalMap.png";
+        public const string MaskMapName = "_MaskMap.png";
+
+        public static void ImportTextures(ImportData data, Surface surface)
+        {
+            var baseColorMap = TexturesImporterUtils.ImportTexture_BaseColorMap(data);
+            if (baseColorMap != null) surface.AddProperty(SurfaceImporterUtils.BaseColorMap, baseColorMap);
+
+            var normalMap = TexturesImporterUtils.ImportTexture_NormalMap(data);
+            if (normalMap != null) surface.AddProperty(SurfaceImporterUtils.NormalMap, normalMap);
+
+            var maskMap = TexturesImporterUtils.ImportTexture_MaskMap(data);
+            if (maskMap != null) surface.AddProperty(SurfaceImporterUtils.MaskMap, maskMap);
+        }
+
+        public static Task ImportTexturesAsync(ImportData data, Surface surface)
+        {
+            return Task.Run(() => ImportTextures(data, surface));
+        }
+
         public static TextureImporter.Texture ImportTexture_BaseColorMap(ImportData data)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
@@ -23,7 +43,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
         public static TextureImporter.Texture ImportTexture_BaseColorMap(ImportData data, ImportSettings importSettings)
         {
-            return ImportTexture(data, "_BaseColorMap.png", importSettings);
+            return ImportTexture(data, BaseColorMapName, importSettings);
         }
 
         public static Task<TextureImporter.Texture> AsyncImportTexture_BaseColorMap(ImportData data, ImportSettings importSettings)
@@ -43,7 +63,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             importSettings.normalMap = true;
             importSettings.alphaIsTransparency = false;
-            return ImportTexture(data, "_NormalMap.png", importSettings);
+            return ImportTexture(data, NormalMapName, importSettings);
         }
 
         public static Task<TextureImporter.Texture> AsyncImportTexture_NormalMap(ImportData data, ImportSettings importSettings)
@@ -61,7 +81,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static TextureImporter.Texture ImportTexture_MaskMap(ImportData data, ImportSettings importSettings)
         {
             importSettings.alphaIsTransparency = false;
-            return ImportTexture(data, "_MaskMap.png", importSettings);
+            return ImportTexture(data, MaskMapName, importSettings);
         }
 
         public static Task<TextureImporter.Texture> AsyncImportTexture_MaskMap(ImportData data, ImportSettings importSettings)
