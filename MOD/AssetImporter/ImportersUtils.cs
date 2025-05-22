@@ -20,7 +20,8 @@ namespace ExtraAssetsImporter.AssetImporter
     static class ImportersUtils
     {
 
-        private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetInstance<DefaultTextureImporter>();
+        //private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetInstance<DefaultTextureImporter>();
+        private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
 
         public static RenderPrefabBase GetRenderPrefab(ImportData data)
         {
