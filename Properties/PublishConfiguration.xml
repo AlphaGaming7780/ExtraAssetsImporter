@@ -52,18 +52,18 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ✔️French 100% : aricoseco, Edou24, Triton Supreme
-- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204, Kelvin Ong (kelvinspaces)
-- ✔️Chinese Traditional 100% : Tiger Zhang (tiger42231), Source Design (source_design), Kelvin Ong (kelvinspaces)
-- ⚠️German 18% : Konsi
-- ⚠️Italian 18% : Stefano (Furios)
+- ⚠️French 79% : aricoseco, Edou24, Triton Supreme
+- ⚠️Chinese Simplified 79% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204, Kelvin Ong (kelvinspaces)
+- ⚠️Chinese Traditional 79% : Tiger Zhang (tiger42231), Source Design (source_design), Kelvin Ong (kelvinspaces)
+- ⚠️German 79% : Konsi
+- ⚠️Italian 17% : Stefano (Furios)
 - ❌Japanese 0%
-- ✔️Korean 100% : Hinanchovo
-- ✔️Polish 100% : Lisek, karmel68
-- ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
-- ✔️Portuguese, Brazilian 100% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
-- ⚠️Russian 35% : Mihail (kaktyc), Lek0ms, MrSandcraft
-- ✔️Spanish 100% : elGendo87
+- ⚠️Korean 79% : Hinanchovo
+- ⚠️Polish 79% : Lisek, karmel68
+- ⚠️Portuguese 79% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ⚠️Portuguese, Brazilian 79% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
+- ⚠️Russian 33% : Mihail (kaktyc), Lek0ms, MrSandcraft
+- ⚠️Spanish 79% : elGendo87
   </LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/EAI.png" />
@@ -82,9 +82,17 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
-## Fixes
-- Do not save settings during OnDispose().
-	</ChangeLog>
+### Improvements :
+- **New Importers** (ALPHA)
+> - It's an alpha feature, I recommend to use the old importers for now.
+> - You can enable the new importers in EAI settings.
+> - The new importers are faster than the old one (3x).
+> - You can now create asset with only one texture, can be a NormalMap, a MaskMap or the BaseColorMap.
+> - This fix the pink normal map issue and in the same time break all surfaces made with a pink normal map.
+> - Possibility to have AssetPack filter in game.
+> - Possibility to have localization for assets.
+- Use ExtraLib AssetMultiCategory features now.
+  </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
 	<ExternalLink Type="crowdin" Url="https://crowdin.com/project/extraassetsimporter" />
