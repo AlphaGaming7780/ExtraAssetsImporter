@@ -1,67 +1,92 @@
 ﻿using Colossal.IO.AssetDatabase;
+using ExtraAssetsImporter.DataBase;
 using Game.Modding;
 using Game.Settings;
 using System.IO;
 
-namespace ExtraAssetsImporter;
-
-//[FileLocation($"ModsSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
-[FileLocation("ExtraAssetsImporter")]
-[SettingsUIGroupOrder(kImportersGroup, kMPHGroup)]
-[SettingsUIShowGroupName(kImportersGroup, kMPHGroup)]
-public class Setting(IMod mod) : ModSetting(mod)
+namespace ExtraAssetsImporter
 {
-    public const string kMainSection = "Main";
-    public const string kDataBaseSection = "DataBase";
-    public const string kImportersGroup = "Importers";
-    public const string kMPHGroup = "Missing Prefab Helper";
-    internal bool DeleteDataBase { get; private set; } = false;
-
-    [SettingsUISection(kMainSection, kImportersGroup)]
-    public bool Surfaces { get; set; } = true;
-
-    [SettingsUISection(kMainSection, kImportersGroup)]
-    public bool Decals { get; set; } = true;
-
-    [SettingsUISection(kMainSection, kImportersGroup)]
-    public bool NetLanes { get; set; } = true;
-
-    [SettingsUISection(kMainSection, kMPHGroup)]
-    public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
-
-    [SettingsUISection(kDataBaseSection, "")]
-    [SettingsUIDirectoryPicker]
-    //public string DataBasePath { get { return EAIDataBaseManager.eaiDataBase.ActualDataBasePath; } set { EAIDataBaseManager.RelocateAssetDataBase(value); } }// = "C:/";
-    public string DatabasePath { get { if (EAIDataBaseManager.eaiDataBase == null || EAIDataBaseManager.eaiDataBase.ActualDataBasePath == null) return ""; return EAIDataBaseManager.eaiDataBase.ActualDataBasePath; } set { SavedDatabasePath = Path.GetDirectoryName(value); } }
-    public string SavedDatabasePath = null;
-
-    [SettingsUISection(kDataBaseSection, "")]
-    public bool DeleteNotLoadedAssets { get; set; } = true;
-
-    [SettingsUISection(kDataBaseSection, "")]
-    [SettingsUIDisableByCondition(typeof(Setting), nameof(DeleteDataBase))]
-    public bool DeleteDataBaseOnClose { set { DeleteDataBase = true; } }
-    //public bool DisableCondition => DeleteDataBase;
-
-    public override void SetDefaults()
+    //[FileLocation($"ModsSettings\\{nameof(ExtraAssetsImporter)}\\settings")]
+    [FileLocation("ExtraAssetsImporter")]
+    [SettingsUIGroupOrder(kNewImportersGroup, kOldImportersGroup, kMPHGroup)]
+    [SettingsUIShowGroupName(kNewImportersGroup, kOldImportersGroup, kMPHGroup)]
+    public class Setting : ModSetting
     {
-        Decals = true;
-        Surfaces = true;
-        NetLanes = true;
-        CompatibilityDropDown = EAICompatibility.None;
+        public Setting(IMod mod) : base(mod) { }
+
+        public const string kMainSection = "Main";
+        public const string kDataBaseSection = "DataBase";
+        public const string kNewImportersGroup = "NewImporters";
+        public const string kOldImportersGroup = "OldImporters";
+        public const string kMPHGroup = "MissingPrefabHelper";
+        internal bool DeleteDataBase { get; private set; } = false;
+
+        [SettingsUISection(kMainSection, kNewImportersGroup)]
+        public bool UseNewImporters { get; set; } = true;
+        public bool DisableCondition_UseNewImporters => UseNewImporters;
+
+        [SettingsUISection(kMainSection, kOldImportersGroup)]
+        public bool UseOldImporters { get; set; } = true;
+        public bool DisableCondition_UseOldImporters => !UseOldImporters;
+
+        [SettingsUISection(kMainSection, kOldImportersGroup)]
+        [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(DisableCondition_UseOldImporters))]
+        public bool Surfaces { get; set; } = true;
+
+        [SettingsUISection(kMainSection, kOldImportersGroup)]
+        [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(DisableCondition_UseOldImporters))]
+        public bool Decals { get; set; } = true;
+
+        [SettingsUISection(kMainSection, kOldImportersGroup)]
+        [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(DisableCondition_UseOldImporters))]
+        public bool NetLanes { get; set; } = true;
+
+        [SettingsUISection(kMainSection, kMPHGroup)]
+        public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
+
+        [SettingsUISection(kDataBaseSection, "")]
+        [SettingsUIDirectoryPicker]
+        public string DatabasePath
+        {
+            get
+            {
+                if (EAIDataBaseManager.eaiDataBase == null || EAIDataBaseManager.eaiDataBase.ActualDataBasePath == null)
+                    return "";
+                return EAIDataBaseManager.eaiDataBase.ActualDataBasePath;
+            }
+            set { SavedDatabasePath = Path.GetDirectoryName(value); }
+        }
+        public string SavedDatabasePath = null;
+
+        [SettingsUISection(kDataBaseSection, "")]
+        public bool DeleteNotLoadedAssets { get; set; } = true;
+
+        [SettingsUISection(kDataBaseSection, "")]
+        [SettingsUIDisableByCondition(typeof(Setting), nameof(DeleteDataBase))]
+        public bool DeleteDataBaseOnClose { set { DeleteDataBase = true; } }
+
+        public override void SetDefaults()
+        {
+            Decals = true;
+            Surfaces = true;
+            NetLanes = true;
+            CompatibilityDropDown = EAICompatibility.None;
+        }
+
+        internal void ResetCompatibility()
+        {
+            CompatibilityDropDown = EAICompatibility.None;
+            ApplyAndSave();
+        }
     }
 
-    internal void ResetCompatibility()
+    public enum EAICompatibility
     {
-        CompatibilityDropDown = EAICompatibility.None;
-        ApplyAndSave();
+        None,
+        ELT2,
+        ELT3,
+        LocalAsset,
     }
+
 }
 
-public enum EAICompatibility
-{
-    None,
-    ELT2,
-    ELT3,
-    LocalAsset,
-}
