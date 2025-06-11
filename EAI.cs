@@ -139,9 +139,12 @@ namespace ExtraAssetsImporter
                 Directory.CreateDirectory(pathToDataCustomSurfaces);
                 Directory.CreateDirectory(pathToDataCustomNetLanes);
 
-                if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
-                if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
-                if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
+                if(m_Setting.UseOldImporters)
+                {
+                    if (Directory.Exists(pathToDataCustomDecals) && m_Setting.Decals) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
+                    if (Directory.Exists(pathToDataCustomSurfaces) && m_Setting.Surfaces) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
+                    if (Directory.Exists(pathToDataCustomNetLanes) && m_Setting.NetLanes) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
+                }
 
                 textureStreamingSystem = updateSystem.World.GetOrCreateSystemManaged<TextureStreamingSystem>(); // to use VT, should not be used normally.
                 
@@ -172,49 +175,16 @@ namespace ExtraAssetsImporter
             // Load the custom assets with the new importers
             if (m_Setting.UseNewImporters) AssetsImporterManager.LoadCustomAssets();
 
-            // Still support the old importers
-            if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
-            if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-            if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
-            //EL.extraLibMonoScript.StartCoroutine(WaitForCustomStuffToFinish());
-   
+            if(m_Setting.UseOldImporters)
+            {
+                if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+                if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+                if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+            }
+
+            EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForImportersToFinish());
+
         }
-
-		private static IEnumerator WaitForCustomStuffToFinish()
-		{
-			while( 
-                (m_Setting.Decals && !DecalsImporter.DecalsLoaded) || 
-                (m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) || 
-                (m_Setting.NetLanes && !Importers.NetLanesDecalImporter.NetLanesLoaded) || 
-                !AssetsImporterManager.HasFinished) 
-			{
-				yield return null;
-			}
-			EAI.Logger.Info("The loading of custom stuff as finished.");
-			m_Setting.ResetCompatibility();
-            EAIDataBaseManager.SaveValidateDataBase();
-			EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
-
-            //foreach (MaterialLibrary.MaterialDescription material in AssetDatabase.global.resources.materialLibrary.m_Materials)
-            //{
-            //    Logger.Info(material.m_Material.name);
-
-            //    Logger.Info($"{material.m_Material.name} | Shader name : {material.m_Material.shader.name}");
-
-            //    if (material.m_Material.name != "DefaultDecal" && material.m_Material.name != "CurvedDecal") continue;
-
-            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Int)) { Logger.Info($"{material.m_Material.name} | Int : {s}"); }
-            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Float)) { Logger.Info($"{material.m_Material.name} | Float : {s}"); }
-            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Vector)) { Logger.Info($"{material.m_Material.name} | Vector : {s}"); }
-            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Texture)) { Logger.Info($"{material.m_Material.name} | Texture : {s}"); }
-            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.Matrix)) { Logger.Info($"{material.m_Material.name} | Matrix : {s}"); }
-            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ConstantBuffer)) { Logger.Info($"{material.m_Material.name} | ConstantBuffer : {s}"); }
-            //    foreach (string s in material.m_Material.GetPropertyNames(UnityEngine.MaterialPropertyType.ComputeBuffer)) { Logger.Info($"{material.m_Material.name} | ComputeBuffer : {s}"); }
-
-            //}
-
-            yield break;
-		}
 
 
         internal static void ClearData()
@@ -230,10 +200,12 @@ namespace ExtraAssetsImporter
 		{
             if(m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(modPath);
 
-            if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces")))	SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
-            if (Directory.Exists(Path.Combine(modPath, "CustomDecals")))	DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
-            if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes")))  NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
-
+            if(m_Setting.UseOldImporters)
+            {
+                if (m_Setting.Surfaces  && Directory.Exists(Path.Combine(modPath, "CustomSurfaces"))) SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
+                if (m_Setting.Decals    && Directory.Exists(Path.Combine(modPath, "CustomDecals"))) DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
+                if (m_Setting.NetLanes  && Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
+            }
         }
 
         [Obsolete("Not needed anymore, you can remove this")]

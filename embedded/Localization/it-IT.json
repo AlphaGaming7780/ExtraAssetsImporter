@@ -13,7 +13,7 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Caricare le superfici personalizzate, ha effetto dopo aver riavviato il gioco.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Missing Prefab Fixer",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Dispositivo Prefabbricato Mancante",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Correzioni per la compatibilità",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "This setting have for goal to try to fix missing prefabs caused by an EAI update. To use it, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save and check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Disattivato",

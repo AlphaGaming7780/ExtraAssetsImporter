@@ -13,7 +13,7 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Carrega os decalques personalizados, tem efeito após reiniciar o jogo.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Faixas de Rede Personalizadas",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Carrega as faixas de rede personalizadas. As alterações só terão efeito após reiniciares o jogo.",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Missing Prefab Fixer",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Reparador de Prefabs em falta",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Correção de compatibilidade",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Esta configuração tem como objetivo tentar corrigir os prefabs em falta causados por uma atualização do EAI. Para a usar, ativa a configuração correspondente à versão do mod que usaste no teu save, reinicia o jogo, carrega o teu jogo e vê se os prefabs em falta regressaram e se está tudo em ordem. Se estiver tudo bem, guarda o teu jogo e reinicia o jogo; se houver algum problema, sai do jogo sem guardar. Esta configuração desativa-se automaticamente após o reinício para evitar conflitos e problemas futuros.",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Desativado",

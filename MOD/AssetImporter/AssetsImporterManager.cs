@@ -19,9 +19,6 @@ namespace ExtraAssetsImporter.AssetImporter
         private static readonly Dictionary<Type, ImporterBase> s_PreImporters = new();
         private static readonly List<string> s_AddAssetFolder = new();
 
-        private static bool hasFinised = false;
-        public static bool HasFinished => hasFinised;
-
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
             if (s_Importers.ContainsKey(typeof(T))) return false;
@@ -54,7 +51,6 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void LoadCustomAssets()
         {
-            hasFinised = false;
 
             CreateEAILocalAssetPackPrefab();
 
@@ -88,40 +84,26 @@ namespace ExtraAssetsImporter.AssetImporter
                 EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets());
             }
 
-            EL.extraLibMonoScript.StartCoroutine(WaitForImportersToFinish());
+            //EL.extraLibMonoScript.StartCoroutine(WaitForImportersToFinish());
         }
 
-        private static IEnumerator WaitForImportersToFinish()
+        internal static IEnumerator WaitForImportersToFinish()
         {
 
             while (
-                (EAI.m_Setting.Decals && !DecalsImporter.DecalsLoaded) ||
-                (EAI.m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) ||
-                (EAI.m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded) ||
-                !HasImporterFinished(s_Importers.Values.ToArray())
+                ( EAI.m_Setting.UseOldImporters && EAI.m_Setting.Decals && !DecalsImporter.DecalsLoaded) ||
+                ( EAI.m_Setting.UseOldImporters && EAI.m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) ||
+                ( EAI.m_Setting.UseOldImporters && EAI.m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded) ||
+                ( EAI.m_Setting.UseNewImporters && !HasImporterFinished(s_Importers.Values.ToArray()) )
             )
             {
                 yield return null;
             }
 
-            ////bool areDone = false;
-            //while (!HasImporterFinished(s_Importers.Values.ToArray()))
-            //{
-            //    //areDone = true;
-            //    //foreach (ImporterBase importer in s_Importers.Values)
-            //    //{
-            //    //    if (importer.AssetsLoaded) continue;
-            //    //    areDone = false;
-            //    //}
-            //    yield return null;
-            //}
-
             EAI.Logger.Info("The loading of importers as finished.");
             EAI.m_Setting.ResetCompatibility();
             EAIDataBaseManager.SaveValidateDataBase();
             EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
-
-            hasFinised = true;
 
             yield break;
         }

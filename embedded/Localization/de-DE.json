@@ -13,7 +13,7 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Lädt benutzerdefinierte Aufkleber, erfordert Neustart des Spiels.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Benutzerdefinierte NetLanes",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Lädt benutzerdefinierte NetLanes, erfordert Neustart des Spiels.",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Missing Prefab Fixer",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Fehlende Prefabs-Reparatur",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Kompatibilitäts-Fix",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Diese Einstellung hat als Ziel, fehlende Prefabs zu beheben, die durch ein ExtraAssetsImporter-Update verursacht wurden. Um sie zu verwenden, aktiviere die Einstellung entsprechend der Version der Mod, die im Spielstand verwendet wurde. Starte das Spiel neu, lade den Spielstand und prüfe, ob die fehlenden Prerabs zurück sind und alles funktioniert. Wenn es keine Probleme gibt ist, speichere den Spielstand und starte das Spiel neu. Wenn es Fehler gibt, beende das Spiel ohne zu speichern. Diese Einstellung deaktiviert sich nach dem Neustart automatisch, um zukünftige Konflikte und Probleme zu vermeiden.",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Deaktiviert",

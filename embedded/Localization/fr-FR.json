@@ -13,7 +13,7 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "Charger les décalcomanies personnalisées, prendra effet après le redémarrage du jeu.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Lignes(NetLanes) personnalisées",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Charger les lignes personnalisées, prendra effet après le redémarrage du jeu.",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Missing Prefab Fixer",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Prefab Fixer manquant",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Correction de la compatibilité",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Ce paramètre a pour but d'essayer de corriger les préfabs manquants causés par une mise à jour de EIA. Pour l'utiliser, activez le paramètre correspondant à la version du mod que vous avez utilisé dans votre sauvegarde, redémarrez le jeu, chargez votre sauvegarde et vérifiez si les préfabs manquants sont de retour et vérifier que tous soit correct. Si tout est correct, sauvegardez votre sauvegarde et redémarrez le jeu, s'il y a des problèmes alors quitter le jeu sans sauvegarder. Ce paramètre se désactive automatiquement après le redémarrage pour éviter de futurs conflits et problèmes.",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Désactivé",

@@ -13,7 +13,7 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Decals]": "載入客製化貼花，重新啟動遊戲後套用。",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "自定義網路車道",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "載入自定義網路車道，重新啟動遊戲後生效。",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Missing Prefab Fixer",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "遺失預製件修復器",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "相容性修復",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "此設定的目的是嘗試修復由 EAI 更新導致缺失的prefabs 。要使用它，請啟用與您在保存中使用的模組版本相對應的設置，重新啟動遊戲，加載您的保存並檢查缺少的預製件是否已恢復以及是否沒有任何問題。如果沒有問題，請儲存您的儲存並重新啟動遊戲，如果有錯誤的內容，請退出遊戲而不儲存。此設定在重新啟動後會自動停用，以避免將來發生衝突和問題。",
 	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "已停用",
