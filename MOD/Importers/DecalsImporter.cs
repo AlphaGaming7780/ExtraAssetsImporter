@@ -278,6 +278,10 @@ namespace ExtraAssetsImporter.Importers
             decalPrefabUI.m_Priority = jSONMaterail.UiPriority;
             decalPrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/icon.svg" : null);
 
+            PlaceableObject placeableObject = decalPrefab.AddComponent<PlaceableObject>();
+            placeableObject.m_ConstructionCost = 0;
+            placeableObject.m_XPReward = 0;
+
             AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName + PrefabAsset.kExtension, EscapeStrategy.None);
             EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 

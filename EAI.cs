@@ -135,6 +135,10 @@ namespace ExtraAssetsImporter
 
                 if (m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(pathModsData);
 
+                Directory.CreateDirectory(pathToDataCustomDecals);
+                Directory.CreateDirectory(pathToDataCustomSurfaces);
+                Directory.CreateDirectory(pathToDataCustomNetLanes);
+
                 if (Directory.Exists(pathToDataCustomDecals)) DecalsImporter.AddCustomDecalsFolder(pathToDataCustomDecals);
                 if (Directory.Exists(pathToDataCustomSurfaces)) SurfacesImporter.AddCustomSurfacesFolder(pathToDataCustomSurfaces);
                 if (Directory.Exists(pathToDataCustomNetLanes)) NetLanesDecalImporter.AddCustomNetLanesFolder(pathToDataCustomNetLanes);
