@@ -159,7 +159,8 @@ namespace ExtraAssetsImporter
                 throw ex; // This should still send the error to the game and so start the OnDispose.
             }
 
-		}
+            EAI.Logger.Info("EAI loaded successfully.");
+        }
 
 		public void OnDispose()
 		{
@@ -198,14 +199,22 @@ namespace ExtraAssetsImporter
 
 		public static void LoadCustomAssets(string modPath)
 		{
-            if(m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(modPath);
 
-            if(m_Setting.UseOldImporters)
-            {
-                if (m_Setting.Surfaces  && Directory.Exists(Path.Combine(modPath, "CustomSurfaces"))) SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
-                if (m_Setting.Decals    && Directory.Exists(Path.Combine(modPath, "CustomDecals"))) DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
-                if (m_Setting.NetLanes  && Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
-            }
+            AssetsImporterManager.AddAssetFolder(modPath);
+
+            if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces"))) SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
+            if (Directory.Exists(Path.Combine(modPath, "CustomDecals"))) DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
+            if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
+
+            // Patch 1.3.3f1 fix, mods OnLoad is called before EAI is OnLoad method is called.
+            //if (m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(modPath);
+
+            //if (m_Setting.UseOldImporters)
+            //{
+            //    if (m_Setting.Surfaces  && Directory.Exists(Path.Combine(modPath, "CustomSurfaces"))) SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
+            //    if (m_Setting.Decals    && Directory.Exists(Path.Combine(modPath, "CustomDecals"))) DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
+            //    if (m_Setting.NetLanes  && Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
+            //}
         }
 
         [Obsolete("Not needed anymore, you can remove this")]
