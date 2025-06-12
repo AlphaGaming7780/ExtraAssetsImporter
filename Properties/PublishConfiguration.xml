@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.5.0" />
+	<ModVersion Value="1.5.1" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.3.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -83,15 +83,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
 ### Improvements :
-- **New Importers** (ALPHA)
-> - It's an alpha feature, I recommend to use the old importers for now.
-> - You can enable the new importers in EAI settings.
-> - The new importers are faster than the old one (3x).
-> - You can now create asset with only one texture, can be a NormalMap, a MaskMap or the BaseColorMap.
-> - This fix the pink normal map issue and in the same time break all surfaces made with a pink normal map.
-> - Possibility to have AssetPack filter in game.
-> - Possibility to have localization for assets.
-- Use ExtraLib AssetMultiCategory features now.
+- Forgot the last localization change.
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
