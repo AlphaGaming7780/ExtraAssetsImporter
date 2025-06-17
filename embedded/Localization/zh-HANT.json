@@ -1,10 +1,10 @@
 {
 	"Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "主要功能",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "New importers",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use new EAI importers (ALPHA)",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "新導入器",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "使用新 EAI 導入器（Alpha 試用期中）",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Enbale this to use the new importers.",
-	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.OldImporters]": "Old importers",
+	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.OldImporters]": "舊導入器",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseOldImporters]": "Use old EAI importers",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseOldImporters]": "Enbale this to use the old importers.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.Surfaces]": "客製化表面",
@@ -26,9 +26,9 @@
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "如果資產檔案未被載入（例如禁用的模組），請從磁碟中刪除這些檔案",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "關閉時刪除資料庫",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "關閉遊戲時刪除資料庫，這在卸載模組時很有用。",
-	"Assets.NAME[Roadway NetLanes]": "Roadway NetLanes",
-	"Assets.DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes.",
-	"Assets.NAME[Beach NetLanes]": "Beach NetLanes",
-	"Assets.DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes.",
-	"Assets.NAME[ExtraAssetsImporter AssetPack]": "EAI Local Assets Pack"
+	"Assets.NAME[Roadway NetLanes]": "道路網格",
+	"Assets.DESCRIPTION[Roadway NetLanes]": "此類別包含所有道路網格。",
+	"Assets.NAME[Beach NetLanes]": "海灘網格",
+	"Assets.DESCRIPTION[Beach NetLanes]": "此類別包含所有海灘網格。",
+	"Assets.NAME[ExtraAssetsImporter AssetPack]": "EAI 本機資產"
 }
