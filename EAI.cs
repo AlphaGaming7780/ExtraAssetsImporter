@@ -38,7 +38,7 @@ namespace ExtraAssetsImporter
 
         internal static TextureStreamingSystem textureStreamingSystem;
 
-        private static HashSet<string> modPathsLoaded = new HashSet<string>();
+        //private static HashSet<string> modPathsLoaded = new HashSet<string>();
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
@@ -206,36 +206,45 @@ namespace ExtraAssetsImporter
 
         internal static void autoImportCustomAssets()
         {
-            string localAppPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string localLowPath = Path.Combine(Path.GetDirectoryName(localAppPath), "LocalLow");
             string[] modsPaths =
             {
-                Path.Combine(localLowPath, "Colossal Order", "Cities Skylines II", "Mods"), // Local mods development path
-                Path.Combine(localLowPath, "Colossal Order", "Cities Skylines II", ".cache", "Mods", "mods_subscribed") // PDX mods subscribed path
+                Path.Combine(AssetDatabase.user.rootPath, "Mods"), // Local mods development path
+                Path.Combine(AssetDatabase.user.rootPath, ".cache", "Mods", "mods_subscribed") // PDX mods subscribed path
             };
 
             var folders = modsPaths
-                .SelectMany(modsPath => Directory.EnumerateDirectories(modsPath))
-                .Where(folder =>
-                    Directory.Exists(Path.Combine(folder, "Decals")) || Directory.Exists(Path.Combine(folder, "Surfaces")) || Directory.Exists(Path.Combine(folder, "NetLanes"))
-                );
+                .SelectMany(modsPath => Directory.EnumerateDirectories(modsPath));
+
+            // Removing that check, because there is already checks in the importers for the folders, and alos because IDK the folders in advance for the new importers.
+            //.Where(folder =>
+            //    Directory.Exists(Path.Combine(folder, "Decals")) || Directory.Exists(Path.Combine(folder, "Surfaces")) || Directory.Exists(Path.Combine(folder, "NetLanes"))
+            //);
 
             foreach (string folder in folders)
             {
-                LoadCustomAssets(folder);
-            };
+                EAI.Logger.Info($"Loading asset at : {folder}");
+                AssetsImporterManager.AddAssetFolder(folder);
+
+                // no need to call that method, old importer aren't affected by that load order issue and don't want to change how they load.
+                //LoadCustomAssets(folder);
+            }
         }
 
-		public static void LoadCustomAssets(string modPath)
+        public static void LoadCustomAssets(string modPath)
 		{
-            log.Info($"New importer Loader: loading folder {modPath}");
-            lock (modPathsLoaded)
-            {
-                if (modPathsLoaded.Contains(modPath)) return;
-                modPathsLoaded.Add(modPath);
+            //EAI.Logger.Info($"New importer Loader: loading folder {modPath}");
 
-                AssetsImporterManager.AddAssetFolder(modPath);
-            }
+            // path are already being saved for later use, and there is already checks for duplicate path in each individual importer.
+            //lock (modPathsLoaded)
+            //{
+            //    if (modPathsLoaded.Contains(modPath)) return;
+            //    modPathsLoaded.Add(modPath);
+
+            //    AssetsImporterManager.AddAssetFolder(modPath);
+
+            //}
+
+            AssetsImporterManager.AddAssetFolder(modPath);
 
             // Also load old importer paths
             if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces"))) SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
