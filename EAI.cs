@@ -14,8 +14,9 @@ using Game;
 using Game.Modding;
 using Game.SceneFlow;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace ExtraAssetsImporter
@@ -37,7 +38,7 @@ namespace ExtraAssetsImporter
 
         internal static TextureStreamingSystem textureStreamingSystem;
 
-        //private bool eaiIsLoaded = false;
+        private static HashSet<string> modPathsLoaded = new HashSet<string>();
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
@@ -174,7 +175,13 @@ namespace ExtraAssetsImporter
             EAI.Logger.Info("Start loading custom stuff.");
 
             // Load the custom assets with the new importers
-            if (m_Setting.UseNewImporters) AssetsImporterManager.LoadCustomAssets();
+            if (m_Setting.UseNewImporters)
+            {
+                // Auto load custom assets into new importer if they have the correct folder names
+                autoImportCustomAssets();
+
+                AssetsImporterManager.LoadCustomAssets();
+            }
 
             if(m_Setting.UseOldImporters)
             {
@@ -197,11 +204,40 @@ namespace ExtraAssetsImporter
             if ( EAI.m_Setting.DeleteDataBase ) EAIDataBaseManager.DeleteDatabase();
         }
 
+        internal static void autoImportCustomAssets()
+        {
+            string localAppPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string localLowPath = Path.Combine(Path.GetDirectoryName(localAppPath), "LocalLow");
+            string[] modsPaths =
+            {
+                Path.Combine(localLowPath, "Colossal Order", "Cities Skylines II", "Mods"), // Local mods development path
+                Path.Combine(localLowPath, "Colossal Order", "Cities Skylines II", ".cache", "Mods", "mods_subscribed") // PDX mods subscribed path
+            };
+
+            var folders = modsPaths
+                .SelectMany(modsPath => Directory.EnumerateDirectories(modsPath))
+                .Where(folder =>
+                    Directory.Exists(Path.Combine(folder, "Decals")) || Directory.Exists(Path.Combine(folder, "Surfaces")) || Directory.Exists(Path.Combine(folder, "NetLanes"))
+                );
+
+            foreach (string folder in folders)
+            {
+                LoadCustomAssets(folder);
+            };
+        }
+
 		public static void LoadCustomAssets(string modPath)
 		{
+            log.Info($"New importer Loader: loading folder {modPath}");
+            lock (modPathsLoaded)
+            {
+                if (modPathsLoaded.Contains(modPath)) return;
+                modPathsLoaded.Add(modPath);
 
-            AssetsImporterManager.AddAssetFolder(modPath);
+                AssetsImporterManager.AddAssetFolder(modPath);
+            }
 
+            // Also load old importer paths
             if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces"))) SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
             if (Directory.Exists(Path.Combine(modPath, "CustomDecals"))) DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
             if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
