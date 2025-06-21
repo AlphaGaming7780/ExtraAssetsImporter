@@ -218,6 +218,8 @@ namespace ExtraAssetsImporter
             foreach (string folder in folders)
             {
                 EAI.Logger.Info($"Loading asset at : {folder}");
+                // quick fix, because I'm bored.
+                if (!Directory.Exists(folder)) continue;
                 AssetsImporterManager.AddAssetFolder(folder);
             }
         }
