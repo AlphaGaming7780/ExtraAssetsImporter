@@ -30,5 +30,7 @@
 	"Assets.DESCRIPTION[Roadway NetLanes]": "此類別包含所有道路網絡。",
 	"Assets.NAME[Beach NetLanes]": "海灘網絡",
 	"Assets.DESCRIPTION[Beach NetLanes]": "此類別包含所有海灘網絡。",
+	"Assets.NAME[Water NetLanes]": "Water NetLanes",
+	"Assets.DESCRIPTION[Water NetLanes]": "This category contains all the Water NetLanes.",
 	"Assets.NAME[ExtraAssetsImporter AssetPack]": "EAI 本機資產"
 }
