@@ -14,8 +14,9 @@ using Game;
 using Game.Modding;
 using Game.SceneFlow;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace ExtraAssetsImporter
@@ -37,7 +38,7 @@ namespace ExtraAssetsImporter
 
         internal static TextureStreamingSystem textureStreamingSystem;
 
-        //private bool eaiIsLoaded = false;
+        //private static HashSet<string> modPathsLoaded = new HashSet<string>();
 
         public void OnLoad(UpdateSystem updateSystem)
 		{
@@ -174,7 +175,13 @@ namespace ExtraAssetsImporter
             EAI.Logger.Info("Start loading custom stuff.");
 
             // Load the custom assets with the new importers
-            if (m_Setting.UseNewImporters) AssetsImporterManager.LoadCustomAssets();
+            if (m_Setting.UseNewImporters)
+            {
+                // Auto load custom assets into new importer if they have the correct folder names
+                AutoImportCustomAssets();
+
+                AssetsImporterManager.LoadCustomAssets();
+            }
 
             if(m_Setting.UseOldImporters)
             {
@@ -197,11 +204,29 @@ namespace ExtraAssetsImporter
             if ( EAI.m_Setting.DeleteDataBase ) EAIDataBaseManager.DeleteDatabase();
         }
 
-		public static void LoadCustomAssets(string modPath)
-		{
+        internal static void AutoImportCustomAssets()
+        {
+            string[] modsPaths =
+            {
+                Path.Combine(AssetDatabase.user.rootPath, "Mods"), // Local mods development path
+                Path.Combine(AssetDatabase.user.rootPath, ".cache", "Mods", "mods_subscribed") // PDX mods subscribed path
+            };
 
+            var folders = modsPaths
+                .SelectMany(modsPath => Directory.EnumerateDirectories(modsPath));
+
+            foreach (string folder in folders)
+            {
+                EAI.Logger.Info($"Loading asset at : {folder}");
+                AssetsImporterManager.AddAssetFolder(folder);
+            }
+        }
+
+        public static void LoadCustomAssets(string modPath)
+		{
             AssetsImporterManager.AddAssetFolder(modPath);
 
+            // Also load old importer paths
             if (Directory.Exists(Path.Combine(modPath, "CustomSurfaces"))) SurfacesImporter.AddCustomSurfacesFolder(Path.Combine(modPath, "CustomSurfaces"));
             if (Directory.Exists(Path.Combine(modPath, "CustomDecals"))) DecalsImporter.AddCustomDecalsFolder(Path.Combine(modPath, "CustomDecals"));
             if (Directory.Exists(Path.Combine(modPath, "CustomNetLanes"))) NetLanesDecalImporter.AddCustomNetLanesFolder(Path.Combine(modPath, "CustomNetLanes"));
