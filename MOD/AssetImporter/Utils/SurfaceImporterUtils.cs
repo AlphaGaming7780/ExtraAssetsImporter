@@ -12,31 +12,34 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 {
     public static class SurfaceImporterUtils
     {
-
+        public const string MaterialJsonFileName = "Material.json";
         public const string BaseColorMap = "_BaseColorMap";
         public const string NormalMap = "_NormalMap";
         public const string MaskMap = "_MaskMap";
 
-        public static Task<Surface> AsyncCreateSurface(ImportData data, bool importTextures = true)
+        public static Task<Surface> AsyncCreateSurface(ImportData data, string defaultMaterialName, bool importTextures = true)
         {
-            return Task.Run(() => CreateSurface(data, importTextures));
+            return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures));
         }
 
-        public static Task<Surface> AsyncCreateMaterial(ImportData data, MaterialJson materialJson, bool importTextures = true)
+        public static Task<Surface> AsyncCreateMaterial(ImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
         {
-            return Task.Run(() => CreateSurface(data, materialJson, importTextures));
+            return Task.Run(() => CreateSurface(data, materialJson, defaultMaterialName, importTextures));
         }
 
-        public static Surface CreateSurface(ImportData data, bool importTextures = true)
+        public static Surface CreateSurface(ImportData data, string defaultMaterialName, bool importTextures = true)
         {
-            string path = Path.Combine(data.FolderPath, "Material.json");
+            string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
             MaterialJson materialJson = ImportersUtils.LoadJson<MaterialJson>(path);
-            if (materialJson == null) throw new Exception("Material JSON is null, that maybe mean there is a sytaxe error in the file.");
-            return CreateSurface(data, materialJson, importTextures);
+            if (materialJson == null) throw new Exception("Material JSON is null, that maybe mean there is a syntax error in the file.");
+            return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }
 
-        public static Surface CreateSurface(ImportData data, MaterialJson materialJson, bool importTextures = true)
+        public static Surface CreateSurface(ImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
         {
+
+            string materialName = materialJson.MaterialName ?? defaultMaterialName;
+
             Surface surface = new(data.AssetName, materialJson.MaterialName);
 
             foreach (string key in materialJson.Float.Keys)     { surface.AddProperty(key, materialJson.Float[key]  );}

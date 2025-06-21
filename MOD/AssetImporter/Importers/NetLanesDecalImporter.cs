@@ -38,7 +38,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //JSONDecalsMaterail decalsMaterail = enumeratorDecal.Current;
 
             JsonNetLanes jsonNetLanes = LoadJSON(data);
-            JSONDecalsMaterail decalsMaterail = DecalsImporterNew.LoadJSON(data);
+            //JSONDecalsMaterail decalsMaterail = DecalsImporterNew.LoadJSON(data);
 
             VersionCompatiblity(jsonNetLanes, data.CatName, data.AssetName);
             if (jsonNetLanes.prefabIdentifierInfos.Count > 0)
@@ -53,7 +53,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (renderPrefab == null)
             {
 
-                IEnumerator<Surface> enumerator = DecalsImporterNew.AsyncCreateSurface(data, decalsMaterail, "CurvedDecal");
+                IEnumerator<Surface> enumerator = DecalsImporterNew.AsyncCreateSurface(data, "CurvedDecal");
 
                 bool value = true;
                 while (enumerator.Current == null && value)

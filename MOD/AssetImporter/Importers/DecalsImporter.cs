@@ -45,7 +45,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (renderPrefab == null)
             {
 
-                IEnumerator<Surface> enumerator = AsyncCreateSurface(data, decalsMaterail);
+                IEnumerator<Surface> enumerator = AsyncCreateSurface(data);
 
                 bool value = true;
                 while (enumerator.Current == null && value)
@@ -89,7 +89,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public static Surface CreateSurface(ImportData data, JSONDecalsMaterail decalsMaterail, string materialName = "DefaultDecal")
         {
-            Surface decalSurface = SurfaceImporterUtils.CreateSurface(data);
+            Surface decalSurface = SurfaceImporterUtils.CreateSurface(data, materialName);
 
             if (!decalSurface.HasProperty("colossal_DecalLayerMask")) decalSurface.AddProperty("colossal_DecalLayerMask", 1);
 
@@ -105,11 +105,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return decalSurface;
         }
 
-        public static IEnumerator<Surface> AsyncCreateSurface(ImportData data, JSONDecalsMaterail decalsMaterail, string materialName = "DefaultDecal")
+        public static IEnumerator<Surface> AsyncCreateSurface(ImportData data, string materialName = "DefaultDecal")
         {
 
             //IEnumerator<Surface> enumerator = TexturesImporterUtils.AsyncCreateSurface(data, materialName);s
-            Task<Surface> task = SurfaceImporterUtils.AsyncCreateSurface(data);
+            Task<Surface> task = SurfaceImporterUtils.AsyncCreateSurface(data, materialName);
 
             //bool value = true;
             //while (enumerator.Current == null && value)
