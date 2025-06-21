@@ -178,7 +178,7 @@ namespace ExtraAssetsImporter
             if (m_Setting.UseNewImporters)
             {
                 // Auto load custom assets into new importer if they have the correct folder names
-                autoImportCustomAssets();
+                AutoImportCustomAssets();
 
                 AssetsImporterManager.LoadCustomAssets();
             }
@@ -204,7 +204,7 @@ namespace ExtraAssetsImporter
             if ( EAI.m_Setting.DeleteDataBase ) EAIDataBaseManager.DeleteDatabase();
         }
 
-        internal static void autoImportCustomAssets()
+        internal static void AutoImportCustomAssets()
         {
             string[] modsPaths =
             {
@@ -215,35 +215,15 @@ namespace ExtraAssetsImporter
             var folders = modsPaths
                 .SelectMany(modsPath => Directory.EnumerateDirectories(modsPath));
 
-            // Removing that check, because there is already checks in the importers for the folders, and alos because IDK the folders in advance for the new importers.
-            //.Where(folder =>
-            //    Directory.Exists(Path.Combine(folder, "Decals")) || Directory.Exists(Path.Combine(folder, "Surfaces")) || Directory.Exists(Path.Combine(folder, "NetLanes"))
-            //);
-
             foreach (string folder in folders)
             {
                 EAI.Logger.Info($"Loading asset at : {folder}");
                 AssetsImporterManager.AddAssetFolder(folder);
-
-                // no need to call that method, old importer aren't affected by that load order issue and don't want to change how they load.
-                //LoadCustomAssets(folder);
             }
         }
 
         public static void LoadCustomAssets(string modPath)
 		{
-            //EAI.Logger.Info($"New importer Loader: loading folder {modPath}");
-
-            // path are already being saved for later use, and there is already checks for duplicate path in each individual importer.
-            //lock (modPathsLoaded)
-            //{
-            //    if (modPathsLoaded.Contains(modPath)) return;
-            //    modPathsLoaded.Add(modPath);
-
-            //    AssetsImporterManager.AddAssetFolder(modPath);
-
-            //}
-
             AssetsImporterManager.AddAssetFolder(modPath);
 
             // Also load old importer paths
