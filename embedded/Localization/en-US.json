@@ -35,6 +35,9 @@
 	"Assets.DESCRIPTION[Roadway NetLanes]": "This category contains all the Roadway NetLanes.",
 	"Assets.NAME[Beach NetLanes]": "Beach NetLanes",
 	"Assets.DESCRIPTION[Beach NetLanes]": "This category contains all the Beach NetLanes.",
+	"Assets.NAME[Water NetLanes]": "Water NetLanes",
+	"Assets.DESCRIPTION[Water NetLanes]": "This category contains all the Water NetLanes.",
+
 
 	"Assets.NAME[ExtraAssetsImporter AssetPack]": "EAI Local Assets Pack"
 }
