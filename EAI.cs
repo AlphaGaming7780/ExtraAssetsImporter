@@ -213,13 +213,12 @@ namespace ExtraAssetsImporter
             };
 
             var folders = modsPaths
+                .Where(modsPath => Directory.Exists(modsPath))
                 .SelectMany(modsPath => Directory.EnumerateDirectories(modsPath));
 
             foreach (string folder in folders)
             {
                 EAI.Logger.Info($"Loading asset at : {folder}");
-                // quick fix, because I'm bored.
-                if (!Directory.Exists(folder)) continue;
                 AssetsImporterManager.AddAssetFolder(folder);
             }
         }
