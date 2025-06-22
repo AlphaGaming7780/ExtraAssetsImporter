@@ -1,4 +1,5 @@
-﻿using Colossal.Localization;
+﻿using Colossal.Collections.Generic;
+using Colossal.Localization;
 using Game.SceneFlow;
 using Game.UI.Menu;
 using System.Collections;
@@ -19,23 +20,30 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
 
-            Task task = Task.Run(() => LoadLocalization(folder));
+            Task<Dictionary<string, Dictionary<string, string>>> task = Task.Run( () =>LoadLocalization(folder));
 
             while (!task.IsCompleted) yield return null;
 
-        }
+            Dictionary<string, Dictionary<string, string>> local = task.Result;
 
-        private void LoadLocalization(string folder)
-        {
             foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
             {
-                string path = Path.Combine(folder, $"{localeID}.json");
-                if(!File.Exists(path)) continue;
-                Dictionary<string, string> local = ImportersUtils.LoadJson<Dictionary<string, string>>(path);
-
-                GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(local));
+                if(!local.ContainsKey(localeID)) continue;
+                GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(local[localeID]));
             }
         }
 
+        private Dictionary<string, Dictionary<string, string>> LoadLocalization(string folder)
+        {
+            Dictionary<string, Dictionary<string, string>> local = new();
+
+            foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+            {
+                string path = Path.Combine(folder, $"{localeID}.json");
+                if (!File.Exists(path)) continue;
+                local.Add(localeID, ImportersUtils.LoadJson<Dictionary<string, string>>(path));
+            }
+            return local;
+        }
     }
 }

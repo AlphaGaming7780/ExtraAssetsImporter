@@ -59,7 +59,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - ⚠️Italian 16% : Stefano (Furios)
 - ⚠️Japanese 72% : nd381
 - ⚠️Korean 75% : Hinanchovo
-- ⚠️Polish 94% : Lisek, karmel68
+- ✔️Polish 100% : Lisek, karmel68
 - ⚠️Portuguese 75% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
 - ⚠️Portuguese, Brazilian 75% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
 - ⚠️Russian 32% : Mihail (kaktyc), Lek0ms, MrSandcraft
@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.5.5" />
+	<ModVersion Value="1.5.7" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.3.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -83,11 +83,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--<ChangeLog Value="" />-->
   <ChangeLog>
 ### Fixes:
-- (Fixed a bug)².
-
-### Translations:
-- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS)
-- ✔️Spanish 100% : elGendo87
+- Fixe again.
   </ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
