@@ -87,7 +87,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return new[] { ImportersUtils.CreateBoxMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
         }
 
-        public static Surface CreateSurface(ImportData data, JSONDecalsMaterail decalsMaterail, string materialName = "DefaultDecal")
+        public static Surface CreateSurface(ImportData data, string materialName = "DefaultDecal")
         {
             Surface decalSurface = SurfaceImporterUtils.CreateSurface(data, materialName);
 
