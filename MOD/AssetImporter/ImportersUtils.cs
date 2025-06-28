@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Colossal.AssetPipeline;
+﻿using Colossal.AssetPipeline;
 using Colossal.IO.AssetDatabase;
-using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Json;
-using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 
 

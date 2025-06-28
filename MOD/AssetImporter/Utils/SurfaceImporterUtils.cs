@@ -31,9 +31,6 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
             MaterialJson materialJson = ImportersUtils.LoadJson<MaterialJson>(path);
-<<<<<<< Updated upstream
-            if (materialJson == null) throw new Exception("Material JSON is null, that maybe mean there is a syntax error in the file.");
-=======
             if (materialJson == null) throw new Exception("Material JSON is null, that maybe mean there is a sytaxe error in the file.");
             return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }

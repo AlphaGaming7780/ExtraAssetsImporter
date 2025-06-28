@@ -1,9 +1,7 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.PSI.Common;
-using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
-using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.ClassExtension;

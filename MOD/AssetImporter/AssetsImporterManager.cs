@@ -85,7 +85,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                 if (componentsVariant.TryGetValue(importer.ComponentType.FullName, out Variant componentJson))
                 {
-                    importer.Process(componentJson, prefabBase);
+                    importer.Process(data, componentJson, prefabBase);
                 }
             }
         }

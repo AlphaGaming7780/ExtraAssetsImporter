@@ -1,14 +1,11 @@
-﻿using System;
+﻿using Colossal.Localization;
+using Colossal.PSI.Common;
+using ExtraLib;
+using Game.SceneFlow;
+using Game.UI.Menu;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Colossal.Localization;
-using Colossal.PSI.Common;
-using ExtraAssetsImporter.AssetImporter.JSONs;
-using ExtraLib;
-using ExtraLib.Prefabs;
-using Game.SceneFlow;
-using Game.UI.Menu;
 
 namespace ExtraAssetsImporter.AssetImporter
 {

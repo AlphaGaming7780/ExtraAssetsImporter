@@ -1,5 +1,4 @@
-﻿using Colossal.Collections.Generic;
-using Colossal.Localization;
+﻿using Colossal.Localization;
 using Game.SceneFlow;
 using Game.UI.Menu;
 using System.Collections;

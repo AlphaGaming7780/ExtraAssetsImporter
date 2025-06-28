@@ -63,11 +63,6 @@ namespace ExtraAssetsImporter
                     Directory.Delete(oldModsPath, false);
                 }
 
-                PrefabJson prefabJson = new();
-                prefabJson.Components.Add(typeof(UIObject).FullName, new UIObjectJson());
-
-                File.WriteAllText(Path.Combine(pathModsData, "test.json"), Encoder.Encode(prefabJson, EncodeOptions.None));
-
                 var oldLocation = Path.Combine(EnvPath.kUserDataPath, "ModsSettings", nameof(ExtraAssetsImporter), "settings.coc");
 
                 if (File.Exists(oldLocation))
