@@ -40,12 +40,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //JsonNetLanes jsonNetLanes = enumeratorNetLanes.Current;
             //JSONDecalsMaterail decalsMaterail = enumeratorDecal.Current;
 
-<<<<<<< Updated upstream
-            JsonNetLanes jsonNetLanes = LoadJSON(data);
-            //JSONDecalsMaterail decalsMaterail = DecalsImporterNew.LoadJSON(data);
-=======
             //JsonNetLanes jsonNetLanes = LoadJSON(data);
->>>>>>> Stashed changes
 
             //VersionCompatiblity(jsonNetLanes, data.CatName, data.AssetName);
             //if (jsonNetLanes.prefabIdentifierInfos.Count > 0)
