@@ -178,6 +178,7 @@ namespace ExtraAssetsImporter
             if (m_Setting.UseNewImporters)
             {
                 // Auto load custom assets into new importer if they have the correct folder names
+                // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
                 AutoImportCustomAssets();
 
                 AssetsImporterManager.LoadCustomAssets();
