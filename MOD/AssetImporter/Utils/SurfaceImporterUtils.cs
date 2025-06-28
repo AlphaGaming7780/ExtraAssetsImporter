@@ -19,7 +19,11 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
         public static Task<Surface> AsyncCreateSurface(ImportData data, string defaultMaterialName, bool importTextures = true)
         {
+<<<<<<< Updated upstream
             return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures));
+=======
+            return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures ));
+>>>>>>> Stashed changes
         }
 
         public static Task<Surface> AsyncCreateMaterial(ImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
@@ -31,16 +35,24 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
             MaterialJson materialJson = ImportersUtils.LoadJson<MaterialJson>(path);
+<<<<<<< Updated upstream
             if (materialJson == null) throw new Exception("Material JSON is null, that maybe mean there is a syntax error in the file.");
+=======
+            if (materialJson == null) throw new Exception("Material JSON is null, that maybe mean there is a sytaxe error in the file.");
+>>>>>>> Stashed changes
             return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }
 
         public static Surface CreateSurface(ImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
         {
+<<<<<<< Updated upstream
 
             string materialName = materialJson.MaterialName ?? defaultMaterialName;
 
             Surface surface = new(data.AssetName, materialJson.MaterialName);
+=======
+            Surface surface = new(data.AssetName, materialJson.MaterialName ?? defaultMaterialName);
+>>>>>>> Stashed changes
 
             foreach (string key in materialJson.Float.Keys)     { surface.AddProperty(key, materialJson.Float[key]  );}
             foreach (string key in materialJson.Vector.Keys)    { surface.AddProperty(key, materialJson.Vector[key] );}

@@ -4,10 +4,11 @@
 		<OutputType>Library</OutputType>
 		<TargetFramework>net48</TargetFramework>
 		<Configurations>Debug;Release;Debug+Extra4;Release+Extra4</Configurations>
+    <LangVersion>9</LangVersion>
 		
 		<!--The folder where Game.dll is located. Set it only if the game is not installed in the default location, otherwise keep it empty-->
     <CustomManagedPath>C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>
-    <!--<CustomManagedPath>E:\SteamLibrary\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>-->
+    <CustomManagedPath>E:\SteamLibrary\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>
 
     <AdditionalFilesDirectory>Resources</AdditionalFilesDirectory>
 		
@@ -61,6 +62,11 @@
 	<ItemGroup>
 		<None Include="$(ModPropsFile)" Link="Properties\Mod.props" />
 		<None Include="$(ModTargetsFile)" Link="Properties\Mod.targets" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="MOD\AssetImporter\JSONs\RenderPrefabComponents\" />
+	  <Folder Include="MOD\AssetImporter\JSONs\PrefabComponents\" />
 	</ItemGroup>
 
   <Target Name="GetAdditionalFiles" AfterTargets="DeployWIP">

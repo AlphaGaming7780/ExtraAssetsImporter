@@ -1,4 +1,7 @@
-﻿using ExtraAssetsImporter.AssetImporter.Importers;
+﻿using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.Components;
+using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using ExtraLib;
@@ -14,9 +17,9 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     static class AssetsImporterManager
     {
-
-        private static readonly Dictionary<Type, ImporterBase> s_Importers = new();
         private static readonly Dictionary<Type, ImporterBase> s_PreImporters = new();
+        private static readonly Dictionary<Type, ImporterBase> s_Importers = new();
+        private static readonly Dictionary<Type, ComponentImporter> s_ComponentImporters = new();
         private static readonly List<string> s_AddAssetFolder = new();
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
@@ -36,6 +39,14 @@ namespace ExtraAssetsImporter.AssetImporter
             return true;
         }
 
+        public static bool AddComponentImporter<T>() where T : ComponentImporter, new()
+        {
+            if (s_ComponentImporters.ContainsKey(typeof(T))) return false;
+            T importer = new T();
+            s_ComponentImporters.Add(typeof(T), importer);
+            return true;
+        }
+
         public static bool AddAssetFolder(string path)
         {
             if (s_AddAssetFolder.Contains(path)) return false;
@@ -48,6 +59,36 @@ namespace ExtraAssetsImporter.AssetImporter
             return true;
         }
 
+        internal static void ProcessComponentImporters(ImportData data, Variant prefabJson, PrefabBase prefabBase)
+        {
+            Variant componentsVariant = prefabJson.TryGet(nameof(PrefabJson.Components));
+
+            if(componentsVariant == null)
+            {
+                EAI.Logger.Warn($"The prefab {prefabBase.name} doesn't have any components to process.");
+                return;
+            }
+
+            foreach (ComponentImporter importer in s_ComponentImporters.Values)
+            {
+                //if (importer.PrefabType != prefabBase.GetType() && !importer.PrefabType.GetNestedTypes().Contains(prefabBase.GetType()))
+                //if (prefabBase.GetType() is importer.PrefabType)
+                //    {
+                //    EAI.Logger.Warn($" importer type {importer.PrefabType.FullName}, prefabbase type {prefabBase.GetType().FullName}");
+                //    foreach (Type nestedType in importer.PrefabType.GetNestedTypes())
+                //    {
+                //        EAI.Logger.Warn($"Nested type: {nestedType.FullName}");
+                //    }
+                //    EAI.Logger.Warn($"The component importer {importer.ComponentType.FullName} is not compatible with the prefab type {prefabBase.GetType().FullName} for the asset {prefabBase.name}.");
+                //    return;
+                //}
+
+                if (componentsVariant.TryGetValue(importer.ComponentType.FullName, out Variant componentJson))
+                {
+                    importer.Process(componentJson, prefabBase);
+                }
+            }
+        }
 
         public static void LoadCustomAssets()
         {

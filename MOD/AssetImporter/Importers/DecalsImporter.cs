@@ -30,16 +30,16 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //}
 
             //JSONDecalsMaterail decalsMaterail = enumerator.Current;
-            JSONDecalsMaterail decalsMaterail = LoadJSON(data);
+            //JSONDecalsMaterail decalsMaterail = LoadJSON(data);
 
-            VersionCompatiblity(decalsMaterail, data.CatName, data.AssetName);
-            if (decalsMaterail.prefabIdentifierInfos.Count > 0)
-            {
-                ObsoleteIdentifiers obsoleteIdentifiers = decalPrefab.AddComponent<ObsoleteIdentifiers>();
-                obsoleteIdentifiers.m_PrefabIdentifiers = decalsMaterail.prefabIdentifierInfos.ToArray();
-            }
+            //VersionCompatiblity(decalsMaterail, data.CatName, data.AssetName);
+            //if (decalsMaterail.prefabIdentifierInfos.Count > 0)
+            //{
+            //    ObsoleteIdentifiers obsoleteIdentifiers = decalPrefab.AddComponent<ObsoleteIdentifiers>();
+            //    obsoleteIdentifiers.m_PrefabIdentifiers = decalsMaterail.prefabIdentifierInfos.ToArray();
+            //}
 
-            ImportersUtils.SetupUIObject(this, data, decalPrefab, decalsMaterail.UiPriority);
+            ImportersUtils.SetupUIObject(this, data, decalPrefab);
 
             RenderPrefabBase renderPrefab = ImportersUtils.GetRenderPrefab(data);
             if (renderPrefab == null)

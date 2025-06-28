@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO.AssetDatabase;
+using Colossal.Json;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.ClassExtension;
@@ -13,12 +12,17 @@ using ExtraLib.Prefabs;
 using Game.Prefabs;
 using Game.SceneFlow;
 using Game.UI.Menu;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
     abstract class PrefabImporterBase : FolderImporter
     {
+        public const string PrefabJsonName = "Prefab.json";
         private UIAssetParentCategoryPrefab assetCat = null;
 
         virtual public string CatName { get; } = null;
@@ -57,7 +61,9 @@ namespace ExtraAssetsImporter.AssetImporter
                     string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
                     string assetDataPath = Path.Combine(FolderName, modName, catName, assetName);
 
-                    ImportData importData = new(assetFolder, assetName, catName, modName, fullAssetName, assetDataPath, assetCat);
+                    Variant prefabJson = ImportersUtils.LoadJson(Path.Combine(assetFolder, PrefabJsonName));
+
+                    ImportData importData = new(assetFolder, assetName, catName, modName, fullAssetName, assetDataPath, prefabJson, assetCat);
                     IEnumerator<PrefabBase> enumerator = null;
 
                     try
@@ -103,6 +109,8 @@ namespace ExtraAssetsImporter.AssetImporter
                             assetPackItem.m_Packs = new[] { assetPackPrefab };
                         }
 
+                        AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
+
                         AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
                         EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
 
@@ -134,4 +142,32 @@ namespace ExtraAssetsImporter.AssetImporter
         }
 
     }
+    public struct ImportData
+    {
+
+        public ImportData(string folderPath, string assetName, string catName, string modName, string fullAssetName, string assetDataPath, Variant prefabJson, UIAssetParentCategoryPrefab assetCat)
+        {
+            this.FolderPath = folderPath;
+            this.AssetName = assetName;
+            this.CatName = catName;
+            this.ModName = modName;
+            this.FullAssetName = fullAssetName;
+            this.AssetDataPath = assetDataPath;
+            this.PrefabJson = prefabJson;
+            this.AssetCat = assetCat;
+        }
+
+        public string FolderPath { get; private set; }
+        public string AssetName { get; private set; }
+        public string CatName { get; private set; }
+        public string ModName { get; private set; }
+        public string FullAssetName { get; private set; }
+        public string AssetDataPath { get; private set; }
+        public Variant PrefabJson { get; private set; }
+        public UIAssetParentCategoryPrefab AssetCat { get; private set; }
+
+        //public Mesh[] meshes;
+        //public Surface surface;
+    }
+
 }

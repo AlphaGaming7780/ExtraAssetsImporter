@@ -6,6 +6,7 @@ using Colossal.AssetPipeline;
 using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
@@ -59,6 +60,9 @@ namespace ExtraAssetsImporter.AssetImporter
             EAI.Logger.Info($"Creating RenderPrefab for {data.FullAssetName}.");
             SurfaceAsset surfaceAsset =  SurfaceImporterUtils.SetupSurfaceAsset(data, surface, useVT);
 
+            string pathToRenderPrefabJson = Path.Combine(data.FolderPath, "RenderPrefab.json");
+            Variant renderPrefabVariant = File.Exists(pathToRenderPrefabJson) ? ImportersUtils.LoadJson(pathToRenderPrefabJson) : null;
+
             Vector4 MeshSize = surface.GetVectorProperty("colossal_MeshSize");
 
             AssetDataPath geometryAssetDataPath = AssetDataPath.Create(data.AssetDataPath, "GeometryAsset", EscapeStrategy.None);
@@ -90,6 +94,8 @@ namespace ExtraAssetsImporter.AssetImporter
 
             setupRenderPrefab(data, renderPrefab, surface, meshes);
 
+            if(renderPrefabVariant != null) AssetsImporterManager.ProcessComponentImporters(data, renderPrefabVariant, renderPrefab);
+
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, $"{data.AssetName}_RenderPrefab", EscapeStrategy.None);
             PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); // Colossal.Hash128.CreateGuid(fullAssetName)
             renderPrefabAsset.Save();
@@ -115,7 +121,12 @@ namespace ExtraAssetsImporter.AssetImporter
             return Decoder.Decode(File.ReadAllText(path)).Make<T>();
         }
 
-        public static UIObject SetupUIObject( FolderImporter importer, ImportData data, PrefabBase prefab, int UiPriority)
+        public static Variant LoadJson(string path)
+        {
+            return Decoder.Decode(File.ReadAllText(path));
+        }
+
+        public static UIObject SetupUIObject( FolderImporter importer, ImportData data, PrefabBase prefab, int UiPriority = 0)
         {
 
             string iconPath = Path.Combine(data.FolderPath, "icon.png");

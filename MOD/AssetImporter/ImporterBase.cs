@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Colossal.Localization;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraLib;
 using ExtraLib.Prefabs;
 using Game.SceneFlow;
@@ -129,32 +130,5 @@ namespace ExtraAssetsImporter.AssetImporter
         protected abstract IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
         protected virtual void AfterLoadCustomAssetFolder() { }
 
-    }
-
-
-    public struct ImportData
-    {
-
-        public ImportData(string folderPath, string assetName, string catName, string modName, string fullAssetName, string assetDataPath, UIAssetParentCategoryPrefab assetCat)
-        {
-            this.FolderPath = folderPath;
-            this.AssetName = assetName;
-            this.CatName = catName;
-            this.ModName = modName;
-            this.FullAssetName = fullAssetName;
-            this.AssetDataPath = assetDataPath;
-            this.AssetCat = assetCat;
-        }
-
-        public string FolderPath { get; private set; }
-        public string AssetName { get; private set; }
-        public string CatName { get; private set; }
-        public string ModName { get; private set; }
-        public string FullAssetName { get; private set; }
-        public string AssetDataPath { get; private set; }
-        public UIAssetParentCategoryPrefab AssetCat { get; private set; }
-
-        //public Mesh[] meshes;
-        //public Surface surface;
     }
 }

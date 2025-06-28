@@ -1,4 +1,5 @@
 ﻿using Colossal.AssetPipeline;
+using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Importers;
 using ExtraLib;
@@ -22,6 +23,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             NetLaneGeometryPrefab netLanesPrefab = ScriptableObject.CreateInstance<NetLaneGeometryPrefab>();
 
+            NetLanePrefabJson netLanePrefabJson = data.PrefabJson.Make<NetLanePrefabJson>();
+
             //IEnumerator<JsonNetLanes> enumeratorNetLanes = AsyncLoadJSON(data);
             //IEnumerator<JSONDecalsMaterail> enumeratorDecal = DecalsImporterNew.AsyncLoadJSON(data);
 
@@ -37,17 +40,21 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //JsonNetLanes jsonNetLanes = enumeratorNetLanes.Current;
             //JSONDecalsMaterail decalsMaterail = enumeratorDecal.Current;
 
+<<<<<<< Updated upstream
             JsonNetLanes jsonNetLanes = LoadJSON(data);
             //JSONDecalsMaterail decalsMaterail = DecalsImporterNew.LoadJSON(data);
+=======
+            //JsonNetLanes jsonNetLanes = LoadJSON(data);
+>>>>>>> Stashed changes
 
-            VersionCompatiblity(jsonNetLanes, data.CatName, data.AssetName);
-            if (jsonNetLanes.prefabIdentifierInfos.Count > 0)
-            {
-                ObsoleteIdentifiers obsoleteIdentifiers = netLanesPrefab.AddComponent<ObsoleteIdentifiers>();
-                obsoleteIdentifiers.m_PrefabIdentifiers = jsonNetLanes.prefabIdentifierInfos.ToArray();
-            }
+            //VersionCompatiblity(jsonNetLanes, data.CatName, data.AssetName);
+            //if (jsonNetLanes.prefabIdentifierInfos.Count > 0)
+            //{
+            //    ObsoleteIdentifiers obsoleteIdentifiers = netLanesPrefab.AddComponent<ObsoleteIdentifiers>();
+            //    obsoleteIdentifiers.m_PrefabIdentifiers = jsonNetLanes.prefabIdentifierInfos.ToArray();
+            //}
 
-            ImportersUtils.SetupUIObject(this, data, netLanesPrefab, jsonNetLanes.UiPriority );
+            //ImportersUtils.SetupUIObject(this, data, netLanesPrefab, jsonNetLanes.UiPriority );
 
             RenderPrefab renderPrefab = (RenderPrefab)ImportersUtils.GetRenderPrefab(data);
             if (renderPrefab == null)
@@ -70,42 +77,42 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, DecalsImporterNew.SetupDecalRenderPrefab);
             }
 
-            if (jsonNetLanes.curveProperties != null)
-            {
-                CurveProperties curveProperties = renderPrefab.AddComponent<CurveProperties>();
-                curveProperties.m_TilingCount = jsonNetLanes.curveProperties.TilingCount;
-                curveProperties.m_SmoothingDistance = jsonNetLanes.curveProperties.SmoothingDistance;
-                curveProperties.m_OverrideLength = jsonNetLanes.curveProperties.OverrideLength;
-                curveProperties.m_GeometryTiling = jsonNetLanes.curveProperties.GeometryTiling;
-                curveProperties.m_StraightTiling = jsonNetLanes.curveProperties.StraightTiling;
-                curveProperties.m_SubFlow = jsonNetLanes.curveProperties.SubFlow;
-                curveProperties.m_InvertCurve = jsonNetLanes.curveProperties.InvertCurve;
-            }
+            //if (jsonNetLanes.curveProperties != null)
+            //{
+            //    CurveProperties curveProperties = renderPrefab.AddComponent<CurveProperties>();
+            //    curveProperties.m_TilingCount = jsonNetLanes.curveProperties.TilingCount;
+            //    curveProperties.m_SmoothingDistance = jsonNetLanes.curveProperties.SmoothingDistance;
+            //    curveProperties.m_OverrideLength = jsonNetLanes.curveProperties.OverrideLength;
+            //    curveProperties.m_GeometryTiling = jsonNetLanes.curveProperties.GeometryTiling;
+            //    curveProperties.m_StraightTiling = jsonNetLanes.curveProperties.StraightTiling;
+            //    curveProperties.m_SubFlow = jsonNetLanes.curveProperties.SubFlow;
+            //    curveProperties.m_InvertCurve = jsonNetLanes.curveProperties.InvertCurve;
+            //}
 
             netLanesPrefab.AddNetLaneMeshInfo(renderPrefab);
 
 
-            if (jsonNetLanes.PathfindPrefab != null)
+            if (netLanePrefabJson.PathfindPrefab != null)
             {
-                if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(PathfindPrefab), jsonNetLanes.PathfindPrefab), out PrefabBase prefabBase) && prefabBase is PathfindPrefab pathfindPrefab)
+                if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(PathfindPrefab), netLanePrefabJson.PathfindPrefab), out PrefabBase prefabBase) && prefabBase is PathfindPrefab pathfindPrefab)
                 {
                     netLanesPrefab.m_PathfindPrefab = pathfindPrefab;
                 }
                 else
                 {
-                    EAI.Logger.Warn($"Failed to get the PathfindPrefab with the name of {jsonNetLanes.PathfindPrefab} for the {data.FullAssetName} asset.");
+                    EAI.Logger.Warn($"Failed to get the PathfindPrefab with the name of {netLanePrefabJson.PathfindPrefab} for the {data.FullAssetName} asset.");
                 }
             }
 
-            if (jsonNetLanes.utilityLane != null)
-            {
-                UtilityLane utilityLane = netLanesPrefab.AddComponent<UtilityLane>();
-                utilityLane.m_UtilityType = jsonNetLanes.utilityLane.UtilityType;
-                utilityLane.m_VisualCapacity = jsonNetLanes.utilityLane.VisualCapacity;
-                utilityLane.m_Width = jsonNetLanes.utilityLane.Width;
-                utilityLane.m_Hanging = jsonNetLanes.utilityLane.Hanging;
-                utilityLane.m_Underground = jsonNetLanes.utilityLane.Underground;
-            }
+            //if (jsonNetLanes.utilityLane != null)
+            //{
+            //    UtilityLane utilityLane = netLanesPrefab.AddComponent<UtilityLane>();
+            //    utilityLane.m_UtilityType = jsonNetLanes.utilityLane.UtilityType;
+            //    utilityLane.m_VisualCapacity = jsonNetLanes.utilityLane.VisualCapacity;
+            //    utilityLane.m_Width = jsonNetLanes.utilityLane.Width;
+            //    utilityLane.m_Hanging = jsonNetLanes.utilityLane.Hanging;
+            //    utilityLane.m_Underground = jsonNetLanes.utilityLane.Underground;
+            //}
 
             //AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", data.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
             //EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(data.FullAssetName));

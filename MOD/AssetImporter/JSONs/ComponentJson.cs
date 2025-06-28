@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Game.Prefabs;
 
 namespace ExtraAssetsImporter.AssetImporter.JSONs
 {
-    public class RenderPrefabJson : PrefabJson
+    public class ComponentJson
     {
-
+        
     }
 }

@@ -1,9 +1,12 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.VirtualTexturing;
+using Colossal.Json;
 using Colossal.Logging;
 using Colossal.PSI.Environment;
 using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using ExtraAssetsImporter.MOD.AssetImporter.Importers;
@@ -12,6 +15,7 @@ using ExtraLib.Debugger;
 using ExtraLib.Helpers;
 using Game;
 using Game.Modding;
+using Game.Prefabs;
 using Game.SceneFlow;
 using System;
 using System.Collections.Generic;
@@ -59,6 +63,10 @@ namespace ExtraAssetsImporter
                     Directory.Delete(oldModsPath, false);
                 }
 
+                PrefabJson prefabJson = new();
+                prefabJson.Components.Add(typeof(UIObject).FullName, new UIObjectJson());
+
+                File.WriteAllText(Path.Combine(pathModsData, "test.json"), Encoder.Encode(prefabJson, EncodeOptions.None));
 
                 var oldLocation = Path.Combine(EnvPath.kUserDataPath, "ModsSettings", nameof(ExtraAssetsImporter), "settings.coc");
 
@@ -133,6 +141,8 @@ namespace ExtraAssetsImporter
                 AssetsImporterManager.AddImporter<DecalsImporterNew>();
                 AssetsImporterManager.AddImporter<NetLanesDecalImporterNew>();
                 AssetsImporterManager.AddImporter<SurfacesImporterNew>();
+
+                AssetsImporterManager.AddComponentImporter<UIObjectComponentImporter>();
 
                 if (m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(pathModsData);
 
