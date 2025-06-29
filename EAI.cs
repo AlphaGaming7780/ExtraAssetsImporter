@@ -137,7 +137,10 @@ namespace ExtraAssetsImporter
                 AssetsImporterManager.AddImporter<NetLanesDecalImporterNew>();
                 AssetsImporterManager.AddImporter<SurfacesImporterNew>();
 
-                AssetsImporterManager.AddComponentImporter<UIObjectComponentImporter>();
+                AssetsImporterManager.AddComponentImporter<UIObjectComponent>();
+                AssetsImporterManager.AddComponentImporter<ObsoleteIdentifiersComponent>();
+                AssetsImporterManager.AddComponentImporter<UtilityLaneComponent>();
+                AssetsImporterManager.AddComponentImporter<CurvePropertiesComponent>();
 
                 if (m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(pathModsData);
 

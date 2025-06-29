@@ -20,25 +20,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 
-            //IEnumerator<JSONDecalsMaterail> enumerator = AsyncLoadJSON(data);
-
-            //bool value = true;
-            //while (enumerator.Current == null && value)
-            //{
-            //    yield return null;
-            //    value = enumerator.MoveNext();
-            //}
-
-            //JSONDecalsMaterail decalsMaterail = enumerator.Current;
-            //JSONDecalsMaterail decalsMaterail = LoadJSON(data);
-
-            //VersionCompatiblity(decalsMaterail, data.CatName, data.AssetName);
-            //if (decalsMaterail.prefabIdentifierInfos.Count > 0)
-            //{
-            //    ObsoleteIdentifiers obsoleteIdentifiers = decalPrefab.AddComponent<ObsoleteIdentifiers>();
-            //    obsoleteIdentifiers.m_PrefabIdentifiers = decalsMaterail.prefabIdentifierInfos.ToArray();
-            //}
-
             ImportersUtils.SetupUIObject(this, data, decalPrefab);
 
             RenderPrefabBase renderPrefab = ImportersUtils.GetRenderPrefab(data);
@@ -83,6 +64,10 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public static Mesh[] CreateMeshes(Surface surface)
         {
+            if(!surface.HasProperty("colossal_MeshSize"))
+            {
+                surface.AddProperty("colossal_MeshSize", new Vector4(1f, 1f, 1f, 0f));
+            }
             Vector4 MeshSize = surface.GetVectorProperty("colossal_MeshSize");
             return new[] { ImportersUtils.CreateBoxMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
         }

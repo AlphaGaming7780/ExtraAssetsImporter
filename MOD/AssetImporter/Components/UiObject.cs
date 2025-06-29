@@ -5,7 +5,7 @@ using System;
 
 namespace ExtraAssetsImporter.AssetImporter.Components
 {
-    public class UIObjectComponentImporter : ComponentImporter
+    public class UIObjectComponent : ComponentImporter
     {
         public override Type ComponentType => typeof(UIObject);
 
