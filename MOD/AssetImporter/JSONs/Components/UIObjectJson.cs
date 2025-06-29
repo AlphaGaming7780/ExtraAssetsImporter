@@ -1,8 +1,10 @@
-﻿namespace ExtraAssetsImporter.AssetImporter.JSONs.Components
+﻿using Game.Prefabs;
+
+namespace ExtraAssetsImporter.AssetImporter.JSONs.Components
 {
     public class UIObjectJson : ComponentJson
     {
-        public string m_Group = null;
+        public PrefabIDJson m_Group = null;
 
         public int m_Priority = -1;
 

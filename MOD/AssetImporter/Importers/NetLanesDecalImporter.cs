@@ -23,7 +23,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             NetLaneGeometryPrefab netLanesPrefab = ScriptableObject.CreateInstance<NetLaneGeometryPrefab>();
 
-            NetLanePrefabJson netLanePrefabJson = data.PrefabJson.Make<NetLanePrefabJson>();
+            if(data.PrefabJson != null)
+            {
+                NetLanePrefabJson netLanePrefabJson = data.PrefabJson.Make<NetLanePrefabJson>();
+                netLanePrefabJson.Process(netLanesPrefab);
+            }
 
             ImportersUtils.SetupUIObject(this, data, netLanesPrefab);
 
@@ -49,19 +53,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             }
 
             netLanesPrefab.AddNetLaneMeshInfo(renderPrefab);
-
-
-            if (netLanePrefabJson.PathfindPrefab != null)
-            {
-                if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(PathfindPrefab), netLanePrefabJson.PathfindPrefab), out PrefabBase prefabBase) && prefabBase is PathfindPrefab pathfindPrefab)
-                {
-                    netLanesPrefab.m_PathfindPrefab = pathfindPrefab;
-                }
-                else
-                {
-                    EAI.Logger.Warn($"Failed to get the PathfindPrefab with the name of {netLanePrefabJson.PathfindPrefab} for the {data.FullAssetName} asset.");
-                }
-            }
 
             yield return netLanesPrefab;
         }

@@ -58,9 +58,10 @@ namespace ExtraAssetsImporter.AssetImporter
 
                     string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
                     string assetDataPath = Path.Combine(FolderName, modName, catName, assetName);
-
-                    Variant prefabJson = ImportersUtils.LoadJson(Path.Combine(assetFolder, PrefabJsonName));
-
+                    string prefabJsonPath = Path.Combine(assetFolder, PrefabJsonName);
+                    Variant prefabJson = null;
+                    if (File.Exists(prefabJsonPath)) prefabJson = ImportersUtils.LoadJson(Path.Combine(assetFolder, PrefabJsonName));
+                    
                     ImportData importData = new(assetFolder, assetName, catName, modName, fullAssetName, assetDataPath, prefabJson, assetCat);
                     IEnumerator<PrefabBase> enumerator = null;
 

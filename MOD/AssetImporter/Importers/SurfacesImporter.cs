@@ -1,5 +1,7 @@
 ﻿using Colossal.AssetPipeline.Importers;
 using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
@@ -30,38 +32,23 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
             surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
 
+            if (data.PrefabJson != null)
+            {
+                AreaPrefabJson areaPrefabJson = data.PrefabJson.Make<AreaPrefabJson>();
+                areaPrefabJson.Process(surfacePrefab);
+            }
+
             Material newMaterial = GetDefaultSurfaceMaterial();
             newMaterial.name = data.FullAssetName + " Material";
 
             newMaterial.SetFloat(ShaderPropertiesIDs.DrawOrder, GetRendererPriorityByCat(data.CatName));
 
-            //IEnumerator<JSONSurfacesMaterail> enumerator = AsyncLoadJSON(data);
+            MaterialJson materialJson = SurfaceImporterUtils.LoadMaterialJson(data);
 
-            //bool value = true;
-            //while (enumerator.Current == null && value)
-            //{
-            //    yield return null;
-            //    value = enumerator.MoveNext();
-            //}
-
-            //JSONSurfacesMaterail surfacesMaterail = enumerator.Current;
-            JSONSurfacesMaterail surfacesMaterail = LoadJSON(data);
-
-            foreach (string key in surfacesMaterail.Float.Keys)
+            if(materialJson != null)
             {
-                if (newMaterial.HasFloat(key)) newMaterial.SetFloat(key, surfacesMaterail.Float[key]);
-                else
-                {
-                    if (key == "UiPriority") surfacesMaterail.UiPriority = (int)surfacesMaterail.Float[key];
-                }
-            }
-            foreach (string key in surfacesMaterail.Vector.Keys) { if (newMaterial.HasVector(key)) newMaterial.SetVector(key, surfacesMaterail.Vector[key]); }
-
-            VersionCompatiblity(surfacesMaterail, data.CatName, data.AssetName);
-            if (surfacesMaterail.prefabIdentifierInfos.Count > 0)
-            {
-                ObsoleteIdentifiers obsoleteIdentifiers = surfacePrefab.AddComponent<ObsoleteIdentifiers>();
-                obsoleteIdentifiers.m_PrefabIdentifiers = surfacesMaterail.prefabIdentifierInfos.ToArray();
+                foreach (string key in materialJson.Float.Keys) { if (newMaterial.HasFloat(key)) newMaterial.SetFloat(key, materialJson.Float[key]); }
+                foreach (string key in materialJson.Vector.Keys) { if (newMaterial.HasVector(key)) newMaterial.SetVector(key, materialJson.Vector[key]); }
             }
 
             while (!baseColorMapTask.IsCompleted || !normalMapTask.IsCompleted || !maskMapTask.IsCompleted) yield return null;
@@ -99,12 +86,10 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
 
             RenderedArea renderedArea = surfacePrefab.AddComponent<RenderedArea>();
             renderedArea.m_RendererPriority = (int)newMaterial.GetFloat(ShaderPropertiesIDs.DrawOrder);
-            renderedArea.m_LodBias = 0;
-            renderedArea.m_Roundness = surfacesMaterail.m_Roundness;
             renderedArea.m_Material = newMaterial;
             renderedArea.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask);
 
-            ImportersUtils.SetupUIObject(this, data, surfacePrefab, surfacesMaterail.UiPriority);
+            ImportersUtils.SetupUIObject(this, data, surfacePrefab);
 
             yield return surfacePrefab;
         }

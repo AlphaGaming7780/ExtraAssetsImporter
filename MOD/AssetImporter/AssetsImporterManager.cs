@@ -1,7 +1,7 @@
 ﻿using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
-using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using ExtraLib;

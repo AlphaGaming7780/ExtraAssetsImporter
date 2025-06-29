@@ -17,6 +17,14 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public const string NormalMap = "_NormalMap";
         public const string MaskMap = "_MaskMap";
 
+        public static MaterialJson LoadMaterialJson(ImportData data)
+        {
+            string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
+            if(!File.Exists(path)) return null;
+            MaterialJson materialJson = ImportersUtils.LoadJson<MaterialJson>(path);
+            return materialJson;
+        }
+
         public static Task<Surface> AsyncCreateSurface(ImportData data, string defaultMaterialName, bool importTextures = true)
         {
             return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures ));
@@ -30,17 +38,20 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static Surface CreateSurface(ImportData data, string defaultMaterialName, bool importTextures = true)
         {
             string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
-            MaterialJson materialJson = ImportersUtils.LoadJson<MaterialJson>(path);
-            if (materialJson == null) throw new Exception("Material JSON is null, that maybe mean there is a sytaxe error in the file.");
+            MaterialJson materialJson = LoadMaterialJson(data);
             return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }
 
         public static Surface CreateSurface(ImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
         {
-            Surface surface = new(data.AssetName, materialJson.MaterialName ?? defaultMaterialName);
+            string materialName = materialJson != null ? materialJson.MaterialName ?? defaultMaterialName : defaultMaterialName;
 
-            foreach (string key in materialJson.Float.Keys)     { surface.AddProperty(key, materialJson.Float[key]  );}
-            foreach (string key in materialJson.Vector.Keys)    { surface.AddProperty(key, materialJson.Vector[key] );}
+            Surface surface = new(data.AssetName, materialName);
+            if(materialJson != null)
+            {
+                foreach (string key in materialJson.Float.Keys) { surface.AddProperty(key, materialJson.Float[key]); }
+                foreach (string key in materialJson.Vector.Keys) { surface.AddProperty(key, materialJson.Vector[key]); }
+            }
 
             if (importTextures)
             {

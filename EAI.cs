@@ -141,6 +141,7 @@ namespace ExtraAssetsImporter
                 AssetsImporterManager.AddComponentImporter<ObsoleteIdentifiersComponent>();
                 AssetsImporterManager.AddComponentImporter<UtilityLaneComponent>();
                 AssetsImporterManager.AddComponentImporter<CurvePropertiesComponent>();
+                AssetsImporterManager.AddComponentImporter<RenderedAreaComponent>();
 
                 if (m_Setting.UseNewImporters) AssetsImporterManager.AddAssetFolder(pathModsData);
 
