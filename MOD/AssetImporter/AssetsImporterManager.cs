@@ -22,6 +22,8 @@ namespace ExtraAssetsImporter.AssetImporter
         private static readonly Dictionary<Type, ComponentImporter> s_ComponentImporters = new();
         private static readonly List<string> s_AddAssetFolder = new();
 
+        public const string k_TemplateFolderName = "_Templates";
+
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
             if (s_Importers.ContainsKey(typeof(T))) return false;
@@ -169,6 +171,16 @@ namespace ExtraAssetsImporter.AssetImporter
             assetPackUI.m_Icon = Icons.GetIcon(assetPackPrefab);
 
             EL.m_PrefabSystem.AddPrefab(assetPackPrefab);
+        }
+
+        public static void ExportImportersTemplate()
+        {
+            string path = Path.Combine(EAI.pathModsData, k_TemplateFolderName);
+            Directory.CreateDirectory(path);
+            foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
+            {
+                importer.ExportTemplate(path);
+            }
         }
 
     }

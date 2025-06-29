@@ -1,10 +1,12 @@
-﻿using Colossal.Localization;
+﻿using Colossal.Json;
+using Colossal.Localization;
 using Game.SceneFlow;
 using Game.UI.Menu;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using UnityEngine.SocialPlatforms;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
 {
@@ -15,6 +17,23 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public override string AssetEndName => "local";
 
         public override bool PreImporter => true;
+
+        public override void ExportTemplate(string path)
+        {
+            path = Path.Combine(path, FolderName);
+            Directory.CreateDirectory(path);
+            foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+            {
+                string newPath = Path.Combine(path, $"{localeID}.json");
+                Dictionary<string, string> keyValuePairs = new()
+                {
+                    { "key1", "value1" },
+                    { "key2", "value2" },
+                    { "key3", "value3" }
+                };
+                File.WriteAllText(newPath, Encoder.Encode(keyValuePairs, EncodeOptions.None));
+            }
+        }
 
         protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
         {

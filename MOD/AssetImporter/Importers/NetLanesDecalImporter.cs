@@ -1,5 +1,7 @@
 ﻿using Colossal.AssetPipeline;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Importers;
 using ExtraLib;
@@ -13,6 +15,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 {
     class NetLanesDecalImporterNew : PrefabImporterBase
     {
+        public const string k_DefaultMaterialName = "CurvedDecal";
+
         public override string ImporterId => "NetLanesDecal";
 
         public override string AssetEndName => "NetLaneDecal";
@@ -35,7 +39,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (renderPrefab == null)
             {
 
-                IEnumerator<Surface> enumerator = DecalsImporterNew.AsyncCreateSurface(data, "CurvedDecal");
+                IEnumerator<Surface> enumerator = DecalsImporterNew.AsyncCreateSurface(data, k_DefaultMaterialName);
 
                 bool value = true;
                 while (enumerator.Current == null && value)
@@ -46,7 +50,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
                 Surface surface = enumerator.Current;
 
-                //Surface surface = DecalsImporterNew.CreateSurface(data, decalsMaterail, "CurvedDecal");
+                //Surface surface = DecalsImporterNew.CreateSurface(data, decalsMaterail, k_DefaultMaterialName);
                 Mesh[] meshes = DecalsImporterNew.CreateMeshes(surface);
 
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, DecalsImporterNew.SetupDecalRenderPrefab);
@@ -107,6 +111,15 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 };
                 jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
+        }
+
+        public override void ExportTemplate(string path)
+        {
+            path = Path.Combine(path, FolderName);
+            Directory.CreateDirectory(path);
+            NetLanePrefabJson netLanePrefabJson = new();
+            File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(netLanePrefabJson, EncodeOptions.None));
+            SurfaceImporterUtils.ExportTemplateMaterialJson(k_DefaultMaterialName, path);
         }
     }
 }

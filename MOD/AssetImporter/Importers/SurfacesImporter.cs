@@ -1,4 +1,5 @@
 ﻿using Colossal.AssetPipeline.Importers;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
@@ -187,5 +188,40 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             }
         }
 
+        public override void ExportTemplate(string path)
+        {
+            path = Path.Combine(path, FolderName);
+            Directory.CreateDirectory(path);
+            AreaPrefabJson areaPrefabJson = new();
+            File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(areaPrefabJson, EncodeOptions.None));
+
+            Material material = GetDefaultSurfaceMaterial();
+            MaterialJson materialJson = new MaterialJson
+            {
+                Float = new Dictionary<string, float>(),
+                Vector = new Dictionary<string, Vector4>()
+            };
+
+            foreach (string key in material.GetPropertyNames(MaterialPropertyType.Float))
+            {
+                if(materialJson.Float.ContainsKey(key))
+                    materialJson.Float[key] = material.GetFloat(key);
+                else
+                    materialJson.Float.Add(key, material.GetFloat(key));
+            }
+
+            foreach (string key in material.GetPropertyNames(MaterialPropertyType.Vector))
+            {
+                if(materialJson.Vector.ContainsKey(key))
+                    materialJson.Vector[key] = material.GetVector(key);
+                else
+                    materialJson.Vector.Add(key, material.GetVector(key));
+            }
+
+            UnityEngine.Object.Destroy(material);
+
+            File.WriteAllText(Path.Combine(path, SurfaceImporterUtils.MaterialJsonFileName), Encoder.Encode(materialJson, EncodeOptions.None));
+
+        }
     }
 }

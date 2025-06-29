@@ -1,4 +1,5 @@
 ﻿using Colossal.IO.AssetDatabase;
+using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.DataBase;
 using Game.Modding;
 using Game.Settings;
@@ -24,6 +25,9 @@ namespace ExtraAssetsImporter
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool UseNewImporters { get; set; } = true;
         public bool DisableCondition_UseNewImporters => UseNewImporters;
+
+        [SettingsUISection(kMainSection, kNewImportersGroup)]
+        public bool ExportTemplates { set { AssetsImporterManager.ExportImportersTemplate(); } }
 
         [SettingsUISection(kMainSection, kOldImportersGroup)]
         public bool UseOldImporters { get; set; } = true;

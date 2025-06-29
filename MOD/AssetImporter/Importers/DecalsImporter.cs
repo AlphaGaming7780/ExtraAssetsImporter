@@ -1,4 +1,7 @@
 ﻿using Colossal.AssetPipeline;
+using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Importers;
@@ -13,6 +16,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 {
     class DecalsImporterNew : PrefabImporterBase
     {
+        public const string k_DefaultMaterialName = "DefaultDecal";
         public override string ImporterId => "Decals";
         public override string AssetEndName => "Decal";
 
@@ -72,7 +76,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return new[] { ImportersUtils.CreateBoxMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
         }
 
-        public static Surface CreateSurface(ImportData data, string materialName = "DefaultDecal")
+        public static Surface CreateSurface(ImportData data, string materialName = k_DefaultMaterialName)
         {
             Surface decalSurface = SurfaceImporterUtils.CreateSurface(data, materialName);
 
@@ -90,7 +94,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return decalSurface;
         }
 
-        public static IEnumerator<Surface> AsyncCreateSurface(ImportData data, string materialName = "DefaultDecal")
+        public static IEnumerator<Surface> AsyncCreateSurface(ImportData data, string materialName = k_DefaultMaterialName)
         {
 
             //IEnumerator<Surface> enumerator = TexturesImporterUtils.AsyncCreateSurface(data, materialName);s
@@ -169,5 +173,13 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return decalsMaterail;
         }
 
+        public override void ExportTemplate(string path)
+        {
+            PrefabJson prefabJson = new PrefabJson();
+            path = Path.Combine(path, FolderName);
+            Directory.CreateDirectory(path);
+            File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(prefabJson, EncodeOptions.None));
+            SurfaceImporterUtils.ExportTemplateMaterialJson(k_DefaultMaterialName, path);
+        }
     }
 }

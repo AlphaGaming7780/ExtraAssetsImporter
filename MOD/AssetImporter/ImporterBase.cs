@@ -11,7 +11,6 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     abstract class ImporterBase
     {
-
         public abstract string ImporterId { get; }
 
         public abstract string AssetEndName { get; }
@@ -126,6 +125,6 @@ namespace ExtraAssetsImporter.AssetImporter
         protected virtual void PreLoadCustomAssetFolder() { }
         protected abstract IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
         protected virtual void AfterLoadCustomAssetFolder() { }
-
+        public abstract void ExportTemplate(string path);
     }
 }

@@ -71,5 +71,15 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             yield return null;
         }
+
+        public override void ExportTemplate(string path)
+        {
+            AssetPackJson assetPackJson = new AssetPackJson
+            {
+                PackName = "Asset Pack Name",
+            };
+
+            File.WriteAllText(Path.Combine(path, FileName), Encoder.Encode(assetPackJson, EncodeOptions.None));
+        }
     }
 }

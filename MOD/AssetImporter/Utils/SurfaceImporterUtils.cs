@@ -7,6 +7,8 @@ using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.IO.AssetDatabase;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.DataBase;
+using UnityEngine;
+using Colossal.Json;
 
 namespace ExtraAssetsImporter.AssetImporter.Utils
 {
@@ -46,7 +48,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             string materialName = materialJson != null ? materialJson.MaterialName ?? defaultMaterialName : defaultMaterialName;
 
-            Surface surface = new(data.AssetName, materialName);
+            Surface surface = new($"{data.AssetName}_Surface", materialName);
             if(materialJson != null)
             {
                 foreach (string key in materialJson.Float.Keys) { surface.AddProperty(key, materialJson.Float[key]); }
@@ -97,5 +99,37 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return surfaceAsset;
         }
 
+        public static void ExportTemplateMaterialJson(string materialName, string path)
+        {
+            Surface surface = new Surface($"{materialName}_Template", materialName);
+            Material material = surface.ToUnityMaterial();
+            MaterialJson materialJson = new MaterialJson
+            {
+                MaterialName = materialName,
+                Float = new Dictionary<string, float>(),
+                Vector = new Dictionary<string, Vector4>()
+            };
+
+            foreach (string key in material.GetPropertyNames(MaterialPropertyType.Float))
+            {
+                if (materialJson.Float.ContainsKey(key))
+                    materialJson.Float[key] = material.GetFloat(key);
+                else
+                    materialJson.Float.Add(key, material.GetFloat(key));
+            }
+
+            foreach (string key in material.GetPropertyNames(MaterialPropertyType.Vector))
+            {
+                if (materialJson.Vector.ContainsKey(key))
+                    materialJson.Vector[key] = material.GetVector(key);
+                else
+                    materialJson.Vector.Add(key, material.GetVector(key));
+            }
+
+            UnityEngine.Object.Destroy(material);
+
+            File.WriteAllText(Path.Combine(path, MaterialJsonFileName), Encoder.Encode(materialJson, EncodeOptions.None));
+
+        }
     }
 }

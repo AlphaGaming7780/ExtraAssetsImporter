@@ -5,6 +5,8 @@
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "New importers",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use new EAI importers (ALPHA)",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Enable this to use the new importers.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.ExportTemplates]": "Export templates",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.ExportTemplates]": "Create JSON templates for every new importer. You can find the created templates in ModsData/ExtraAssetsImporter/_Templates.",
 
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.OldImporters]": "Old importers",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseOldImporters]": "Use old EAI importers",
