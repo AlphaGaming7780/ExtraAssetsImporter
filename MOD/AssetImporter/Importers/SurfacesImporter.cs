@@ -1,12 +1,14 @@
 ﻿using Colossal.AssetPipeline.Importers;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -193,6 +195,12 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
             path = Path.Combine(path, FolderName);
             Directory.CreateDirectory(path);
             AreaPrefabJson areaPrefabJson = new();
+
+            foreach (ComponentImporter component in AssetsImporterManager.GetComponentImportersForPrefab<SurfacePrefab>())
+            {
+                areaPrefabJson.Components.Add(component.ComponentType.FullName, component.GetDefaultJson());
+            }
+
             File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(areaPrefabJson, EncodeOptions.None));
 
             Material material = GetDefaultSurfaceMaterial();

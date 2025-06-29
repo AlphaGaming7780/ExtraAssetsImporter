@@ -1,4 +1,5 @@
 ﻿using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using Game.Prefabs;
 using System;
@@ -10,6 +11,20 @@ namespace ExtraAssetsImporter.AssetImporter.Components
         public override Type ComponentType => typeof(ObsoleteIdentifiers);
 
         public override Type PrefabType => typeof(PrefabBase);
+
+        public override ComponentJson GetDefaultJson()
+        {
+            return new ObsoleteIdentifiersJson()
+            {
+                PrefabIdentifiers = new PrefabIdentifierInfo[] {
+                    new PrefabIdentifierInfo
+                    {
+                        m_Name = "Prefab Name",
+                        m_Type = "Prefab Type"
+                    }
+                }
+            };
+        }
 
         public override void Process(ImportData data, Variant componentJson, PrefabBase prefab)
         {

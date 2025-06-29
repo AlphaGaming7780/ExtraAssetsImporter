@@ -2,7 +2,7 @@
 
 namespace ExtraAssetsImporter.AssetImporter.JSONs.Components
 {
-    public class ObsoleteIdentifiersJson
+    public class ObsoleteIdentifiersJson : ComponentJson
     {
         public PrefabIdentifierInfo[] PrefabIdentifiers;
     }

@@ -1,11 +1,14 @@
 ﻿using Colossal.AssetPipeline;
 using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.Components;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Importers;
 using ExtraLib;
 using Game.Prefabs;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -118,6 +121,12 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             path = Path.Combine(path, FolderName);
             Directory.CreateDirectory(path);
             NetLanePrefabJson netLanePrefabJson = new();
+
+            foreach (ComponentImporter component in AssetsImporterManager.GetComponentImportersForPrefab<NetLaneGeometryPrefab>())
+            {
+                netLanePrefabJson.Components.Add(component.ComponentType.FullName, component.GetDefaultJson());
+            }
+
             File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(netLanePrefabJson, EncodeOptions.None));
             SurfaceImporterUtils.ExportTemplateMaterialJson(k_DefaultMaterialName, path);
         }

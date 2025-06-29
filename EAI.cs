@@ -7,6 +7,7 @@ using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using ExtraAssetsImporter.MOD.AssetImporter.Importers;

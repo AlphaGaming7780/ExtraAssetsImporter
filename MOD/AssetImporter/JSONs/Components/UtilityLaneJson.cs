@@ -1,6 +1,6 @@
 ﻿namespace ExtraAssetsImporter.AssetImporter.JSONs.Components
 {
-    public class UtilityLaneJson
+    public class UtilityLaneJson : ComponentJson
     {
         public Game.Net.UtilityTypes UtilityType = Game.Net.UtilityTypes.WaterPipe;
         public PrefabIDJson LocalConnectionLane = null;

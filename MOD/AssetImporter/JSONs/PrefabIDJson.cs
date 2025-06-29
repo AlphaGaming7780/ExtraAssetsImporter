@@ -4,6 +4,12 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
 {
     public class PrefabIDJson
     {
+        public PrefabIDJson(string type, string name) 
+        {
+            Type = type;
+            Name = name;
+        }
+
         public string Type;
 
         public string Name;

@@ -1,4 +1,5 @@
 ﻿using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using Game.Prefabs;
 using System;
@@ -10,6 +11,11 @@ namespace ExtraAssetsImporter.AssetImporter.Components
         public override Type ComponentType => typeof(RenderedArea);
 
         public override Type PrefabType => typeof(SurfacePrefab);
+
+        public override ComponentJson GetDefaultJson()
+        {
+            return new RenderedAreaJson();
+        }
 
         public override void Process(ImportData data, Variant componentJson, PrefabBase prefab)
         {

@@ -1,6 +1,7 @@
 ﻿using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
@@ -11,6 +12,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter
@@ -61,6 +63,24 @@ namespace ExtraAssetsImporter.AssetImporter
             return true;
         }
 
+        public static List<ComponentImporter> GetComponentImportersForPrefab<T>()
+        {
+            return GetComponentImportersForPrefab(typeof(T));
+        }
+
+        public static List<ComponentImporter> GetComponentImportersForPrefab(Type prefabType)
+        {
+            List<ComponentImporter> importers = new List<ComponentImporter>();
+            foreach (ComponentImporter importer in s_ComponentImporters.Values)
+            {
+                if (importer.PrefabType == prefabType || FindAllDerivedTypes(importer.PrefabType).Contains(prefabType))
+                {
+                    importers.Add(importer);
+                }
+            }
+            return importers;
+        }
+
         internal static void ProcessComponentImporters(ImportData data, Variant prefabJson, PrefabBase prefabBase)
         {
             Variant componentsVariant = prefabJson.TryGet(nameof(PrefabJson.Components));
@@ -73,20 +93,13 @@ namespace ExtraAssetsImporter.AssetImporter
 
             foreach (ComponentImporter importer in s_ComponentImporters.Values)
             {
-                //if (importer.PrefabType != prefabBase.GetType() && !importer.PrefabType.GetNestedTypes().Contains(prefabBase.GetType()))
-                //if (prefabBase.GetType() is importer.PrefabType)
-                //    {
-                //    EAI.Logger.Warn($" importer type {importer.PrefabType.FullName}, prefabbase type {prefabBase.GetType().FullName}");
-                //    foreach (Type nestedType in importer.PrefabType.GetNestedTypes())
-                //    {
-                //        EAI.Logger.Warn($"Nested type: {nestedType.FullName}");
-                //    }
-                //    EAI.Logger.Warn($"The component importer {importer.ComponentType.FullName} is not compatible with the prefab type {prefabBase.GetType().FullName} for the asset {prefabBase.name}.");
-                //    return;
-                //}
-
                 if (componentsVariant.TryGetValue(importer.ComponentType.FullName, out Variant componentJson))
                 {
+                    if (importer.PrefabType != prefabBase.GetType() && !FindAllDerivedTypes(importer.PrefabType).Contains(prefabBase.GetType()))
+                    {
+                        EAI.Logger.Warn($"The component importer {importer.ComponentType.FullName} is not compatible with the prefab type {prefabBase.GetType().FullName} for the asset {prefabBase.name}.");
+                        continue;
+                    }
                     importer.Process(data, componentJson, prefabBase);
                 }
             }
@@ -181,6 +194,22 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 importer.ExportTemplate(path);
             }
+        }
+
+        public static List<Type> FindAllDerivedTypes(Type baseType)
+        {
+            return FindAllDerivedTypes(baseType, Assembly.GetAssembly(baseType));
+        }
+
+        public static List<Type> FindAllDerivedTypes(Type baseType,Assembly assembly)
+        {
+            return assembly
+                .GetTypes()
+                .Where(t =>
+                    t != baseType &&
+                    baseType.IsAssignableFrom(t)
+                    ).ToList();
+
         }
 
     }

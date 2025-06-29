@@ -1,7 +1,7 @@
 ﻿using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using ExtraLib;
-using ExtraLib.Helpers;
 using Game.Prefabs;
 using System;
 
@@ -12,6 +12,16 @@ namespace ExtraAssetsImporter.AssetImporter.Components
         public override Type ComponentType => typeof(UtilityLane);
 
         public override Type PrefabType => typeof(NetLanePrefab);
+
+        public override ComponentJson GetDefaultJson()
+        {
+            return new UtilityLaneJson()
+            {
+                NodeObject = new PrefabIDJson("Prefab Type", "Prefab Name"),
+                LocalConnectionLane = new PrefabIDJson("Prefab Type", "Prefab Name"),
+                LocalConnectionLane2 = new PrefabIDJson("Prefab Type", "Prefab Name")
+            };
+        }
 
         public override void Process(ImportData data, Variant componentJson, PrefabBase prefab)
         {

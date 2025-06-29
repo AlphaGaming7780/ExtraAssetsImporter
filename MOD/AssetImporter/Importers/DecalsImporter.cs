@@ -1,5 +1,6 @@
 ﻿using Colossal.AssetPipeline;
 using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
@@ -7,6 +8,7 @@ using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -176,6 +178,12 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public override void ExportTemplate(string path)
         {
             PrefabJson prefabJson = new PrefabJson();
+
+            foreach (ComponentImporter component in AssetsImporterManager.GetComponentImportersForPrefab<StaticObjectPrefab>())
+            {
+                prefabJson.Components.Add(component.ComponentType.FullName, component.GetDefaultJson());
+            }
+
             path = Path.Combine(path, FolderName);
             Directory.CreateDirectory(path);
             File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(prefabJson, EncodeOptions.None));

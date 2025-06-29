@@ -1,6 +1,6 @@
 ﻿namespace ExtraAssetsImporter.AssetImporter.JSONs.Components
 {
-    public class CurvePropertiesJson
+    public class CurvePropertiesJson : ComponentJson
     {
         public int TilingCount = 0;
         public float OverrideLength = 0;
