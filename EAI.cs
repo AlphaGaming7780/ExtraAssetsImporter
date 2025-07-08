@@ -6,7 +6,6 @@ using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
-using ExtraAssetsImporter.MOD.AssetImporter.Importers;
 using ExtraLib;
 using ExtraLib.Debugger;
 using ExtraLib.Helpers;
@@ -14,7 +13,6 @@ using Game;
 using Game.Modding;
 using Game.SceneFlow;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -179,7 +177,7 @@ namespace ExtraAssetsImporter
             {
                 // Auto load custom assets into new importer if they have the correct folder names
                 // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
-                AutoImportCustomAssets();
+                //AutoImportCustomAssets();
 
                 AssetsImporterManager.LoadCustomAssets();
             }

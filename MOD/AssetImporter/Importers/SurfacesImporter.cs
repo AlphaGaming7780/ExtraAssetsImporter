@@ -1,16 +1,15 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Colossal.AssetPipeline.Importers;
-using ExtraAssetsImporter.AssetImporter;
+﻿using Colossal.AssetPipeline.Importers;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
 
-namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
+namespace ExtraAssetsImporter.AssetImporter.Importers
 {
     class SurfacesImporterNew : PrefabImporterBase
     {
@@ -20,12 +19,18 @@ namespace ExtraAssetsImporter.MOD.AssetImporter.Importers
 
         protected override IEnumerator<PrefabBase> Import(ImportData data)
         {
-            ImportSettings importSettings = default;
+            // Disble BC compression for surfaces.
+            ImportSettings importSettings = ImportSettings.GetDefault();
             importSettings.compressBC = false;
 
             Task<TextureImporter.Texture> baseColorMapTask = TexturesImporterUtils.AsyncImportTexture_BaseColorMap(data, importSettings);
             Task<TextureImporter.Texture> normalMapTask = TexturesImporterUtils.AsyncImportTexture_NormalMap(data, importSettings);
             Task<TextureImporter.Texture> maskMapTask = TexturesImporterUtils.AsyncImportTexture_MaskMap(data, importSettings);
+
+            // might be interesting to enable back BC compression for surfaces; butr it's fucking slow so for now, it's disabled.
+            //Task<TextureImporter.Texture> baseColorMapTask = TexturesImporterUtils.AsyncImportTexture_BaseColorMap(data);
+            //Task<TextureImporter.Texture> normalMapTask = TexturesImporterUtils.AsyncImportTexture_NormalMap(data);
+            //Task<TextureImporter.Texture> maskMapTask = TexturesImporterUtils.AsyncImportTexture_MaskMap(data);
 
             SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
             surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);

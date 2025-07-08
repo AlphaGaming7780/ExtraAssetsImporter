@@ -1,4 +1,5 @@
-﻿using ExtraAssetsImporter.AssetImporter.Importers;
+﻿using Colossal.IO;
+using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using ExtraLib;
@@ -38,9 +39,11 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static bool AddAssetFolder(string path)
         {
+            path = PathUtils.Normalize(path);
             if (s_AddAssetFolder.Contains(path)) return false;
+            s_AddAssetFolder.Add(path);
 
-            foreach( ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values) )
+            foreach ( ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values) )
             {
                 importer.AddCustomAssetsFolder(path);
             }
