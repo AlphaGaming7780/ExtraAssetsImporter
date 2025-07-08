@@ -25,11 +25,12 @@ namespace ExtraAssetsImporter.AssetImporter
         protected int failedAssets;
         protected int skipedAsset;
         
-        public virtual void AddCustomAssetsFolder(string path)
+        public virtual bool AddCustomAssetsFolder(string path)
         {
-            if (_FolderToLoadAssets.Contains(path)) return;
+            if (_FolderToLoadAssets.Contains(path)) return false;
             _FolderToLoadAssets.Add(path);
             Icons.LoadIcons(new DirectoryInfo(path).Parent.FullName);
+            return true;
         }
 
         public virtual void RemoveCustomAssetsFolder(string path)

@@ -188,7 +188,7 @@ namespace ExtraAssetsImporter
             if (m_Setting.UseNewImporters)
             {
                 // Auto load custom assets into new importer if they have the correct folder names
-                AutoImportCustomAssets();
+                //AutoImportCustomAssets();
 
                 AssetsImporterManager.LoadCustomAssets();
             }
@@ -224,7 +224,8 @@ namespace ExtraAssetsImporter
 
             var folders = modsPaths
                 .Where(modsPath => Directory.Exists(modsPath))
-                .SelectMany(modsPath => Directory.EnumerateDirectories(modsPath));
+                .SelectMany(modsPath => Directory.EnumerateDirectories(modsPath))
+                .Where(folder => !Path.GetDirectoryName(folder).StartsWith("."));
 
             foreach (string folder in folders)
             {

@@ -24,6 +24,8 @@ namespace ExtraAssetsImporter.AssetImporter
         private static readonly Dictionary<Type, ComponentImporter> s_ComponentImporters = new();
         private static readonly List<string> s_AddAssetFolder = new();
 
+        public const string k_AssetPacksFolderName = "_AssetPacks";
+        public const string k_CompiledAssetPacksFolderName = "_CompiledAssetPacks";
         public const string k_TemplateFolderName = "_Templates";
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
@@ -54,7 +56,11 @@ namespace ExtraAssetsImporter.AssetImporter
         public static bool AddAssetFolder(string path)
         {
             if (s_AddAssetFolder.Contains(path)) return false;
+            // Ignore path that start with "."
+            if (Path.GetDirectoryName(path).StartsWith(".")) return false;
 
+            s_AddAssetFolder.Add(path);
+            
             foreach( ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values) )
             {
                 importer.AddCustomAssetsFolder(path);

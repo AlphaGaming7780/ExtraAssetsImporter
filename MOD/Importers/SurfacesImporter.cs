@@ -198,7 +198,7 @@ namespace ExtraAssetsImporter.Importers
             Texture2D texture2D_BaseColorMap = new(1, 1);
             if (!texture2D_BaseColorMap.LoadImage(fileData))
             {
-                EAI.Logger.Error($"[ELT] Failed to Load the BaseColorMap image for the {surfacePrefab.name} surface.");
+                EAI.Logger.Error($"Failed to Load the BaseColorMap image for the {surfacePrefab.name} surface.");
                 UnityEngine.Object.Destroy(texture2D_BaseColorMap);
                 UnityEngine.Object.Destroy(newMaterial);
                 return;
