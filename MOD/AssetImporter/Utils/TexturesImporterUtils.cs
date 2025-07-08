@@ -58,8 +58,6 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static TextureImporter.Texture ImportTexture_NormalMap(ImportData data)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
-            importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
-            importSettings.wrapMode = TextureWrapMode.Repeat;
             return ImportTexture_NormalMap(data, importSettings);
         }
 
@@ -67,6 +65,8 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             importSettings.normalMap = true;
             importSettings.alphaIsTransparency = false;
+            importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
+            importSettings.wrapMode = TextureWrapMode.Repeat;
             return ImportTexture(data, NormalMapName, importSettings);
         }
 
