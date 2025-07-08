@@ -36,14 +36,18 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static TextureImporter.Texture ImportTexture_BaseColorMap(ImportData data)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
-            importSettings.compressBC = true;
-            importSettings.wrapMode = TextureWrapMode.Repeat;
             return ImportTexture_BaseColorMap(data, importSettings);
         }
 
         public static TextureImporter.Texture ImportTexture_BaseColorMap(ImportData data, ImportSettings importSettings)
         {
+            importSettings.wrapMode = TextureWrapMode.Repeat;
             return ImportTexture(data, BaseColorMapName, importSettings);
+        }
+
+        public static Task<TextureImporter.Texture> AsyncImportTexture_BaseColorMap(ImportData data)
+        {
+            return Task.Run<TextureImporter.Texture>(() => ImportTexture_BaseColorMap(data));
         }
 
         public static Task<TextureImporter.Texture> AsyncImportTexture_BaseColorMap(ImportData data, ImportSettings importSettings)
@@ -54,8 +58,6 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static TextureImporter.Texture ImportTexture_NormalMap(ImportData data)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
-            importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
-            importSettings.wrapMode = TextureWrapMode.Repeat;
             return ImportTexture_NormalMap(data, importSettings);
         }
 
@@ -63,7 +65,14 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             importSettings.normalMap = true;
             importSettings.alphaIsTransparency = false;
+            importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
+            importSettings.wrapMode = TextureWrapMode.Repeat;
             return ImportTexture(data, NormalMapName, importSettings);
+        }
+
+        public static Task<TextureImporter.Texture> AsyncImportTexture_NormalMap(ImportData data)
+        {
+            return Task.Run<TextureImporter.Texture>(() => ImportTexture_NormalMap(data));
         }
 
         public static Task<TextureImporter.Texture> AsyncImportTexture_NormalMap(ImportData data, ImportSettings importSettings)
@@ -74,14 +83,19 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static TextureImporter.Texture ImportTexture_MaskMap(ImportData data)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
-            importSettings.wrapMode = TextureWrapMode.Repeat;
             return ImportTexture_MaskMap(data, importSettings);
         }
 
         public static TextureImporter.Texture ImportTexture_MaskMap(ImportData data, ImportSettings importSettings)
         {
+            importSettings.wrapMode = TextureWrapMode.Repeat;
             importSettings.alphaIsTransparency = false;
             return ImportTexture(data, MaskMapName, importSettings);
+        }
+
+        public static Task<TextureImporter.Texture> AsyncImportTexture_MaskMap(ImportData data)
+        {
+            return Task.Run<TextureImporter.Texture>(() => ImportTexture_MaskMap(data));
         }
 
         public static Task<TextureImporter.Texture> AsyncImportTexture_MaskMap(ImportData data, ImportSettings importSettings)

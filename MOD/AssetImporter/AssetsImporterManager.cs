@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using Colossal.IO;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
@@ -55,6 +56,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static bool AddAssetFolder(string path)
         {
+            path = PathUtils.Normalize(path);
             if (s_AddAssetFolder.Contains(path)) return false;
             // Ignore path that start with "."
             if (Path.GetDirectoryName(path).StartsWith(".")) return false;
