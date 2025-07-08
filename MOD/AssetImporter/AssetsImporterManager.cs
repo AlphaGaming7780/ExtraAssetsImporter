@@ -2,7 +2,6 @@
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
-using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
@@ -27,7 +26,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public const string k_AssetPacksFolderName = "_AssetPacks";
         public const string k_CompiledAssetPacksFolderName = "_CompiledAssetPacks";
-        public const string k_TemplateFolderName = "_Templates";
+        public const string k_TemplateFolderName = "_DefaultJson";
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
@@ -91,6 +90,12 @@ namespace ExtraAssetsImporter.AssetImporter
 
         internal static void ProcessComponentImporters(ImportData data, Variant prefabJson, PrefabBase prefabBase)
         {
+            if(prefabJson == null)
+            {
+                EAI.Logger.Warn($"The asset {data.FullAssetName} doesn't have any JSON data to process.");
+                return;
+            }
+
             Variant componentsVariant = prefabJson.TryGet(nameof(PrefabJson.Components));
 
             if(componentsVariant == null)

@@ -1,6 +1,5 @@
 ﻿using Colossal.AssetPipeline.Importers;
 using Colossal.Json;
-using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
@@ -8,7 +7,6 @@ using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;

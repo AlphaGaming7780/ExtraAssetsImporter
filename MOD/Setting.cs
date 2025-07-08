@@ -27,7 +27,7 @@ namespace ExtraAssetsImporter
         public bool DisableCondition_UseNewImporters => UseNewImporters;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
-        public bool ExportTemplates { set { AssetsImporterManager.ExportImportersTemplate(); } }
+        public bool ExportDefaultJson { set { AssetsImporterManager.ExportImportersTemplate(); } }
 
         [SettingsUISection(kMainSection, kOldImportersGroup)]
         public bool UseOldImporters { get; set; } = true;
