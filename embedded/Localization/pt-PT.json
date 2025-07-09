@@ -27,7 +27,7 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Eliminar base de dados ao fechar",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteDataBaseOnClose]": "Elimina a base de dados quando fechas o jogo, útil ao desinstalar o mod.",
 	"Assets.NAME[Roadway NetLanes]": "NetLanes para Ruas",
-	"Assets.DESCRIPTION[Roadway NetLanes]": "Esta categoria contém todos os NetLanes para Ruas.",
+	"Assets.DESCRIPTION[Roadway NetLanes]": "Esta categoria contém todos as NetLanes para Ruas.",
 	"Assets.NAME[Beach NetLanes]": "NetLanes de Praia",
 	"Assets.DESCRIPTION[Beach NetLanes]": "Esta categoria contém todas as NetLanes de Praia.",
 	"Assets.NAME[Water NetLanes]": "NetLanes de Água",
