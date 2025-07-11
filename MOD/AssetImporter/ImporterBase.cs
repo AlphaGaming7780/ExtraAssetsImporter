@@ -1,5 +1,7 @@
-﻿using Colossal.Localization;
+﻿using Colossal.IO.AssetDatabase;
+using Colossal.Localization;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using Game.SceneFlow;
 using Game.UI.Menu;
@@ -9,6 +11,23 @@ using System.IO;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
+
+    public struct ImporterSettings
+    {
+        public ILocalAssetDatabase dataBase;
+        public bool savePrefab;
+        public bool isAssetPack;
+
+        public static ImporterSettings GetDefault()
+        {
+            ImporterSettings result = default(ImporterSettings);
+            result.dataBase = EAIDataBaseManager.assetDataBaseEAI;
+            result.savePrefab = false;
+            result.isAssetPack = false;
+            return result;
+        }
+    }
+
     abstract class ImporterBase
     {
         public abstract string ImporterId { get; }
@@ -33,14 +52,14 @@ namespace ExtraAssetsImporter.AssetImporter
             return true;
         }
 
-        public virtual void RemoveCustomAssetsFolder(string path)
-        {
-            if (!_FolderToLoadAssets.Contains(path)) return;
-            _FolderToLoadAssets.Remove(path);
-            Icons.UnLoadIcons(new DirectoryInfo(path).Parent.FullName);
-        }
+        //public virtual void RemoveCustomAssetsFolder(string path)
+        //{
+        //    if (!_FolderToLoadAssets.Contains(path)) return;
+        //    _FolderToLoadAssets.Remove(path);
+        //    Icons.UnLoadIcons(new DirectoryInfo(path).Parent.FullName);
+        //}
 
-        internal virtual IEnumerator LoadCustomAssets()
+        internal virtual IEnumerator LoadCustomAssets(ImporterSettings importSettings)
         {
             if (AssetsLoading) yield break;
 
@@ -76,7 +95,7 @@ namespace ExtraAssetsImporter.AssetImporter
                         numberOfAssets++;
             }
 
-            PreLoadCustomAssetFolder();
+            PreLoadCustomAssetFolder(importSettings);
 
             Dictionary<string, string> csLocalisation = new();
 
@@ -99,10 +118,10 @@ namespace ExtraAssetsImporter.AssetImporter
 
                 string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
 
-                yield return LoadCustomAssetFolder(folder, modName, csLocalisation, notificationInfo);
+                yield return LoadCustomAssetFolder(importSettings, folder, modName, csLocalisation, notificationInfo);
             }
 
-            AfterLoadCustomAssetFolder();
+            AfterLoadCustomAssetFolder(importSettings);
 
             foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
             {
@@ -121,11 +140,18 @@ namespace ExtraAssetsImporter.AssetImporter
 
             AssetsLoaded = true;
             AssetsLoading = false;
+            Reset();
         }
 
-        protected virtual void PreLoadCustomAssetFolder() { }
-        protected abstract IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
-        protected virtual void AfterLoadCustomAssetFolder() { }
+        public virtual void Reset()
+        {
+            _FolderToLoadAssets.Clear();
+        }
+
+        protected virtual void PreLoadCustomAssetFolder(ImporterSettings importSettings) { }
+        protected abstract IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
+        protected virtual void AfterLoadCustomAssetFolder(ImporterSettings importSettings) { }
         public abstract void ExportTemplate(string path);
+
     }
 }

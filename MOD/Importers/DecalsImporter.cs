@@ -4,6 +4,7 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.ClassExtension;
@@ -138,31 +139,50 @@ namespace ExtraAssetsImporter.Importers
                                 EAI.Logger.Info($"No cahed data for {fullDecalName}, creating the cache.");
                                 renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
                                 asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
-                                EAIDataBaseManager.AddAssets(asset);
+                                EAIDataBaseManager.AddAsset(asset);
                             }
                             else
                             {
                                 try
                                 {
-                                    EAI.Logger.Info($"Cahed data for {fullDecalName}, loading the cache.");
-                                    List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
-                                    foreach (PrefabBase prefabBase in loadedObject)
-                                    {
-                                        if (prefabBase is RenderPrefab renderPrefab1)
-                                        {
-                                            renderPrefab = renderPrefab1;
-                                            break;
-                                        }
-                                    }
+
+                                    renderPrefab = GetRenderPrefab(fullDecalName, decalName);
+
+
+                                    //if (!EAIDataBaseManager.TryLoadPrefab<RenderPrefab>(fullDecalName, $"{decalName}_RenderPrefab", out renderPrefab))
+                                    //{
+                                    //    EAI.Logger.Warn($"EAI failed to load the cached RenderPrefab for {fullDecalName}.");
+                                    //    //EL.m_PrefabSystem.AddPrefab(renderPrefab);
+                                    //}
+                                    //else
+                                    //{
+                                    //    EAI.Logger.Info($"EAI loaded the cached RenderPrefab for {fullDecalName} : {renderPrefab.name}.");
+                                    //}
+
+                                    //List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
+                                    //foreach (PrefabBase prefabBase in loadedObject)
+                                    //{
+                                    //    if (prefabBase is RenderPrefab renderPrefab1)
+                                    //    {
+                                    //        renderPrefab = renderPrefab1;
+                                    //        break;
+                                    //    }
+                                    //}
                                 }
-                                catch (Exception e) { }
+                                catch (Exception e)
+                                {
+
+                                    EAI.Logger.Error($"EAI failed to load the cached RenderPrefab for {fullDecalName} | ERROR : {e}");
+                                    renderPrefab = null;
+
+                                }
 
                                 if (renderPrefab == null)
                                 {
                                     EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
                                     renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
                                     asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
-                                    EAIDataBaseManager.AddAssets(asset);
+                                    EAIDataBaseManager.AddAsset(asset);
                                 }
                             }
 
@@ -170,6 +190,9 @@ namespace ExtraAssetsImporter.Importers
 
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullDecalName}]")) csLocalisation.Add($"Assets.NAME[{fullDecalName}]", decalName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullDecalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullDecalName}]", decalName);
+
+                            EAIDataBaseManager.ValidateAsset(fullDecalName);
+
                         }
                         catch (Exception e)
                         {
@@ -534,6 +557,40 @@ namespace ExtraAssetsImporter.Importers
                 jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
         }
+
+
+        public static RenderPrefab GetRenderPrefab(string fullAssetName, string assetName )
+        {
+
+            PrefabID prefabID = new PrefabID(nameof(RenderPrefab), $"{fullAssetName}_RenderPrefab");
+            if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is RenderPrefab renderPrefab)
+            {
+                //EAI.Logger.Info($"RenderPrefab for {fullAssetName} was already loaded and in the prefab system.");
+                return renderPrefab;
+            }
+
+            try
+            {
+                //EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");
+
+                if (EAIDataBaseManager.TryLoadPrefab<RenderPrefab>(fullAssetName, $"{assetName}_RenderPrefab", out renderPrefab))
+                {
+                    EL.m_PrefabSystem.AddPrefab(renderPrefab);
+                    return renderPrefab;
+                }
+
+                //EAI.Logger.Info($"No cached data for {fullAssetName}.");
+                return null;
+
+            }
+            catch (Exception e)
+            {
+                //EAI.Logger.Warn($"Failed to load the cached data for {fullAssetName}.\nException:{e}.");
+            }
+
+            return null;
+        }
+
     }
 
 }

@@ -5,7 +5,7 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs.Prefabs
 {
     public class AreaPrefabJson : PrefabJson
     {
-        public Color m_Color = Color.white;
+        public Color m_Color = new(255f, 255f, 255f, 0.05f);
         public Color m_EdgeColor = Color.white;
         public Color m_SelectionColor = Color.white;
         public Color m_SelectionEdgeColor = Color.white;

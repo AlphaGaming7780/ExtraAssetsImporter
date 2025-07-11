@@ -25,13 +25,13 @@ namespace ExtraAssetsImporter.AssetImporter
 
         virtual public string CatName { get; } = null;
 
-        protected override void PreLoadCustomAssetFolder()
+        protected override void PreLoadCustomAssetFolder(ImporterSettings importSettings)
         {
-            base.PreLoadCustomAssetFolder();
+            base.PreLoadCustomAssetFolder(importSettings);
             assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab( CatName ?? ImporterId );
         }
 
-        protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
             foreach (string catFolder in Directory.GetDirectories(folder))
             {
@@ -61,8 +61,48 @@ namespace ExtraAssetsImporter.AssetImporter
                     string prefabJsonPath = Path.Combine(assetFolder, PrefabJsonName);
                     Variant prefabJson = null;
                     if (File.Exists(prefabJsonPath)) prefabJson = ImportersUtils.LoadJson(Path.Combine(assetFolder, PrefabJsonName));
-                    
-                    ImportData importData = new(assetFolder, assetName, catName, modName, fullAssetName, assetDataPath, prefabJson, assetCat);
+
+                    int folderHash = EAIDataBaseManager.GetAssetHash(assetFolder);
+                    bool needToUpdateAsset = false;
+
+                    if (EAIDataBaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset eaiAsset))
+                    {
+                        if (eaiAsset.AssetHash == folderHash && importSettings.isAssetPack)
+                        {
+                            EAIDataBaseManager.AddOrValidateAsset(eaiAsset);
+                            continue;
+                        }
+
+                        if(eaiAsset.AssetHash != folderHash) 
+                        {
+                            needToUpdateAsset = true;
+                        }
+
+                    } 
+                    else
+                    {
+                        eaiAsset = new(fullAssetName, folderHash, assetDataPath);
+                        needToUpdateAsset = true;
+                    }
+
+                    if(Directory.Exists(Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath))) {
+                        Directory.Delete(Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath), true);
+                    }
+
+                    PrefabImportData importData = new(
+                        importSettings, 
+                        eaiAsset,
+                        needToUpdateAsset,
+                        assetFolder, 
+                        assetName, 
+                        catName, 
+                        modName, 
+                        fullAssetName, 
+                        assetDataPath, 
+                        prefabJson, 
+                        assetCat
+                    );
+
                     IEnumerator<PrefabBase> enumerator = null;
 
                     try
@@ -109,11 +149,29 @@ namespace ExtraAssetsImporter.AssetImporter
                         }
 
                         AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
+                        AssetDataPath prefabAssetPath;
+                        if (importSettings.isAssetPack)
+                        {
+                            //prefabAssetPath = AssetDataPath.Create(importData.AssetDataPath, $"{importData.AssetName}{PrefabAsset.kExtension}", EscapeStrategy.None);
+                            prefabAssetPath = AssetDataPath.Create(importData.AssetDataPath, importData.AssetName, EscapeStrategy.None);
+                        }
+                        else
+                        {
+                            prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
+                        }
 
-                        AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
-                        EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
+                        PrefabAsset prefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
+                        
+                        if(importSettings.savePrefab) prefabAsset.Save();
+
+                        if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
+                            EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old new and adding the new one.");
+                            EL.m_PrefabSystem.RemovePrefab(existingPrefab);
+                        }
 
                         EL.m_PrefabSystem.AddPrefab(prefab);
+
+                        EAIDataBaseManager.AddOrValidateAsset(eaiAsset);
 
                         if (!localisation.ContainsKey($"Assets.NAME[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullAssetName}]")) localisation.Add($"Assets.NAME[{fullAssetName}]", assetName);
                         if (!localisation.ContainsKey($"Assets.DESCRIPTION[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullAssetName}]")) localisation.Add($"Assets.DESCRIPTION[{fullAssetName}]", assetName);
@@ -130,7 +188,7 @@ namespace ExtraAssetsImporter.AssetImporter
             }
         }
 
-        protected abstract IEnumerator<PrefabBase> Import(ImportData data);
+        protected abstract IEnumerator<PrefabBase> Import(PrefabImportData data);
 
         internal void ImportFailed(string assetFolder, string assetDataPath, Exception e)
         {
@@ -141,11 +199,14 @@ namespace ExtraAssetsImporter.AssetImporter
         }
 
     }
-    public struct ImportData
+    public struct PrefabImportData
     {
 
-        public ImportData(string folderPath, string assetName, string catName, string modName, string fullAssetName, string assetDataPath, Variant prefabJson, UIAssetParentCategoryPrefab assetCat)
+        public PrefabImportData(ImporterSettings importSettings, EAIAsset eaiAsset, bool needToUpdateAsset, string folderPath, string assetName, string catName, string modName, string fullAssetName, string assetDataPath, Variant prefabJson, UIAssetParentCategoryPrefab assetCat)
         {
+            this.ImportSettings = importSettings;
+            this.EAIAsset = eaiAsset;
+            this.NeedToUpdateAsset = needToUpdateAsset;
             this.FolderPath = folderPath;
             this.AssetName = assetName;
             this.CatName = catName;
@@ -155,7 +216,9 @@ namespace ExtraAssetsImporter.AssetImporter
             this.PrefabJson = prefabJson;
             this.AssetCat = assetCat;
         }
-
+        public ImporterSettings ImportSettings { get; private set; }
+        public EAIAsset EAIAsset { get; private set; }
+        public bool NeedToUpdateAsset { get; private set; }
         public string FolderPath { get; private set; }
         public string AssetName { get; private set; }
         public string CatName { get; private set; }

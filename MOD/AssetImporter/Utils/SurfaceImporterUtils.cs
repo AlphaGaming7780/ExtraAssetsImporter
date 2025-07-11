@@ -19,7 +19,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public const string NormalMap = "_NormalMap";
         public const string MaskMap = "_MaskMap";
 
-        public static MaterialJson LoadMaterialJson(ImportData data)
+        public static MaterialJson LoadMaterialJson(PrefabImportData data)
         {
             string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
             if(!File.Exists(path)) return null;
@@ -27,24 +27,24 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return materialJson;
         }
 
-        public static Task<Surface> AsyncCreateSurface(ImportData data, string defaultMaterialName, bool importTextures = true)
+        public static Task<Surface> AsyncCreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
         {
             return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures ));
         }
 
-        public static Task<Surface> AsyncCreateMaterial(ImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
+        public static Task<Surface> AsyncCreateMaterial(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
         {
             return Task.Run(() => CreateSurface(data, materialJson, defaultMaterialName, importTextures));
         }
 
-        public static Surface CreateSurface(ImportData data, string defaultMaterialName, bool importTextures = true)
+        public static Surface CreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
         {
             string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
             MaterialJson materialJson = LoadMaterialJson(data);
             return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }
 
-        public static Surface CreateSurface(ImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
+        public static Surface CreateSurface(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
         {
             string materialName = materialJson != null ? materialJson.MaterialName ?? defaultMaterialName : defaultMaterialName;
 
@@ -63,7 +63,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return surface;
         }
 
-        public static SurfaceAsset SetupSurfaceAsset(ImportData data, Surface surface, bool useVT = false)
+        public static SurfaceAsset SetupSurfaceAsset(PrefabImportData data, Surface surface, bool useVT = false)
         {
             AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(data.AssetDataPath, $"{data.AssetName}_SurfaceAsset", EscapeStrategy.None);
             SurfaceAsset surfaceAsset = new()

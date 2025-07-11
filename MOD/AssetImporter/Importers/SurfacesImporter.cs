@@ -1,14 +1,17 @@
 ﻿using Colossal.AssetPipeline.Importers;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
+using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
@@ -21,7 +24,65 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public override string AssetEndName => "Surface";
 
-        protected override IEnumerator<PrefabBase> Import(ImportData data)
+        protected override IEnumerator<PrefabBase> Import(PrefabImportData data)
+        {
+            SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
+            surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
+
+            if (data.PrefabJson != null)
+            {
+                AreaPrefabJson areaPrefabJson = data.PrefabJson.Make<AreaPrefabJson>();
+                areaPrefabJson.Process(surfacePrefab);
+            }
+
+            Material material = GetMaterial(data);
+
+            if(material == null)
+            {
+                // If the material is not found, we create it asynchronously.
+                IEnumerator<Material> materialEnumerator = AsyncCreateMaterial(data);
+                while (materialEnumerator.Current == null && materialEnumerator.MoveNext())
+                {
+                    yield return null;
+                }
+                material = materialEnumerator.Current;
+            }
+
+            RenderedArea renderedArea = surfacePrefab.AddComponent<RenderedArea>();
+            renderedArea.m_RendererPriority = (int)material.GetFloat(ShaderPropertiesIDs.DrawOrder);
+            renderedArea.m_Material = material;
+            renderedArea.m_DecalLayerMask = (DecalLayers)material.GetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask);
+
+            ImportersUtils.SetupUIObject(this, data, surfacePrefab);
+
+            yield return surfacePrefab;
+        }
+
+        private Material GetMaterial(PrefabImportData data)
+        {
+            if(data.NeedToUpdateAsset)
+            {
+                return null;
+            }
+            string materialName = GetMaterialName(data);
+            Material[] mats = Resources.FindObjectsOfTypeAll<Material>().Where( material => material.name == materialName).ToArray();
+
+            if(mats.Length > 0)
+            {
+                EAI.Logger.Info("Found existing material for surface: " + materialName);
+            }
+
+
+            if (EAIDataBaseManager.TryGetAsset<SurfaceAsset>(data.EAIAsset, $"{GetMaterialFileName(data)}{SurfaceAsset.kExtensions[1]}", out SurfaceAsset surfaceAsset))
+            {
+                return surfaceAsset.Load();
+            }
+
+            return null;
+
+        }
+
+        private IEnumerator<Material> AsyncCreateMaterial(PrefabImportData data)
         {
             // Disble BC compression for surfaces.
             ImportSettings importSettings = ImportSettings.GetDefault();
@@ -36,23 +97,14 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //Task<TextureImporter.Texture> normalMapTask = TexturesImporterUtils.AsyncImportTexture_NormalMap(data);
             //Task<TextureImporter.Texture> maskMapTask = TexturesImporterUtils.AsyncImportTexture_MaskMap(data);
 
-            SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
-            surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
-
-            if (data.PrefabJson != null)
-            {
-                AreaPrefabJson areaPrefabJson = data.PrefabJson.Make<AreaPrefabJson>();
-                areaPrefabJson.Process(surfacePrefab);
-            }
-
             Material newMaterial = GetDefaultSurfaceMaterial();
-            newMaterial.name = data.FullAssetName + " Material";
+            newMaterial.name = $"{data.FullAssetName}_Material";
 
             newMaterial.SetFloat(ShaderPropertiesIDs.DrawOrder, GetRendererPriorityByCat(data.CatName));
 
             MaterialJson materialJson = SurfaceImporterUtils.LoadMaterialJson(data);
 
-            if(materialJson != null)
+            if (materialJson != null)
             {
                 foreach (string key in materialJson.Float.Keys) { if (newMaterial.HasFloat(key)) newMaterial.SetFloat(key, materialJson.Float[key]); }
                 foreach (string key in materialJson.Vector.Keys) { if (newMaterial.HasVector(key)) newMaterial.SetVector(key, materialJson.Vector[key]); }
@@ -91,14 +143,22 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture);
             }
 
-            RenderedArea renderedArea = surfacePrefab.AddComponent<RenderedArea>();
-            renderedArea.m_RendererPriority = (int)newMaterial.GetFloat(ShaderPropertiesIDs.DrawOrder);
-            renderedArea.m_Material = newMaterial;
-            renderedArea.m_DecalLayerMask = (DecalLayers)newMaterial.GetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask);
+            //AssetDataPath surfaceAssetPath = AssetDataPath.Create(data.AssetDataPath, GetMaterialFileName(data), EscapeStrategy.None);
+            //SurfaceAsset surfaceAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<SurfaceAsset, Material>(surfaceAssetPath, newMaterial); //Colossal.Hash128.CreateGuid(renderPrefab.name)
+            //surfaceAsset.Save();
 
-            ImportersUtils.SetupUIObject(this, data, surfacePrefab);
+            yield return newMaterial;
 
-            yield return surfacePrefab;
+        }
+
+        private string GetMaterialName(PrefabImportData data)
+        {
+            return $"{data.FullAssetName}_Material";
+        }
+
+        private string GetMaterialFileName(PrefabImportData data)
+        {
+            return $"{data.AssetName}_Material";
         }
 
         private int GetRendererPriorityByCat(string cat)
@@ -132,7 +192,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return material;
         }
 
-        public static IEnumerator<JSONSurfacesMaterail> AsyncLoadJSON(ImportData data)
+        public static IEnumerator<JSONSurfacesMaterail> AsyncLoadJSON(PrefabImportData data)
         {
             JSONSurfacesMaterail surfacesMaterail = new();
 
@@ -150,7 +210,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             yield return surfacesMaterail;
         }
 
-        public static JSONSurfacesMaterail LoadJSON(ImportData data)
+        public static JSONSurfacesMaterail LoadJSON(PrefabImportData data)
         {
             JSONSurfacesMaterail surfacesMaterail = new();
 

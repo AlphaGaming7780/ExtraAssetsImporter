@@ -136,30 +136,29 @@ namespace ExtraAssetsImporter.Importers
                                 //renderPrefab = CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath);
                                 renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
                                 asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
-                                EAIDataBaseManager.AddAssets(asset);
+                                EAIDataBaseManager.AddAsset(asset);
                             }
                             else
                             {
                                 try
                                 {
-                                    List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullNetLaneName);
-                                    foreach (PrefabBase prefabBase in loadedObject)
-                                    {
-                                        if (prefabBase is RenderPrefab renderPrefab1)
-                                        {
-                                            renderPrefab = renderPrefab1;
-                                            break;
-                                        }
-                                    }
+
+                                    renderPrefab = DecalsImporter.GetRenderPrefab(fullNetLaneName, netLanesName);
+
                                 }
-                                catch (Exception e) { }
+                                catch (Exception e) { 
+                                
+                                    EAI.Logger.Error($"EAI failed to load the cached RenderPrefab for {fullNetLaneName} | ERROR : {e}");
+                                    renderPrefab = null;
+
+                                }
 
                                 if (renderPrefab == null)
                                 {
                                     EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
                                     renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
                                     asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
-                                    EAIDataBaseManager.AddAssets(asset);
+                                    EAIDataBaseManager.AddAsset(asset);
                                 }
                             }
 
@@ -167,6 +166,9 @@ namespace ExtraAssetsImporter.Importers
 
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullNetLaneName}]")) csLocalisation.Add($"Assets.NAME[{fullNetLaneName}]", netLanesName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullNetLaneName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullNetLaneName}]", netLanesName);
+
+                            EAIDataBaseManager.ValidateAsset(fullNetLaneName);
+
                         }
                         catch (Exception e)
                         {

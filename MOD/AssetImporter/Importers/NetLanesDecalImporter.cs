@@ -26,7 +26,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public override string CatName => "NetLanes";
 
-        protected override IEnumerator<PrefabBase> Import(ImportData data)
+        protected override IEnumerator<PrefabBase> Import(PrefabImportData data)
         {
             NetLaneGeometryPrefab netLanesPrefab = ScriptableObject.CreateInstance<NetLaneGeometryPrefab>();
 
@@ -44,11 +44,9 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
                 IEnumerator<Surface> enumerator = DecalsImporterNew.AsyncCreateSurface(data, k_DefaultMaterialName);
 
-                bool value = true;
-                while (enumerator.Current == null && value)
+                while (enumerator.Current == null && enumerator.MoveNext())
                 {
                     yield return null;
-                    value = enumerator.MoveNext();
                 }
 
                 Surface surface = enumerator.Current;
@@ -64,7 +62,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             yield return netLanesPrefab;
         }
 
-        private IEnumerator<JsonNetLanes> AsyncLoadJSON(ImportData data)
+        private IEnumerator<JsonNetLanes> AsyncLoadJSON(PrefabImportData data)
         {
             JsonNetLanes jsonNetLane = new();
 
@@ -81,7 +79,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             yield return jsonNetLane;
         }
 
-        private JsonNetLanes LoadJSON(ImportData data)
+        private JsonNetLanes LoadJSON(PrefabImportData data)
         {
             JsonNetLanes jsonNetLane = new();
 

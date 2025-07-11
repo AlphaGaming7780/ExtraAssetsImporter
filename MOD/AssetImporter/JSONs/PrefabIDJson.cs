@@ -10,6 +10,10 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
             Name = name;
         }
 
+        public PrefabIDJson()
+        {
+        }
+
         public string Type;
 
         public string Name;

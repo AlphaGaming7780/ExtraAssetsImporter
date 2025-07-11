@@ -20,7 +20,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             };
         }
 
-        public override void Process(ImportData data, Variant componentJson, PrefabBase prefab)
+        public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
             UIObjectJson uiObjectJson = componentJson.Make<UIObjectJson>();
             if (uiObjectJson is null)

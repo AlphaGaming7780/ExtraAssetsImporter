@@ -22,7 +22,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public override string ImporterId => "Decals";
         public override string AssetEndName => "Decal";
 
-        protected override IEnumerator<PrefabBase> Import(ImportData data)
+        protected override IEnumerator<PrefabBase> Import(PrefabImportData data)
         {
             StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 
@@ -34,11 +34,9 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
                 IEnumerator<Surface> enumerator = AsyncCreateSurface(data);
 
-                bool value = true;
-                while (enumerator.Current == null && value)
+                while (enumerator.Current == null && enumerator.MoveNext())
                 {
                     yield return null;
-                    value = enumerator.MoveNext();
                 }
 
                 Surface surface = enumerator.Current;
@@ -57,9 +55,9 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             yield return decalPrefab;
         }
 
-        public static void SetupDecalRenderPrefab(ImportData data, RenderPrefab renderPrefab, Surface surface, Mesh[] meshes)
+        public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, Surface surface, Mesh[] meshes)
         {
-            Vector4 TextureArea = surface.GetVectorProperty("colossal_TextureArea");
+            Vector4 TextureArea = surface.HasProperty("colossal_TextureArea") ? surface.GetVectorProperty("colossal_TextureArea") : Vector4.one;
             DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
             decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
             decalProperties.m_LayerMask = (DecalLayers)surface.GetFloatProperty("colossal_DecalLayerMask");
@@ -78,7 +76,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return new[] { ImportersUtils.CreateBoxMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
         }
 
-        public static Surface CreateSurface(ImportData data, string materialName = k_DefaultMaterialName)
+        public static Surface CreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
         {
             Surface decalSurface = SurfaceImporterUtils.CreateSurface(data, materialName);
 
@@ -96,7 +94,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return decalSurface;
         }
 
-        public static IEnumerator<Surface> AsyncCreateSurface(ImportData data, string materialName = k_DefaultMaterialName)
+        public static IEnumerator<Surface> AsyncCreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
         {
 
             //IEnumerator<Surface> enumerator = TexturesImporterUtils.AsyncCreateSurface(data, materialName);s
@@ -142,7 +140,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             }
         }
 
-        public static IEnumerator<JSONDecalsMaterail> AsyncLoadJSON(ImportData data)
+        public static IEnumerator<JSONDecalsMaterail> AsyncLoadJSON(PrefabImportData data)
         {
             JSONDecalsMaterail decalsMaterail = new();
             string jsonDecalPath = Path.Combine(data.FolderPath, "decal.json");
@@ -161,7 +159,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         }
 
-        public static JSONDecalsMaterail LoadJSON(ImportData data)
+        public static JSONDecalsMaterail LoadJSON(PrefabImportData data)
         {
 
             JSONDecalsMaterail decalsMaterail = new();

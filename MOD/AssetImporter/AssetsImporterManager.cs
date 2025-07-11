@@ -88,7 +88,7 @@ namespace ExtraAssetsImporter.AssetImporter
             return importers;
         }
 
-        internal static void ProcessComponentImporters(ImportData data, Variant prefabJson, PrefabBase prefabBase)
+        internal static void ProcessComponentImporters(PrefabImportData data, Variant prefabJson, PrefabBase prefabBase)
         {
             if(prefabJson == null)
             {
@@ -125,7 +125,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             foreach (ImporterBase importer in s_PreImporters.Values)
             {
-                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets());
+                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets(ImporterSettings.GetDefault()));
             }
 
             EL.extraLibMonoScript.StartCoroutine(WaitForPreImportersToFinish());
@@ -150,7 +150,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             foreach (ImporterBase importer in s_Importers.Values)
             {
-                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets());
+                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets(ImporterSettings.GetDefault()));
             }
 
             //EL.extraLibMonoScript.StartCoroutine(WaitForImportersToFinish());

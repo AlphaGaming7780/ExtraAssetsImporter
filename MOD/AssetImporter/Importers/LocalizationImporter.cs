@@ -35,7 +35,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             }
         }
 
-        protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
 
             Task<Dictionary<string, Dictionary<string, string>>> task = Task.Run( () =>LoadLocalization(folder));

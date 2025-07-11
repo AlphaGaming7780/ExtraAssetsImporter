@@ -9,7 +9,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
     {
         abstract public Type ComponentType { get; }
         abstract public Type PrefabType { get; }
-        abstract public void Process(ImportData data, Variant componentJson, PrefabBase prefab);
+        abstract public void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab);
         abstract public ComponentJson GetDefaultJson();
 
     }

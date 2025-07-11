@@ -35,7 +35,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return assetPackJson;
         }
 
-        public static bool TryGetAssetPackPrefab( ImportData data, out AssetPackPrefab assetPackPrefab )
+        public static bool TryGetAssetPackPrefab( PrefabImportData data, out AssetPackPrefab assetPackPrefab )
         {
             assetPackPrefab = null;
 
@@ -50,7 +50,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         }
 
-        protected override IEnumerator LoadCustomAssetFolder(string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
             EAI.Logger.Info($"{modName} {AssetEndName}");
             

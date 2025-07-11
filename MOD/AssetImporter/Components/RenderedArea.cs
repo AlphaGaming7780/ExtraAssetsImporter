@@ -17,7 +17,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             return new RenderedAreaJson();
         }
 
-        public override void Process(ImportData data, Variant componentJson, PrefabBase prefab)
+        public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
             RenderedAreaJson json = componentJson.Make<RenderedAreaJson>();
             if (json is null)

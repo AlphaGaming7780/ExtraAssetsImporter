@@ -23,7 +23,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             };
         }
 
-        public override void Process(ImportData data, Variant componentJson, PrefabBase prefab)
+        public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
             UtilityLaneJson utilityLaneJson = componentJson.Make<UtilityLaneJson>();
             if (utilityLaneJson is null)
