@@ -143,6 +143,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture);
             }
 
+            // Doesn't work, we get the error "No material were mapped for {m_MaterialTemplateHash}", because the material Surface use doesn't have a template in MaterialLibrary.
             //AssetDataPath surfaceAssetPath = AssetDataPath.Create(data.AssetDataPath, GetMaterialFileName(data), EscapeStrategy.None);
             //SurfaceAsset surfaceAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<SurfaceAsset, Material>(surfaceAssetPath, newMaterial); //Colossal.Hash128.CreateGuid(renderPrefab.name)
             //surfaceAsset.Save();
