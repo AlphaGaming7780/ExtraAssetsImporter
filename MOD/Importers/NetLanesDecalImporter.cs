@@ -174,7 +174,7 @@ namespace ExtraAssetsImporter.Importers
                         {
                             failedNetLanes++;
                             EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
-                            string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
+                            string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
                             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
                         }
                         ammoutOfNetLanesloaded++;
@@ -309,7 +309,7 @@ namespace ExtraAssetsImporter.Importers
             netLanesPrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}");
 
             AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullNetLaneName + PrefabAsset.kExtension, EscapeStrategy.None);
-            EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
+            EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
 
             EL.m_PrefabSystem.AddPrefab(netLanesPrefab);
         }

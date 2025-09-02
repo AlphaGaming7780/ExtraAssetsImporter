@@ -37,7 +37,7 @@ namespace ExtraAssetsImporter
 		internal static string ResourcesIcons { get; private set; }
 
 		internal static string pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
-        internal static string pathTempFolder => Path.Combine(AssetDataBaseEAI.kRootPath, "TempAssetsFolder");
+        internal static string pathTempFolder => Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, "TempAssetsFolder");
 
         internal static TextureStreamingSystem textureStreamingSystem;
 

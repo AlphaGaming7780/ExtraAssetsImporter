@@ -85,8 +85,9 @@ namespace ExtraAssetsImporter.AssetImporter
                         needToUpdateAsset = true;
                     }
 
-                    if(Directory.Exists(Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath))) {
-                        Directory.Delete(Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath), true);
+                    if (needToUpdateAsset && Directory.Exists(Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath)))
+                    {
+                        Directory.Delete(Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath), true);
                     }
 
                     PrefabImportData importData = new(
@@ -139,6 +140,8 @@ namespace ExtraAssetsImporter.AssetImporter
                         //PrefabBase prefab = pre
                         prefab.name = importData.FullAssetName;
 
+                        //CreateEditorAssetCategories(importData);
+
                         EditorAssetCategoryOverride categoryOverride = prefab.AddComponent<EditorAssetCategoryOverride>();
                         categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
 
@@ -160,12 +163,12 @@ namespace ExtraAssetsImporter.AssetImporter
                             prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
                         }
 
-                        PrefabAsset prefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
+                        PrefabAsset prefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
                         
                         if(importSettings.savePrefab) prefabAsset.Save();
 
                         if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
-                            EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old new and adding the new one.");
+                            EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old one and adding the new one.");
                             EL.m_PrefabSystem.RemovePrefab(existingPrefab);
                         }
 
@@ -194,10 +197,65 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             failedAssets++;
             EAI.Logger.Error($"Failed to load the custom asset at {assetFolder} | ERROR : {e}");
-            string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
+            string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
         }
 
+        //private void CreateEditorAssetCategories(PrefabImportData importData)
+        //{
+
+        //    //$"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}"
+
+        //    if (!EL.m_EditorAssetCategorySystem.TryGetCategory("EAI", out var eaiCat))
+        //    {
+        //        eaiCat = new()
+        //        {
+        //            id = "EAI",
+        //            path = "EAI"
+        //        };
+        //        EL.m_EditorAssetCategorySystem.AddCategory(eaiCat);
+        //    }
+
+        //    if (!EL.m_EditorAssetCategorySystem.TryGetCategory($"{ImporterId}", out var importerCat))
+        //    {
+        //        importerCat = new()
+        //        {
+        //            id = $"{ImporterId}",
+        //            path = $"EAI/{ImporterId}",
+        //            icon = $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/{ImporterId}.svg",
+        //        };
+        //        EL.m_EditorAssetCategorySystem.AddCategory(importerCat, eaiCat);
+        //    }
+
+        //    if (!EL.m_EditorAssetCategorySystem.TryGetCategory($"{importData.ModName}", out var modCat))
+        //    {
+        //        modCat = new()
+        //        {
+        //            id = $"{importData.ModName}",
+        //            path = $"EAI/{ImporterId}/{importData.ModName}",
+        //            icon = null,
+        //        };
+
+        //        if (AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab))
+        //        {
+        //            modCat.icon = assetPackPrefab.GetComponent<UIObject>().m_Icon;
+        //        }
+
+        //        EL.m_EditorAssetCategorySystem.AddCategory(modCat, importerCat);
+        //    }
+
+        //    if (!EL.m_EditorAssetCategorySystem.TryGetCategory($"{importData.CatName}", out var cat))
+        //    {
+        //        cat = new()
+        //        {
+        //            id = $"{importData.CatName}",
+        //            path = $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}",
+        //            icon = File.Exists($"{EL.ResourcesIcons}/UIAssetChildCategoryPrefab/{importData.CatName} {ImporterId}.svg") ? $"{ExtraLib.Helpers.Icons.COUIBaseLocation}/Icons/UIAssetChildCategoryPrefab/{importData.CatName} {ImporterId}.svg" : "",
+        //        };
+        //        EL.m_EditorAssetCategorySystem.AddCategory(cat, modCat);
+        //    }
+
+        //}
     }
     public struct PrefabImportData
     {

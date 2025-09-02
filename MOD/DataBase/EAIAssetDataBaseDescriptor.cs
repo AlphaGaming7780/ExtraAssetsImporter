@@ -3,7 +3,7 @@ using System;
 
 namespace ExtraAssetsImporter.DataBase
 {
-	public readonly struct AssetDataBaseEAI : IAssetDatabaseDescriptor<AssetDataBaseEAI>, IEquatable<AssetDataBaseEAI>
+	public readonly struct EAIAssetDataBaseDescriptor : IAssetDatabaseDescriptor<EAIAssetDataBaseDescriptor>, IEquatable<EAIAssetDataBaseDescriptor>
 	{
 		public static string kRootPath => EAIDataBaseManager.eaiDataBase.ActualDataBasePath;
 
@@ -16,14 +16,14 @@ namespace ExtraAssetsImporter.DataBase
 		//public IDataSourceProvider dataSourceProvider => new CachedFileSystemDataSource(name, kRootPath, assetFactory);
 		public IDataSourceProvider dataSourceProvider => new FileSystemDataSource(name, kRootPath, assetFactory);
 
-		public bool Equals(AssetDataBaseEAI other)
+		public bool Equals(EAIAssetDataBaseDescriptor other)
 		{
 			return true;
 		}
 
 		public override bool Equals(object obj)
 		{
-			return obj is AssetDataBaseEAI;
+			return obj is EAIAssetDataBaseDescriptor;
 		}
 
 		public override int GetHashCode()

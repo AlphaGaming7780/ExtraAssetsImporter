@@ -16,7 +16,7 @@ namespace ExtraAssetsImporter.DataBase
         private static readonly List<EAIAsset> ValidateAssetsDataBase = new List<EAIAsset>();
         private static List<EAIAsset> AssetsDataBase = new List<EAIAsset>();
         //public static ILocalAssetDatabase assetDataBaseEAI { get; private set; } = AssetDatabase<AssetDataBaseEAI>.instance;
-        public static ILocalAssetDatabase assetDataBaseEAI => AssetDatabase<AssetDataBaseEAI>.instance;
+        public static AssetDatabase<EAIAssetDataBaseDescriptor> EAIAssetDataBase => AssetDatabase<EAIAssetDataBaseDescriptor>.instance;
 
         internal static void LoadDataBase()
         {
@@ -40,9 +40,9 @@ namespace ExtraAssetsImporter.DataBase
 
             CheckIfDataBaseNeedToBeRelocated();
 
-            AssetDatabase.global.RegisterDatabase(assetDataBaseEAI).Wait();
+            AssetDatabase.global.RegisterDatabase(EAIAssetDataBase).Wait();
 
-            EAI.Logger.Info($"DataBase Location : {assetDataBaseEAI.rootPath}.");
+            EAI.Logger.Info($"DataBase Location : {EAIAssetDataBase.rootPath}.");
         }
 
         internal static void SaveValidateDataBase()
@@ -74,7 +74,7 @@ namespace ExtraAssetsImporter.DataBase
             EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDataBase.Count}");
             foreach (EAIAsset asset in tempDataBase)
             {
-                string path = Path.Combine(AssetDataBaseEAI.kRootPath, asset.AssetPath);
+                string path = Path.Combine(DataBase.EAIAssetDataBaseDescriptor.kRootPath, asset.AssetPath);
                 if (Directory.Exists(path))
                 {
                     if (!AssetsDataBase.Remove(asset))
@@ -270,24 +270,25 @@ namespace ExtraAssetsImporter.DataBase
         internal static IAssetData GetAsset(EAIAsset asset, string fileName)
         {
             if (asset == EAIAsset.Null) return null;
-            string assetPath = Path.Combine(AssetDataBaseEAI.kRootPath, asset.AssetPath);
+            string assetPath = Path.Combine(DataBase.EAIAssetDataBaseDescriptor.kRootPath, asset.AssetPath);
 
-            if (!Directory.Exists(assetPath)) return null;
+            if (!Directory.Exists(assetPath)) { EAI.Logger.Warn("Diretory doesn't exist"); return null; }
             string filePath = Path.Combine(assetPath, fileName);
-            if (!File.Exists(filePath)) return null;
+            EAI.Logger.Info($"Trying to get asset at path {filePath}.");
+            if (!File.Exists(filePath)) { EAI.Logger.Warn("File doesn't exist"); return null; }
 
-            string assetSubPath = assetPath.Replace(AssetDataBaseEAI.kRootPath + Path.DirectorySeparatorChar, "");
+            string assetSubPath = assetPath.Replace(DataBase.EAIAssetDataBaseDescriptor.kRootPath + Path.DirectorySeparatorChar, "");
             AssetDataPath assetDataPath = AssetDataPath.Create(assetSubPath, fileName, true, EscapeStrategy.None);
 
             try
             {
-                if (assetDataBaseEAI.Exists(assetDataPath, out IAssetData assetData))
+                if (EAIAssetDataBase.Exists(assetDataPath, out IAssetData assetData))
                 {
                     EAI.Logger.Info($"Asset {assetDataPath} already exists in the database, returning existing asset.");
                     return assetData;
                 }
-                ;
-                return assetDataBaseEAI.AddAsset(assetDataPath);
+                
+                return EAIAssetDataBase.AddAsset(assetDataPath);
             }
             catch (Exception e)
             {
@@ -305,7 +306,7 @@ namespace ExtraAssetsImporter.DataBase
         internal static List<IAssetData> GetAssets(EAIAsset asset)
         {
             List<IAssetData> output = new();
-            string assetPath = Path.Combine(AssetDataBaseEAI.kRootPath, asset.AssetPath);
+            string assetPath = Path.Combine(DataBase.EAIAssetDataBaseDescriptor.kRootPath, asset.AssetPath);
             if (!Directory.Exists(assetPath)) return output;
             foreach (string s in DefaultAssetFactory.instance.GetSupportedExtensions())
             {
@@ -381,7 +382,7 @@ namespace ExtraAssetsImporter.DataBase
 
         public static void RemoveAllPrefab()
         {
-            IEnumerable<IAssetData> assetsData = assetDataBaseEAI.AllAssets();
+            IEnumerable<IAssetData> assetsData = EAIAssetDataBase.AllAssets();
 
             foreach (IAssetData assetData in assetsData)
             {

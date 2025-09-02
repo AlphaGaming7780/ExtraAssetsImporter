@@ -5,6 +5,7 @@ using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
+using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
@@ -65,15 +66,15 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 return null;
             }
             string materialName = GetMaterialName(data);
-            Material[] mats = Resources.FindObjectsOfTypeAll<Material>().Where( material => material.name == materialName).ToArray();
+            //Material[] mats = Resources.FindObjectsOfTypeAll<Material>().Where( material => material.name == materialName).ToArray();
 
-            if(mats.Length > 0)
-            {
-                EAI.Logger.Info("Found existing material for surface: " + materialName);
-            }
+            //if(mats.Length > 0)
+            //{
+            //    EAI.Logger.Info("Found existing material for surface: " + materialName);
+            //}
 
-
-            if (EAIDataBaseManager.TryGetAsset<SurfaceAsset>(data.EAIAsset, $"{GetMaterialFileName(data)}{SurfaceAsset.kExtensions[1]}", out SurfaceAsset surfaceAsset))
+            AssetDataPath materialAssetPath = AssetDataPath.Create(data.AssetDataPath, GetMaterialFileName(data), true, EscapeStrategy.None);
+            if (data.ImportSettings.dataBase.TryGetOrAddAsset<SurfaceAsset>(materialAssetPath, out SurfaceAsset surfaceAsset))
             {
                 return surfaceAsset.Load();
             }
@@ -85,24 +86,23 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         private IEnumerator<Material> AsyncCreateMaterial(PrefabImportData data)
         {
             // Disble BC compression for surfaces.
-            ImportSettings importSettings = ImportSettings.GetDefault();
-            importSettings.compressBC = false;
+            //ImportSettings importSettings = ImportSettings.GetDefault();
+            //importSettings.compressBC = false;
 
-            Task<TextureImporter.Texture> baseColorMapTask = TexturesImporterUtils.AsyncImportTexture_BaseColorMap(data, importSettings);
-            Task<TextureImporter.Texture> normalMapTask = TexturesImporterUtils.AsyncImportTexture_NormalMap(data, importSettings);
-            Task<TextureImporter.Texture> maskMapTask = TexturesImporterUtils.AsyncImportTexture_MaskMap(data, importSettings);
+            //Task<TextureAsset> baseColorMapTask = TextureAssetImporterUtils.AsyncImportTexture_BaseColorMap(data, importSettings);
+            //Task<TextureAsset> normalMapTask = TextureAssetImporterUtils.AsyncImportTexture_NormalMap(data, importSettings);
+            //Task<TextureAsset> maskMapTask = TextureAssetImporterUtils.AsyncImportTexture_MaskMap(data, importSettings);
 
-            // might be interesting to enable back BC compression for surfaces; butr it's fucking slow so for now, it's disabled.
-            //Task<TextureImporter.Texture> baseColorMapTask = TexturesImporterUtils.AsyncImportTexture_BaseColorMap(data);
-            //Task<TextureImporter.Texture> normalMapTask = TexturesImporterUtils.AsyncImportTexture_NormalMap(data);
-            //Task<TextureImporter.Texture> maskMapTask = TexturesImporterUtils.AsyncImportTexture_MaskMap(data);
+            Task<TextureAsset> baseColorMapTask = TextureAssetImporterUtils.AsyncImportTexture_BaseColorMap(data);
+            Task<TextureAsset> normalMapTask = TextureAssetImporterUtils.AsyncImportTexture_NormalMap(data);
+            Task<TextureAsset> maskMapTask = TextureAssetImporterUtils.AsyncImportTexture_MaskMap(data);
 
             Material newMaterial = GetDefaultSurfaceMaterial();
             newMaterial.name = $"{data.FullAssetName}_Material";
 
             newMaterial.SetFloat(ShaderPropertiesIDs.DrawOrder, GetRendererPriorityByCat(data.CatName));
 
-            MaterialJson materialJson = SurfaceImporterUtils.LoadMaterialJson(data);
+            MaterialJson materialJson = SurfaceAssetImporterUtils.LoadMaterialJson(data);
 
             if (materialJson != null)
             {
@@ -116,29 +116,23 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             var normalMap = normalMapTask.Result;
             var maskMap = maskMapTask.Result;
 
-            //var baseColorMap = ImportersUtils.ImportTexture_BaseColorMap(data, importSettings);
             if (baseColorMap != null)
             {
-                Texture2D texture = (Texture2D)baseColorMap.ToUnityTexture(false);
-                baseColorMap.Dispose();
+                Texture2D texture = baseColorMap.Load<Texture2D>();
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.BaseColorMap, texture);
             }
 
-            //var normalMap = ImportersUtils.ImportTexture_NormalMap(data, importSettings);
             if (normalMap != null)
             {
-                Texture2D texture = (Texture2D)normalMap.ToUnityTexture(false);
-                normalMap.Dispose();
+                Texture2D texture = normalMap.Load<Texture2D>();
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.NormalMap, texture);
             }
 
-            //var maskMap = ImportersUtils.ImportTexture_MaskMap(data, importSettings);
             if (maskMap != null)
             {
-                Texture2D texture = (Texture2D)maskMap.ToUnityTexture(false);
-                maskMap.Dispose();
+                Texture2D texture = maskMap.Load<Texture2D>();
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture);
             }
@@ -159,7 +153,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         private string GetMaterialFileName(PrefabImportData data)
         {
-            return $"{data.AssetName}_Material";
+            return $"{data.AssetName}_Material{SurfaceAsset.kExtensions[1]}";
         }
 
         private int GetRendererPriorityByCat(string cat)
@@ -293,7 +287,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             UnityEngine.Object.Destroy(material);
 
-            File.WriteAllText(Path.Combine(path, SurfaceImporterUtils.MaterialJsonFileName), Encoder.Encode(materialJson, EncodeOptions.None));
+            File.WriteAllText(Path.Combine(path, SurfaceAssetImporterUtils.MaterialJsonFileName), Encoder.Encode(materialJson, EncodeOptions.None));
 
         }
     }

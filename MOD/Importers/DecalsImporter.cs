@@ -198,7 +198,7 @@ namespace ExtraAssetsImporter.Importers
                         {
                             failedDecals++;
                             EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
-                            string pathToAssetInDatabase = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
+                            string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
                             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
                         }
                         ammoutOfDecalsloaded++;
@@ -306,14 +306,14 @@ namespace ExtraAssetsImporter.Importers
             placeableObject.m_XPReward = 0;
 
             AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName + PrefabAsset.kExtension, EscapeStrategy.None);
-            EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
+            EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
             EL.m_PrefabSystem.AddPrefab(decalPrefab);
         }
 
         internal static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, string materialName = "DefaultDecal")
         {
-            string fullAssetDataPath = Path.Combine(AssetDataBaseEAI.kRootPath, assetDataPath);
+            string fullAssetDataPath = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
             if (Directory.Exists(fullAssetDataPath)) { Directory.Delete(fullAssetDataPath, true); }
 
             Surface decalSurface = new(decalName, materialName);
@@ -367,7 +367,7 @@ namespace ExtraAssetsImporter.Importers
             SurfaceAsset surfaceAsset = new()
             {
                 id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.assetDataBaseEAI
+                database = EAIDataBaseManager.EAIAssetDataBase
             };
             surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
             surfaceAsset.SetData(decalSurface);
@@ -396,7 +396,7 @@ namespace ExtraAssetsImporter.Importers
             GeometryAsset geometryAsset = new()
             {
                 id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.assetDataBaseEAI
+                database = EAIDataBaseManager.EAIAssetDataBase
             };
             geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
             geometryAsset.SetData(meshes);
@@ -426,7 +426,7 @@ namespace ExtraAssetsImporter.Importers
             decalProperties.m_EnableInfoviewColor = false;
 
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(assetDataPath, $"{decalName}_RenderPrefab", EscapeStrategy.None);
-            PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); // Colossal.Hash128.CreateGuid(fullDecalName)
+            PrefabAsset renderPrefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); // Colossal.Hash128.CreateGuid(fullDecalName)
             renderPrefabAsset.Save();
             //EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
 

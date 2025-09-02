@@ -1,18 +1,18 @@
-﻿using System;
+﻿using Colossal.AssetPipeline;
+using Colossal.IO.AssetDatabase;
+using Colossal.IO.AssetDatabase.VirtualTexturing;
+using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraAssetsImporter.DataBase;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Colossal.AssetPipeline;
-using Colossal.IO.AssetDatabase.VirtualTexturing;
-using Colossal.IO.AssetDatabase;
-using ExtraAssetsImporter.AssetImporter.JSONs;
-using ExtraAssetsImporter.DataBase;
 using UnityEngine;
-using Colossal.Json;
 
 namespace ExtraAssetsImporter.AssetImporter.Utils
 {
-    public static class SurfaceImporterUtils
+    internal class SurfaceAssetImporterUtils
     {
         public const string MaterialJsonFileName = "Material.json";
         public const string BaseColorMap = "_BaseColorMap";
@@ -22,58 +22,62 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static MaterialJson LoadMaterialJson(PrefabImportData data)
         {
             string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
-            if(!File.Exists(path)) return null;
+            if (!File.Exists(path)) return null;
             MaterialJson materialJson = ImportersUtils.LoadJson<MaterialJson>(path);
             return materialJson;
         }
 
-        public static Task<Surface> AsyncCreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
+        public static Task<SurfaceAsset> AsyncCreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
         {
-            return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures ));
+            return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures));
         }
 
-        public static Task<Surface> AsyncCreateMaterial(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
+        public static Task<SurfaceAsset> AsyncCreateMaterial(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
         {
             return Task.Run(() => CreateSurface(data, materialJson, defaultMaterialName, importTextures));
         }
 
-        public static Surface CreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
+        public static SurfaceAsset CreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
         {
             string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
             MaterialJson materialJson = LoadMaterialJson(data);
             return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }
 
-        public static Surface CreateSurface(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
+        public static SurfaceAsset CreateSurface(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true, bool useVT = false)
         {
             string materialName = materialJson != null ? materialJson.MaterialName ?? defaultMaterialName : defaultMaterialName;
 
             Surface surface = new($"{data.AssetName}_Surface", materialName);
-            if(materialJson != null)
+            if (materialJson != null)
             {
                 foreach (string key in materialJson.Float.Keys) { surface.AddProperty(key, materialJson.Float[key]); }
                 foreach (string key in materialJson.Vector.Keys) { surface.AddProperty(key, materialJson.Vector[key]); }
             }
 
-            if (importTextures)
-            {
-                TexturesImporterUtils.ImportTextures(data, surface);
-            }
-
-            return surface;
-        }
-
-        public static SurfaceAsset SetupSurfaceAsset(PrefabImportData data, Surface surface, bool useVT = false)
-        {
             AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(data.AssetDataPath, $"{data.AssetName}_SurfaceAsset", EscapeStrategy.None);
             SurfaceAsset surfaceAsset = new()
             {
                 id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.assetDataBaseEAI
+                database = EAIDataBaseManager.EAIAssetDataBase
             };
             surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
             surfaceAsset.SetData(surface);
 
+            if (importTextures)
+            {
+                //TexturesImporterUtils.ImportTextures(data, surface);
+                EAI.Logger.Info($"Importing textures for surface asset {surfaceAssetDataPath}");
+
+                var baseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
+                if (baseColorMap != null) surfaceAsset.UpdateTexture(BaseColorMap, baseColorMap);
+
+                var normalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data);
+                if (normalMap != null) surfaceAsset.UpdateTexture(NormalMap, normalMap);
+
+                var maskMap = TextureAssetImporterUtils.ImportTexture_MaskMap(data);
+                if (maskMap != null) surfaceAsset.UpdateTexture(MaskMap, maskMap);
+            }
 
             if (useVT)
             {
@@ -93,8 +97,10 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             }
             else
             {
-                surfaceAsset.Save(force: false, saveTextures: true, vt: false);
+                surfaceAsset.Save(force: false, saveTextures: false, vt: false);
             }
+
+            surface.Dispose();
 
             return surfaceAsset;
         }
@@ -131,5 +137,6 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             File.WriteAllText(Path.Combine(path, MaterialJsonFileName), Encoder.Encode(materialJson, EncodeOptions.None));
 
         }
+
     }
 }

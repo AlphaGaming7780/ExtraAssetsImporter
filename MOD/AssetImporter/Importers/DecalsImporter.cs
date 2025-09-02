@@ -1,4 +1,5 @@
 ﻿using Colossal.AssetPipeline;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
@@ -32,14 +33,14 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (renderPrefab == null)
             {
 
-                IEnumerator<Surface> enumerator = AsyncCreateSurface(data);
+                IEnumerator<SurfaceAsset> enumerator = AsyncCreateSurface(data);
 
                 while (enumerator.Current == null && enumerator.MoveNext())
                 {
                     yield return null;
                 }
 
-                Surface surface = enumerator.Current;
+                SurfaceAsset surface = enumerator.Current;
                 Mesh[] meshes = CreateMeshes(surface);
 
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, SetupDecalRenderPrefab);
@@ -55,32 +56,32 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             yield return decalPrefab;
         }
 
-        public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, Surface surface, Mesh[] meshes)
+        public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, SurfaceAsset surface, Mesh[] meshes)
         {
-            Vector4 TextureArea = surface.HasProperty("colossal_TextureArea") ? surface.GetVectorProperty("colossal_TextureArea") : Vector4.one;
+            Vector4 TextureArea = surface.vectors.ContainsKey("colossal_TextureArea") ? surface.vectors["colossal_TextureArea"] : Vector4.one;
             DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
             decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
-            decalProperties.m_LayerMask = (DecalLayers)surface.GetFloatProperty("colossal_DecalLayerMask");
-            decalProperties.m_RendererPriority = (int)(surface.HasProperty("_DrawOrder") ? surface.GetFloatProperty("_DrawOrder") : 0);
+            decalProperties.m_LayerMask = (DecalLayers)surface.floats["colossal_DecalLayerMask"];
+            decalProperties.m_RendererPriority = (int)(surface.HasProperty("_DrawOrder") ? surface.floats["_DrawOrder"] : 0);
             decalProperties.m_EnableInfoviewColor = false;
         } 
 
 
-        public static Mesh[] CreateMeshes(Surface surface)
+        public static Mesh[] CreateMeshes(SurfaceAsset surface)
         {
-            if(!surface.HasProperty("colossal_MeshSize"))
+            if(!surface.vectors.ContainsKey("colossal_MeshSize"))
             {
                 surface.AddProperty("colossal_MeshSize", new Vector4(1f, 1f, 1f, 0f));
             }
-            Vector4 MeshSize = surface.GetVectorProperty("colossal_MeshSize");
+            Vector4 MeshSize = surface.vectors["colossal_MeshSize"];
             return new[] { ImportersUtils.CreateBoxMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
         }
 
-        public static Surface CreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
+        public static SurfaceAsset CreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
         {
-            Surface decalSurface = SurfaceImporterUtils.CreateSurface(data, materialName);
+            SurfaceAsset decalSurface = SurfaceAssetImporterUtils.CreateSurface(data, materialName);
 
-            if (!decalSurface.HasProperty("colossal_DecalLayerMask")) decalSurface.AddProperty("colossal_DecalLayerMask", 1);
+            if(decalSurface.floats["colossal_DecalLayerMask"] == 0) decalSurface.AddProperty("colossal_DecalLayerMask", 1f);
 
             //decalSurface.AddProperty("colossal_DecalLayerMask", 1);
 
@@ -94,11 +95,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return decalSurface;
         }
 
-        public static IEnumerator<Surface> AsyncCreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
+        public static IEnumerator<SurfaceAsset> AsyncCreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
         {
 
             //IEnumerator<Surface> enumerator = TexturesImporterUtils.AsyncCreateSurface(data, materialName);s
-            Task<Surface> task = SurfaceImporterUtils.AsyncCreateSurface(data, materialName);
+            Task<SurfaceAsset> task = SurfaceAssetImporterUtils.AsyncCreateSurface(data, materialName);
 
             //bool value = true;
             //while (enumerator.Current == null && value)
@@ -111,9 +112,9 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             while (!task.IsCompleted) yield return null;
 
-            Surface decalSurface = task.Result;
+            SurfaceAsset decalSurface = task.Result;
 
-            if (!decalSurface.HasProperty("colossal_DecalLayerMask")) decalSurface.AddProperty("colossal_DecalLayerMask", 1);
+            if (!decalSurface.floats.ContainsKey("colossal_DecalLayerMask")) decalSurface.AddProperty("colossal_DecalLayerMask", 1f);
 
             yield return decalSurface;
         }
@@ -185,7 +186,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             path = Path.Combine(path, FolderName);
             Directory.CreateDirectory(path);
             File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(prefabJson, EncodeOptions.None));
-            SurfaceImporterUtils.ExportTemplateMaterialJson(k_DefaultMaterialName, path);
+            SurfaceAssetImporterUtils.ExportTemplateMaterialJson(k_DefaultMaterialName, path);
         }
     }
 }

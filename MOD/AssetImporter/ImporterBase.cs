@@ -21,7 +21,7 @@ namespace ExtraAssetsImporter.AssetImporter
         public static ImporterSettings GetDefault()
         {
             ImporterSettings result = default(ImporterSettings);
-            result.dataBase = EAIDataBaseManager.assetDataBaseEAI;
+            result.dataBase = EAIDataBaseManager.EAIAssetDataBase;
             result.savePrefab = false;
             result.isAssetPack = false;
             return result;

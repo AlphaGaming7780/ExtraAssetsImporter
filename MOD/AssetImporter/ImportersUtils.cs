@@ -2,6 +2,7 @@
 using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Utils;
+using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.Helpers;
@@ -37,11 +38,18 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 EAI.Logger.Info($"Cached data for {data.FullAssetName}, loading the cache.");
 
-                if(EAIDataBaseManager.TryLoadPrefab<RenderPrefabBase>(data.EAIAsset, GetRenderPrefabFileName(data), out renderPrefab))
+                AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
+                if (data.ImportSettings.dataBase.TryLoadPrefab<RenderPrefabBase>(renderPrefabAssetPath, out renderPrefab))
                 {
                     EL.m_PrefabSystem.AddPrefab(renderPrefab);
                     return renderPrefab;
                 }
+
+                //if (EAIDataBaseManager.TryLoadPrefab<RenderPrefabBase>(data.EAIAsset, GetRenderPrefabFileName(data), out renderPrefab))
+                //{
+                //    EL.m_PrefabSystem.AddPrefab(renderPrefab);
+                //    return renderPrefab;
+                //}
 
                 EAI.Logger.Info($"No cached data for {data.FullAssetName}.");
                 return null;
@@ -87,21 +95,22 @@ namespace ExtraAssetsImporter.AssetImporter
 
         }
 
-        public static RenderPrefab CreateRenderPrefab(PrefabImportData data, Surface surface, Mesh[] meshes, Action<PrefabImportData, RenderPrefab, Surface, Mesh[]> setupRenderPrefab, bool useVT = false)
+        public static RenderPrefab CreateRenderPrefab(PrefabImportData data, SurfaceAsset surfaceAsset, Mesh[] meshes, Action<PrefabImportData, RenderPrefab, SurfaceAsset, Mesh[]> setupRenderPrefab, bool useVT = false)
         {
             EAI.Logger.Info($"Creating RenderPrefab for {data.FullAssetName}.");
-            SurfaceAsset surfaceAsset =  SurfaceImporterUtils.SetupSurfaceAsset(data, surface, useVT);
+            //SurfaceAsset surfaceAsset =  SurfaceImporterUtils.SetupSurfaceAsset(data, surface, useVT);
+            surfaceAsset.Save(false);
 
             string pathToRenderPrefabJson = Path.Combine(data.FolderPath, "RenderPrefab.json");
             Variant renderPrefabVariant = File.Exists(pathToRenderPrefabJson) ? ImportersUtils.LoadJson(pathToRenderPrefabJson) : null;
 
-            Vector4 MeshSize = surface.GetVectorProperty("colossal_MeshSize");
+            Vector4 MeshSize = surfaceAsset.vectors["colossal_MeshSize"];
 
             AssetDataPath geometryAssetDataPath = AssetDataPath.Create(data.AssetDataPath, "GeometryAsset", EscapeStrategy.None);
             GeometryAsset geometryAsset = new()
             {
                 id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.assetDataBaseEAI
+                database = EAIDataBaseManager.EAIAssetDataBase
             };
             geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
             geometryAsset.SetData(meshes);
@@ -124,16 +133,15 @@ namespace ExtraAssetsImporter.AssetImporter
             renderPrefab.indexCount = 1;
             renderPrefab.manualVTRequired = false;
 
-            setupRenderPrefab(data, renderPrefab, surface, meshes);
+            setupRenderPrefab(data, renderPrefab, surfaceAsset, meshes);
 
             if(renderPrefabVariant != null) AssetsImporterManager.ProcessComponentImporters(data, renderPrefabVariant, renderPrefab);
 
-            AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), EscapeStrategy.None);
-            PrefabAsset renderPrefabAsset = EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); //Colossal.Hash128.CreateGuid(renderPrefab.name)
+            AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
+            PrefabAsset renderPrefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); //Colossal.Hash128.CreateGuid(renderPrefab.name)
             renderPrefabAsset.Save();
             //EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
 
-            surface.Dispose();
             geometryAsset.Unload();
             surfaceAsset.Unload();
 
@@ -150,7 +158,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static string GetRenderPrefabFileName(PrefabImportData data)
         {
-            return $"{data.AssetName}_RenderPrefab";
+            return $"{data.AssetName}_RenderPrefab{PrefabAsset.kExtension}";
         }
 
         public static Task<T> AsyncLoadJson<T>(string path) where T : class
@@ -202,12 +210,12 @@ namespace ExtraAssetsImporter.AssetImporter
 
             string catIconPath = Path.Combine(Directory.GetParent(data.FolderPath).FullName, "icon.svg");
 
-            UIAssetChildCategoryPrefab categoryPrefab = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}");
-            UIObject uiObject = categoryPrefab.GetComponent<UIObject>();
-            if(uiObject.m_Icon == ExtraLib.Helpers.Icons.Placeholder && File.Exists(catIconPath))
-            {
-                uiObject.m_Icon = $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg";
-            }
+            UIAssetChildCategoryPrefab categoryPrefab = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg": null);
+            //UIObject uiObject = categoryPrefab.GetComponent<UIObject>();
+            //if(uiObject.m_Icon == ExtraLib.Helpers.Icons.Placeholder && File.Exists(catIconPath))
+            //{
+            //    uiObject.m_Icon = $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg";
+            //}
 
             UIObject prefabUI = prefab.AddComponent<UIObject>();
             prefabUI.m_IsDebugObject = false;

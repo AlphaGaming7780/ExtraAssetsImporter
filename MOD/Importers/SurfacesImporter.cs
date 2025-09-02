@@ -288,7 +288,7 @@ namespace ExtraAssetsImporter.Importers
             surfacePrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}");
 
             AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
-            EAIDataBaseManager.assetDataBaseEAI.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
+            EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
             EL.m_PrefabSystem.AddPrefab(surfacePrefab);
         }

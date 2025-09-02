@@ -1,4 +1,5 @@
 ﻿using Colossal.AssetPipeline;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
@@ -42,19 +43,19 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (renderPrefab == null)
             {
 
-                IEnumerator<Surface> enumerator = DecalsImporterNew.AsyncCreateSurface(data, k_DefaultMaterialName);
+                IEnumerator<SurfaceAsset> enumerator = DecalsImporterNew.AsyncCreateSurface(data, k_DefaultMaterialName);
 
                 while (enumerator.Current == null && enumerator.MoveNext())
                 {
                     yield return null;
                 }
 
-                Surface surface = enumerator.Current;
+                SurfaceAsset surfaceAsset = enumerator.Current;
 
                 //Surface surface = DecalsImporterNew.CreateSurface(data, decalsMaterail, k_DefaultMaterialName);
-                Mesh[] meshes = DecalsImporterNew.CreateMeshes(surface);
+                Mesh[] meshes = DecalsImporterNew.CreateMeshes(surfaceAsset);
 
-                renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, DecalsImporterNew.SetupDecalRenderPrefab);
+                renderPrefab = ImportersUtils.CreateRenderPrefab(data, surfaceAsset, meshes, DecalsImporterNew.SetupDecalRenderPrefab);
             }
 
             netLanesPrefab.AddNetLaneMeshInfo(renderPrefab);
@@ -126,7 +127,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             }
 
             File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(netLanePrefabJson, EncodeOptions.None));
-            SurfaceImporterUtils.ExportTemplateMaterialJson(k_DefaultMaterialName, path);
+            SurfaceAssetImporterUtils.ExportTemplateMaterialJson(k_DefaultMaterialName, path);
         }
     }
 }

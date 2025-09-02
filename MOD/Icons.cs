@@ -1,5 +1,6 @@
 ﻿using ExtraLib;
 using Game.Prefabs;
+using System;
 using System.IO;
 
 namespace ExtraAssetsImporter
@@ -22,24 +23,24 @@ namespace ExtraAssetsImporter
             ExtraLib.Helpers.Icons.UnLoadIconsFolder(IconsResourceKey, path);
         }
 
-        public static string GetIcon(PrefabBase prefab)
+        public static string GetIcon(Object obj)
         {
 
-            if (prefab is null) return ExtraLib.Helpers.Icons.Placeholder;
+            if (obj is null) return ExtraLib.Helpers.Icons.Placeholder;
 
-            
-            if (File.Exists(Path.Combine(EAI.ResourcesIcons, prefab.GetType().Name, $"{prefab.name}.svg"))) return $"{COUIBaseLocation}/Icons/{prefab.GetType().Name}/{prefab.name}.svg";
+            EAI.Logger.Info($"GetIcon: {obj.GetType().Name} {obj}");
+            if (File.Exists(Path.Combine(EAI.ResourcesIcons, obj.GetType().Name, $"{obj}.svg"))) return $"{COUIBaseLocation}/Icons/{obj.GetType().Name}/{obj}.svg";
 
-            if (prefab is SurfacePrefab)
+            if (obj is SurfacePrefab)
             {
                 return "Media/Game/Icons/LotTool.svg";
             }
-            else if (prefab is UIAssetCategoryPrefab)
+            else if (obj is UIAssetCategoryPrefab)
             {
 
                 return ExtraLib.Helpers.Icons.Placeholder;
             }
-            else if (prefab is UIAssetMenuPrefab)
+            else if (obj is UIAssetMenuPrefab)
             {
                 return ExtraLib.Helpers.Icons.Placeholder;
             }
