@@ -322,5 +322,15 @@ namespace ExtraAssetsImporter.AssetImporter
             return mesh;
         }
 
+        public static string GetModPath(PrefabImportData data)
+        {
+            return Path.Combine(data.FolderPath, "..", "..", "..");
+        }
+
+        public static string GetFullAssetName(string modName, string catName, string assetName, string assetEndName)
+        {
+            return $"{modName} {catName} {assetName} {assetEndName}";
+        }
+
     }
 }

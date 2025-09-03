@@ -17,6 +17,7 @@ namespace ExtraAssetsImporter.AssetImporter
         public ILocalAssetDatabase dataBase;
         public bool savePrefab;
         public bool isAssetPack;
+        public string outputFolderOffset;
 
         public static ImporterSettings GetDefault()
         {
@@ -24,6 +25,7 @@ namespace ExtraAssetsImporter.AssetImporter
             result.dataBase = EAIDataBaseManager.EAIAssetDataBase;
             result.savePrefab = false;
             result.isAssetPack = false;
+            result.outputFolderOffset = "";
             return result;
         }
     }
@@ -99,7 +101,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             Dictionary<string, string> csLocalisation = new();
 
-            foreach (string folder in _FolderToLoadAssets)
+            foreach (string importerFolder in _FolderToLoadAssets)
             {
 
                 FileInfo[] fileInfos = new FileInfo[0];
@@ -107,18 +109,18 @@ namespace ExtraAssetsImporter.AssetImporter
                 // Note: This is a workaround for the fact that the FolderImporter and FileImporter are not compatible with each other.
                 if (this is FolderImporter)
                 {
-                    if(!Directory.Exists(folder)) continue;
-                    fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+                    if(!Directory.Exists(importerFolder)) continue;
+                    fileInfos = new DirectoryInfo(importerFolder).Parent.GetFiles("*.dll");
 
                 } else if (this is FileImporter)
                 {
-                    if(!File.Exists(folder)) continue;
-                    fileInfos = new FileInfo(folder).Directory.GetFiles("*.dll");
+                    if(!File.Exists(importerFolder)) continue;
+                    fileInfos = new FileInfo(importerFolder).Directory.GetFiles("*.dll");
                 }
 
-                string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(importerFolder).Parent.Name.Split('_')[0];
 
-                yield return LoadCustomAssetFolder(importSettings, folder, modName, csLocalisation, notificationInfo);
+                yield return LoadCustomAssetFolder(importSettings, importerFolder, modName, csLocalisation, notificationInfo);
             }
 
             AfterLoadCustomAssetFolder(importSettings);
@@ -149,7 +151,7 @@ namespace ExtraAssetsImporter.AssetImporter
         }
 
         protected virtual void PreLoadCustomAssetFolder(ImporterSettings importSettings) { }
-        protected abstract IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
+        protected abstract IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
         protected virtual void AfterLoadCustomAssetFolder(ImporterSettings importSettings) { }
         public abstract void ExportTemplate(string path);
 

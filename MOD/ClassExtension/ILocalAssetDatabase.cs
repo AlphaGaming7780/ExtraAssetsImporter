@@ -23,7 +23,6 @@ namespace ExtraAssetsImporter.ClassExtension
             if (!Directory.Exists(assetPath)) return null;
 
             string filePath = Path.Combine(assetPath, assetDataPath.assetName+assetDataPath.extension);
-            EAI.Logger.Info($"Trying to get asset at path {filePath}.");
             if (!File.Exists(filePath)) return null;
 
             if (assetDatabase.Exists(assetDataPath, out IAssetData assetData))

@@ -31,9 +31,9 @@ namespace ExtraAssetsImporter.AssetImporter
             assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab( CatName ?? ImporterId );
         }
 
-        protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
-            foreach (string catFolder in Directory.GetDirectories(folder))
+            foreach (string catFolder in Directory.GetDirectories(importerFolder))
             {
                 string catName = new DirectoryInfo(catFolder).Name;
                 if (catName.StartsWith("."))
@@ -91,16 +91,16 @@ namespace ExtraAssetsImporter.AssetImporter
                     }
 
                     PrefabImportData importData = new(
-                        importSettings, 
+                        importSettings,
                         eaiAsset,
                         needToUpdateAsset,
-                        assetFolder, 
-                        assetName, 
-                        catName, 
-                        modName, 
-                        fullAssetName, 
-                        assetDataPath, 
-                        prefabJson, 
+                        assetFolder,
+                        assetName,
+                        catName,
+                        modName,
+                        fullAssetName,
+                        assetDataPath,
+                        prefabJson,
                         assetCat
                     );
 

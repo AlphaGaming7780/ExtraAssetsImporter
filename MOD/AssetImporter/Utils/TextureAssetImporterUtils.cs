@@ -1,6 +1,8 @@
 ﻿using Colossal.AssetPipeline.Importers;
 using Colossal.IO.AssetDatabase;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
+using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -13,6 +15,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 {
     public static class TextureAssetImporterUtils
     {
+
         private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
         //private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetInstance<DefaultTextureImporter>();
 
@@ -94,25 +97,41 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             string path = Path.Combine(data.FolderPath, textureFileName);
             string textureName = Path.GetFileNameWithoutExtension(path);
+
+            string textureFullFileName = GetTextureFullFileName(data, textureName);
+            string fullAssetTextureName = GetFullAssetTextureName(data, textureName);
+            string assetDataPath = data.AssetDataPath;
+
             if (!File.Exists(path))
             {
-                string jsonPath = Path.GetFileNameWithoutExtension(path) + ".json";
+                string jsonPath = Path.Combine(data.FolderPath, $"{textureName}.json");
 
                 if (!File.Exists(jsonPath))
                     return null;
 
                 // Read and process Texture referencing between multiple assets
 
-                return null;
+                TextureJson textureJson = ImportersUtils.LoadJson<TextureJson>(jsonPath);
 
+                string modPath = ImportersUtils.GetModPath(data);
+
+                EAI.Logger.Info($"Mod path : {modPath}");
+
+                path = Path.Combine(modPath, textureJson.path, textureFileName);
+
+                if(!File.Exists(path))
+                    return null;
+
+                textureFullFileName = GetTextureFullFileName(textureJson.GetAssetName(), textureName);
+                fullAssetTextureName = GetFullAssetTextureName(textureJson.GetFullAssetName(data.ModName), textureName);
+                assetDataPath = textureJson.GetAssetDataPath(data.ModName);
             }
 
-            AssetDataPath textureDataPath = AssetDataPath.Create(data.AssetDataPath, GetTextureFileName(data, textureName), true, EscapeStrategy.None);
+            AssetDataPath textureDataPath = AssetDataPath.Create(assetDataPath, textureFullFileName, true, EscapeStrategy.None);
 
             if (!data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset)) {
-                EAI.Logger.Info($"Importing texture: {textureName} for {data.FullAssetName}");
                 var texture = defaultTextureImporter.Import(importSettings, path);
-                textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(GetTextureName(data, textureName)));
+                textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
                 textureAsset.Save();
                 textureAsset.Unload();
                 texture.Dispose();
@@ -121,14 +140,24 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return textureAsset;
         }
 
-        public static string GetTextureName(PrefabImportData data, string textureName)
+        public static string GetFullAssetTextureName(PrefabImportData data, string textureName)
         {
             return $"{data.FullAssetName}{textureName}";
         }
 
-        public static string GetTextureFileName(PrefabImportData data, string textureName)
+        public static string GetFullAssetTextureName(string FullAssetName, string textureName)
+        {
+            return $"{FullAssetName}{textureName}";
+        }
+
+        public static string GetTextureFullFileName(PrefabImportData data, string textureName)
         {
             return $"{data.AssetName}{textureName}{TextureAsset.kExtension}";
+        }
+
+        public static string GetTextureFullFileName(string assetName, string textureName)
+        {
+            return $"{assetName}{textureName}{TextureAsset.kExtension}";
         }
 
     }

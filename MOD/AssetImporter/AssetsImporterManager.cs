@@ -1,4 +1,5 @@
 ﻿using Colossal.IO;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
@@ -23,6 +24,10 @@ namespace ExtraAssetsImporter.AssetImporter
         private static readonly Dictionary<Type, ImporterBase> s_Importers = new();
         private static readonly Dictionary<Type, ComponentImporter> s_ComponentImporters = new();
         private static readonly List<string> s_AddAssetFolder = new();
+
+        public static IReadOnlyDictionary<Type, ImporterBase> PreImporters => s_PreImporters;
+        public static IReadOnlyDictionary<Type, ImporterBase> Importers => s_Importers;
+        public static IReadOnlyDictionary<Type, ComponentImporter> ComponentImporters => s_ComponentImporters;
 
         public const string k_AssetPacksFolderName = "_AssetPacks";
         public const string k_CompiledAssetPacksFolderName = "_CompiledAssetPacks";
@@ -118,21 +123,37 @@ namespace ExtraAssetsImporter.AssetImporter
             }
         }
 
+        public static void BuildAssetPack(string assetPackName)
+        {
+            ImporterSettings importerSettings = new ImporterSettings
+            {
+                dataBase = AssetDatabase.user,
+                savePrefab = true,
+                isAssetPack = true,
+                outputFolderOffset = Path.Combine( EAI.pathModsData.Replace(AssetDatabase.user.rootPath + Path.DirectorySeparatorChar, ""), k_CompiledAssetPacksFolderName)
+            };
+
+
+
+        }
+
         public static void LoadCustomAssets()
         {
+
+            ImporterSettings importerSettings = ImporterSettings.GetDefault();
 
             CreateEAILocalAssetPackPrefab();
 
             foreach (ImporterBase importer in s_PreImporters.Values)
             {
-                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets(ImporterSettings.GetDefault()));
+                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets(importerSettings));
             }
 
-            EL.extraLibMonoScript.StartCoroutine(WaitForPreImportersToFinish());
+            EL.extraLibMonoScript.StartCoroutine(WaitForPreImportersToFinish(importerSettings));
 
         }
 
-        private static IEnumerator WaitForPreImportersToFinish()
+        private static IEnumerator WaitForPreImportersToFinish(ImporterSettings importerSettings)
         {
             //bool areDone = false;
             while (!HasImporterFinished(s_PreImporters.Values.ToArray()))
@@ -150,7 +171,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             foreach (ImporterBase importer in s_Importers.Values)
             {
-                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets(ImporterSettings.GetDefault()));
+                EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets(importerSettings));
             }
 
             //EL.extraLibMonoScript.StartCoroutine(WaitForImportersToFinish());
