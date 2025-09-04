@@ -98,10 +98,6 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             string path = Path.Combine(data.FolderPath, textureFileName);
             string textureName = Path.GetFileNameWithoutExtension(path);
 
-            string textureFullFileName = GetTextureFullFileName(data, textureName);
-            string fullAssetTextureName = GetFullAssetTextureName(data, textureName);
-            string assetDataPath = data.AssetDataPath;
-
             if (!File.Exists(path))
             {
                 string jsonPath = Path.Combine(data.FolderPath, $"{textureName}.json");
@@ -111,26 +107,19 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
                 // Read and process Texture referencing between multiple assets
 
-                TextureJson textureJson = ImportersUtils.LoadJson<TextureJson>(jsonPath);
-
-                string modPath = ImportersUtils.GetModPath(data);
-
-                EAI.Logger.Info($"Mod path : {modPath}");
-
-                path = Path.Combine(modPath, textureJson.path, textureFileName);
-
-                if(!File.Exists(path))
-                    return null;
-
-                textureFullFileName = GetTextureFullFileName(textureJson.GetAssetName(), textureName);
-                fullAssetTextureName = GetFullAssetTextureName(textureJson.GetFullAssetName(data.ModName), textureName);
-                assetDataPath = textureJson.GetAssetDataPath(data.ModName);
+                return ImportersUtils.LoadJson<TextureJson>(jsonPath).LoadTexture(importSettings, data, textureFileName, textureName);
             }
 
-            AssetDataPath textureDataPath = AssetDataPath.Create(assetDataPath, textureFullFileName, true, EscapeStrategy.None);
+            AssetDataPath textureDataPath = AssetDataPath.Create(data.AssetDataPath, GetTextureFullFileName(data, textureName), true, EscapeStrategy.None);
 
-            if (!data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset)) {
-                var texture = defaultTextureImporter.Import(importSettings, path);
+            return ImportTexture_Impl(importSettings, data, path, textureDataPath, GetFullAssetTextureName(data, textureName));
+        }
+
+        internal static TextureAsset ImportTexture_Impl(ImportSettings importSettings, PrefabImportData data, string textureFilePath, AssetDataPath textureDataPath, string fullAssetTextureName)
+        {
+            if (!data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset))
+            {
+                var texture = defaultTextureImporter.Import(importSettings, textureFilePath);
                 textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
                 textureAsset.Save();
                 textureAsset.Unload();
