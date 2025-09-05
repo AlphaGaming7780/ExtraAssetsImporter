@@ -342,10 +342,15 @@ def migrate_file(fmt: str, input_path: str, out_dir: str, prefab_tmpl: str, mate
     out_prefab = os.path.join(out_dir, "Prefab.json")
     out_material = os.path.join(out_dir, "Material.json")
 
-    write_json(out_prefab, prefab_over if prefab_over else {})
-    write_json(out_material, material_over if material_over else {})
+    isPrefabNone = (prefab_over == None or prefab_over == {})
+    isMaterialNone = (material_over == None or material_over == {})
 
-    return out_prefab, out_material
+    if(not isPrefabNone): 
+        write_json(out_prefab, prefab_over)
+    if(not isMaterialNone): 
+        write_json(out_material, material_over)
+
+    return out_prefab if not isPrefabNone else None, out_material if not isMaterialNone else None
               
 def process_normalmap(src_path: str, dst_path: str):
     """Detect and process NormalMap: invert R channel in linear space like GIMP."""
@@ -415,7 +420,15 @@ def migrate_directory(fmt: str, in_dir: str, out_dir: str, prefab_tmpl: str, mat
             try:
                 out_prefab, out_material = migrate_file(fmt, ipath, opath, prefab_tmpl, material_tmpl)
                 copy_sibling_files(root, opath, fmt)
-                print(f"[OK] {ipath} -> Prefab: {out_prefab}, Material: {out_material}")
+
+                if(out_prefab == None or out_prefab == {}):
+                    print(f"[OK] {ipath} -> Material: {out_material}")
+                elif(out_material == None or out_material == {}):
+                    print(f"[OK] {ipath} -> Prefab: {out_prefab}")
+                elif( ( out_material == None or out_material == {} ) and ( out_prefab == None or out_prefab == {} ) ):
+                    print(f"[OK] {ipath} -> No changes needed.")    
+                else:
+                    print(f"[OK] {ipath} -> Prefab: {out_prefab}, Material: {out_material}")
             except Exception as e:
                 print(f"[ERROR] {ipath}: {e}", file=sys.stderr)
                 if fail_fast:
