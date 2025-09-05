@@ -21,6 +21,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 {
     class SurfacesImporterNew : PrefabImporterBase
     {
+        public const string k_DefaultShaderName = "Shader Graphs/AreaDecalShader";
+
         public override string ImporterId => "Surfaces";
 
         public override string AssetEndName => "Surface";
@@ -97,12 +99,12 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             Task<TextureAsset> normalMapTask = TextureAssetImporterUtils.AsyncImportTexture_NormalMap(data);
             Task<TextureAsset> maskMapTask = TextureAssetImporterUtils.AsyncImportTexture_MaskMap(data);
 
-            Material newMaterial = GetDefaultSurfaceMaterial();
+            MaterialJson materialJson = SurfaceAssetImporterUtils.LoadMaterialJson(data);
+
+            Material newMaterial = GetDefaultSurfaceMaterial(materialJson.ShaderName);
             newMaterial.name = $"{data.FullAssetName}_Material";
 
             newMaterial.SetFloat(ShaderPropertiesIDs.DrawOrder, GetRendererPriorityByCat(data.CatName));
-
-            MaterialJson materialJson = SurfaceAssetImporterUtils.LoadMaterialJson(data);
 
             if (materialJson != null)
             {
@@ -172,9 +174,9 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             };
         }
 
-        private Material GetDefaultSurfaceMaterial()
+        private Material GetDefaultSurfaceMaterial(string shaderName = k_DefaultShaderName)
         {
-            Material material = new(Shader.Find("Shader Graphs/AreaDecalShader"));
+            Material material = new(Shader.Find(shaderName));
             material.SetFloat(ShaderPropertiesIDs.DecalColorMask0, 15);
             material.SetFloat(ShaderPropertiesIDs.DecalColorMask1, 15);
             material.SetFloat(ShaderPropertiesIDs.DecalColorMask2, 11);
@@ -265,6 +267,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             Material material = GetDefaultSurfaceMaterial();
             MaterialJson materialJson = new MaterialJson
             {
+                ShaderName = k_DefaultShaderName,
                 Float = new Dictionary<string, float>(),
                 Vector = new Dictionary<string, Vector4>()
             };
