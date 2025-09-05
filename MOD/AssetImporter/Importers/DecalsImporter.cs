@@ -58,7 +58,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, SurfaceAsset surface, Mesh[] meshes)
         {
-            Vector4 TextureArea = surface.vectors.ContainsKey("colossal_TextureArea") ? surface.vectors["colossal_TextureArea"] : Vector4.one;
+            Vector4 TextureArea = surface.vectors.ContainsKey("colossal_TextureArea") ? surface.vectors["colossal_TextureArea"] : new Vector4(0, 0, 1, 1);
             DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
             decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
             decalProperties.m_LayerMask = (DecalLayers)surface.floats["colossal_DecalLayerMask"];
@@ -115,6 +115,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             SurfaceAsset decalSurface = task.Result;
 
             if (!decalSurface.floats.ContainsKey("colossal_DecalLayerMask")) decalSurface.AddProperty("colossal_DecalLayerMask", 1f);
+            if (!decalSurface.vectors.ContainsKey("colossal_TextureArea")) decalSurface.AddProperty("colossal_TextureArea", new Vector4(0, 0, 1, 1));
 
             yield return decalSurface;
         }
