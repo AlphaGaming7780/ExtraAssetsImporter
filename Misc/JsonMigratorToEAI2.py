@@ -43,8 +43,11 @@ import json
 import os
 import shutil
 import sys
-from copy import deepcopy
-from typing import Any, Dict, Tuple, Optional, List
+from typing import Any, Dict, Tuple, List
+
+# For NormalMap processing
+from PIL import Image
+import numpy as np
 
 Json = Dict[str, Any]
 
@@ -183,7 +186,7 @@ class SurfacesMigrator(Migrator):
         # Map UI Priority -> Game.Prefabs.UIObject.m_Priority
         old_priority = old.get("UiPriority", None)
         if old_priority is None and "Float" in old:
-            old_priority = int(old["Float"].get("UiPriority", None))
+            old_priority = old["Float"].get("UiPriority", None)
 
         if old_priority is not None:
             # Find default priority in template (if present)
@@ -336,11 +339,6 @@ def migrate_file(fmt: str, input_path: str, out_dir: str, prefab_tmpl: str, mate
     old_json = read_json(input_path)
     prefab_over, material_over = migrator.migrate(old_json)
 
-    # Write results
-    # base = os.path.splitext(os.path.basename(input_path))[0]
-    # out_prefab = os.path.join(out_dir, base, "Prefab.json")
-    # out_material = os.path.join(out_dir, base, "Material.json")
-
     out_prefab = os.path.join(out_dir, "Prefab.json")
     out_material = os.path.join(out_dir, "Material.json")
 
@@ -348,14 +346,61 @@ def migrate_file(fmt: str, input_path: str, out_dir: str, prefab_tmpl: str, mate
     write_json(out_material, material_over if material_over else {})
 
     return out_prefab, out_material
+              
+def process_normalmap(src_path: str, dst_path: str):
+    """Detect and process NormalMap: invert R channel in linear space like GIMP."""
+    try:
+        img = Image.open(src_path).convert("RGB")
+        arr = np.array(img).astype(np.float32) / 255.0  # normalisé [0,1]
 
-def copy_sibling_files(src_dir: str, dst_dir: str):
+        # compute mean color for detection
+        mean = arr.mean(axis=(0,1))
+        r_mean, g_mean, b_mean = mean[0], mean[1], mean[2]
+
+        # detect pink normal map (R≈1, G≈0.5, B≈1)
+        if abs(r_mean - 0.9) < 0.1 and abs(g_mean - 0.5) < 0.1 and abs(b_mean - 1.0) < 0.1:
+            print(f"[INFO] Detected pink NormalMap: {src_path}")
+
+            # Convert sRGB -> Linear
+            mask = arr[:,:,0] <= 0.04045
+            r_lin = np.empty_like(arr[:,:,0])
+            r_lin[mask]  = arr[:,:,0][mask] / 12.92
+            r_lin[~mask] = ((arr[:,:,0][~mask] + 0.055) / 1.055) ** 2.4
+
+            # Invert in linear space
+            r_inv = 1.0 - r_lin
+
+            # Convert back Linear -> sRGB
+            mask = r_inv <= 0.0031308
+            r_new = np.empty_like(r_inv)
+            r_new[mask]  = r_inv[mask] * 12.92
+            r_new[~mask] = 1.055 * (r_inv[~mask] ** (1/2.4)) - 0.055
+
+            arr[:,:,0] = r_new
+            arr = np.clip(arr * 255.0, 0, 255).astype(np.uint8)
+
+            img = Image.fromarray(arr)
+            img.save(dst_path)
+        else:
+            shutil.copy2(src_path, dst_path)
+
+    except Exception as e:
+        print(f"[WARN] Failed processing normal map {src_path}: {e}")
+        shutil.copy2(src_path, dst_path)
+
+def copy_sibling_files(src_dir: str, dst_dir: str, fmt: str):
     for f in os.listdir(src_dir):
         spath = os.path.join(src_dir, f)
         dpath = os.path.join(dst_dir, f)
-        if os.path.isfile(spath) and not f.lower().endswith(".json"):
-            os.makedirs(dst_dir, exist_ok=True)
+        if not os.path.isfile(spath) or f.lower().endswith(".json"):
+            continue
+        os.makedirs(dst_dir, exist_ok=True)
+
+        if fmt == "surfaces" and "_normalmap" in f.lower():
+            process_normalmap(spath, dpath)
+        else:
             shutil.copy2(spath, dpath)
+
 
 def migrate_directory(fmt: str, in_dir: str, out_dir: str, prefab_tmpl: str, material_tmpl: str, fail_fast: bool=False):
     """Recursively migrate all *.json files in in_dir, keeping subdirectory structure."""
@@ -369,7 +414,7 @@ def migrate_directory(fmt: str, in_dir: str, out_dir: str, prefab_tmpl: str, mat
             os.makedirs(opath, exist_ok=True)
             try:
                 out_prefab, out_material = migrate_file(fmt, ipath, opath, prefab_tmpl, material_tmpl)
-                copy_sibling_files(root, opath)
+                copy_sibling_files(root, opath, fmt)
                 print(f"[OK] {ipath} -> Prefab: {out_prefab}, Material: {out_material}")
             except Exception as e:
                 print(f"[ERROR] {ipath}: {e}", file=sys.stderr)
