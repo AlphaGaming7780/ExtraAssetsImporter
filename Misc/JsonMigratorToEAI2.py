@@ -44,12 +44,20 @@ import os
 import shutil
 import sys
 from typing import Any, Dict, Tuple, List
+import hashlib
 
 # For NormalMap processing
 from PIL import Image
 import numpy as np
 
 Json = Dict[str, Any]
+
+# global registry of seen textures by type -> hash -> asset_relative_path
+SEEN_TEXTURES = {
+    "_basecolormap": {},
+    "_normalmap": {},
+    "_maskmap": {}
+}
 
 # Build portable fallback path for _DefaultJson inside LocalLow
 base_local_low = os.path.join(os.environ.get("LOCALAPPDATA", ""), "..", "LocalLow")
@@ -364,14 +372,18 @@ def migrate_file(fmt: str, input_path: str, out_dir: str, prefab_tmpl: str, mate
 def process_normalmap(src_path: str, dst_path: str):
     """Detect and process NormalMap: invert R channel in linear space like GIMP."""
     try:
-        img = Image.open(src_path).convert("RGB")
-        arr = np.array(img).astype(np.float32) / 255.0  # normalisé [0,1]
+
+        with Image.open(src_path).convert("RGB") as img:
+            arr = np.array(img).astype(np.float32) / 255.0  # normalisé [0,1]
+
+        # img = Image.open(src_path).convert("RGB")
+        # arr = np.array(img).astype(np.float32) / 255.0  # normalisé [0,1]
 
         # compute mean color for detection
         mean = arr.mean(axis=(0,1))
         r_mean, g_mean, b_mean = mean[0], mean[1], mean[2]
 
-        # detect pink normal map (R≈1, G≈0.5, B≈1)
+        # detect pink normal map (R≈0.9, G≈0.5, B≈1)
         if abs(r_mean - 0.9) < 0.1 and abs(g_mean - 0.5) < 0.1 and abs(b_mean - 1.0) < 0.1:
             print(f"[INFO] Detected pink NormalMap: {src_path}")
 
@@ -393,16 +405,93 @@ def process_normalmap(src_path: str, dst_path: str):
             arr[:,:,0] = r_new
             arr = np.clip(arr * 255.0, 0, 255).astype(np.uint8)
 
+            img.close()
             img = Image.fromarray(arr)
-            img.save(dst_path)
-        else:
-            shutil.copy2(src_path, dst_path)
+            # img.save(dst_path)
+        # else:
+        #     # aucune modification, réutiliser l'image convertie en RGBA
+        #     out_img = img
+
+        # save final image
+        img.save(dst_path)
+
+        # compute hash from the saved image buffer (no reopen needed)
+        h = hashlib.sha1(img.tobytes()).hexdigest()
+        try:
+            img.close()
+        except Exception:
+            pass
+        return h
 
     except Exception as e:
         print(f"[WARN] Failed processing normal map {src_path}: {e}")
+        # fallback: copy as-is and hash
         shutil.copy2(src_path, dst_path)
+        return hash_image_file(dst_path)
 
-def copy_sibling_files(src_dir: str, dst_dir: str, fmt: str):
+def hash_image_file(path: str) -> str:
+    """Return SHA1 of image pixels (RGBA). Opens file and closes it properly."""
+    with Image.open(path) as img:
+        img_rgba = img.convert("RGBA")
+        return hashlib.sha1(img_rgba.tobytes()).hexdigest()
+
+def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, precomputed_hash: str = None):
+    """
+    If identical texture already seen, remove dst_path (if any) and write JSON redirect
+    with path pointing to the asset folder (relative to pack_root, prefixed by pack folder name).
+    Otherwise copy the texture and register it.
+    """
+    name = os.path.basename(src_path).lower()
+    key = None
+    for k in SEEN_TEXTURES.keys():
+        if k in name:
+            key = k
+            break
+
+    # If not one of the special textures, just copy
+    if key is None:
+        shutil.copy2(src_path, dst_path)
+        return
+
+    # get hash (use precomputed if available)
+    if precomputed_hash:
+        h = precomputed_hash
+    else:
+        # open once to hash (hash_image_file closes file)
+        h = hash_image_file(src_path)
+
+    # check duplicate
+    existing = SEEN_TEXTURES[key].get(h)
+    if existing:
+        # duplicate found -> remove dst file if created and write redirect JSON
+        try:
+            if os.path.exists(dst_path):
+                os.remove(dst_path)
+        except Exception:
+            pass
+
+        # write JSON pointing to the asset folder (format: PackName\Category\AssetName)
+        jpath = os.path.splitext(dst_path)[0] + ".json"
+        write_json(jpath, {"path": existing})
+        print(f"[SHARE] {src_path} -> {existing}")
+    else:
+        # new texture: ensure it's on disk at dst_path (if we already saved it, fine; else copy)
+        if not os.path.exists(dst_path):
+            shutil.copy2(src_path, dst_path)
+
+        # asset folder (dst_path parent) relative to pack_root but prefixed by pack folder name
+        asset_dir = os.path.dirname(dst_path)
+        rel = os.path.relpath(asset_dir, start=pack_root).replace("/", "\\")
+        if rel == ".":
+            asset_ref = os.path.basename(pack_root)
+        else:
+            asset_ref = os.path.join(os.path.basename(pack_root), rel).replace("/", "\\")
+
+        SEEN_TEXTURES[key][h] = asset_ref
+        # debug
+        # print(f"[REGISTER] {h} -> {asset_ref}")
+
+def copy_sibling_files(src_dir: str, dst_dir: str, fmt: str, pack_root: str):
     for f in os.listdir(src_dir):
         spath = os.path.join(src_dir, f)
         dpath = os.path.join(dst_dir, f)
@@ -410,25 +499,27 @@ def copy_sibling_files(src_dir: str, dst_dir: str, fmt: str):
             continue
         os.makedirs(dst_dir, exist_ok=True)
 
+        # NormalMap processing (returns hash of the saved file)
         if fmt == "surfaces" and "_normalmap" in f.lower():
-            process_normalmap(spath, dpath)
+            h = process_normalmap(spath, dpath)
+            handle_texture_sharing(dpath, dpath, pack_root, precomputed_hash=h)
         else:
-            shutil.copy2(spath, dpath)
+            # non-normalmap: just let handler compute hash & copy
+            handle_texture_sharing(spath, dpath, pack_root, precomputed_hash=None)
 
 
 def migrate_directory(fmt: str, in_dir: str, out_dir: str, prefab_tmpl: str, material_tmpl: str, fail_fast: bool=False):
     """Recursively migrate all *.json files in in_dir, keeping subdirectory structure."""
     for root, _, files in os.walk(in_dir):
         rel = os.path.relpath(root, in_dir)
+        opath = os.path.join(out_dir, rel)
         for f in files:
             if not f.lower().endswith(".json"):
                 continue
             ipath = os.path.join(root, f)
-            opath = os.path.join(out_dir, rel)
             os.makedirs(opath, exist_ok=True)
             try:
                 out_prefab, out_material = migrate_file(fmt, ipath, opath, prefab_tmpl, material_tmpl)
-                copy_sibling_files(root, opath, fmt)
 
                 if(out_prefab == None or out_prefab == {}):
                     print(f"[OK] {ipath} -> Material: {out_material}")
@@ -442,6 +533,8 @@ def migrate_directory(fmt: str, in_dir: str, out_dir: str, prefab_tmpl: str, mat
                 print(f"[ERROR] {ipath}: {e}", file=sys.stderr)
                 if fail_fast:
                     raise
+
+        copy_sibling_files(root, opath, fmt, out_dir)
 
 def find_template_path(fmt: str, filename: str) -> str:
     """Search for template file case-insensitive in _DefaultJson first, then fallback path."""
