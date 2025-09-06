@@ -101,7 +101,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             MaterialJson materialJson = SurfaceAssetImporterUtils.LoadMaterialJson(data);
 
-            Material newMaterial = GetDefaultSurfaceMaterial(materialJson.ShaderName);
+            Material newMaterial = GetDefaultSurfaceMaterial(materialJson?.ShaderName);
             newMaterial.name = $"{data.FullAssetName}_Material";
 
             newMaterial.SetFloat(ShaderPropertiesIDs.DrawOrder, GetRendererPriorityByCat(data.CatName));
@@ -176,6 +176,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         private Material GetDefaultSurfaceMaterial(string shaderName = k_DefaultShaderName)
         {
+            if (string.IsNullOrEmpty(shaderName)) shaderName = k_DefaultShaderName;
+
             Material material = new(Shader.Find(shaderName));
             material.SetFloat(ShaderPropertiesIDs.DecalColorMask0, 15);
             material.SetFloat(ShaderPropertiesIDs.DecalColorMask1, 15);

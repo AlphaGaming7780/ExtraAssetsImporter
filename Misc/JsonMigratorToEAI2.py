@@ -94,11 +94,10 @@ def diff_overrides(candidate: Any, template: Any, tol: float = 0.0) -> Any:
     """
     Returns only the parts of 'candidate' that differ from 'template'.
 
-    Rules:
-    - dict: recurse; drop keys equal to template; if empty -> return {}
-    - list/tuple: if exactly equal to template -> return [], else return candidate
-      (coarse-grained for lists; per-element diff is avoided for simplicity)
-    - primitives: return candidate if != template (with tol for numbers)
+    Special rule:
+    - If dict looks like a Vector4 (keys x,y,z,w), compare as a whole.
+      * If all components equal -> drop
+      * If at least one differs -> keep full vector
     """
     # If candidate is None or missing, no override
     if candidate is None and template is not None:
@@ -106,12 +105,24 @@ def diff_overrides(candidate: Any, template: Any, tol: float = 0.0) -> Any:
 
     # Dict
     if isinstance(candidate, dict) and isinstance(template, dict):
+
+        # --- Vector4 special case ---
+        if set(candidate.keys()) >= {"x", "y", "z", "w"} and set(template.keys()) >= {"x", "y", "z", "w"}:
+            same = True
+            for comp in ("x", "y", "z", "w"):
+                if not _approx_equal(candidate.get(comp), template.get(comp), tol):
+                    same = False
+                    break
+            if same:
+                return {}  # identical, drop
+            else:
+                return candidate  # at least one different → keep full vector
+
+        # --- Normal dict diff ---
         out: Dict[str, Any] = {}
         for k, v in candidate.items():
-
-            if(k not in template):
+            if k not in template:
                 continue
-
             t = template.get(k)
 
             if isinstance(v, dict) and isinstance(t, dict):
@@ -120,9 +131,7 @@ def diff_overrides(candidate: Any, template: Any, tol: float = 0.0) -> Any:
                     continue
                 out[k] = sub
             else:
-                # Lists or primitives
                 if isinstance(v, list) and isinstance(t, list):
-                    # Entire-list compare
                     if v == t:
                         continue
                     out[k] = v
