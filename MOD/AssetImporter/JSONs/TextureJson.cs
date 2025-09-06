@@ -11,8 +11,8 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
 {
     public class TextureJson
     {
-        public string path = null;
-        public Hash128 CID = Hash128.Empty;
+        public readonly string path = null;
+        public readonly Hash128 CID = Hash128.Empty;
 
         public string GetAssetName()
         {
@@ -77,9 +77,9 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
 
             string modPath = ImportersUtils.GetModPath(data);
 
-            path = Path.Combine(modPath, path, textureFileName);
+            string filePath = Path.Combine(modPath, path, textureFileName);
 
-            if (!File.Exists(path))
+            if (!File.Exists(filePath))
                 return null;
 
             string textureFullFileName = TextureAssetImporterUtils.GetTextureFullFileName(GetAssetName(), textureName);

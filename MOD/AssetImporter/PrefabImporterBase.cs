@@ -75,12 +75,15 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if(eaiAsset.AssetHash != folderHash) 
                         {
+                            EAI.Logger.Info($"The asset {fullAssetName} has changed, updating it. Old hash {eaiAsset.AssetHash}, new hash {folderHash}.");
                             needToUpdateAsset = true;
+                            eaiAsset.AssetHash = folderHash;
                         }
 
                     } 
                     else
                     {
+                        EAI.Logger.Info($"The asset {fullAssetName} is new, adding it.");
                         eaiAsset = new(fullAssetName, folderHash, assetDataPath);
                         needToUpdateAsset = true;
                     }

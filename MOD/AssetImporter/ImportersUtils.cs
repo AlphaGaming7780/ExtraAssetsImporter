@@ -23,7 +23,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             if (data.NeedToUpdateAsset)
             {
-                EAI.Logger.Info($"Need to update the cached data for {data.FullAssetName}.");
+                //EAI.Logger.Info($"Need to update the cached data for {data.FullAssetName}.");
                 return null;
             }
 
@@ -324,7 +324,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static string GetModPath(PrefabImportData data)
         {
-            return Path.Combine(data.FolderPath, "..", "..", "..");
+            return new DirectoryInfo(data.FolderPath).Parent.Parent.Parent.FullName; //Path.Combine(data.FolderPath, "..", "..", "..");
         }
 
         public static string GetFullAssetName(string modName, string catName, string assetName, string assetEndName)
