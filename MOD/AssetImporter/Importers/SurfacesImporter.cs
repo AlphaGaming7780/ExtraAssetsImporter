@@ -1,5 +1,6 @@
 ﻿using Colossal.AssetPipeline.Importers;
 using Colossal.IO.AssetDatabase;
+using Colossal.IO.AssetDatabase.Internal;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
@@ -95,9 +96,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //Task<TextureAsset> normalMapTask = TextureAssetImporterUtils.AsyncImportTexture_NormalMap(data, importSettings);
             //Task<TextureAsset> maskMapTask = TextureAssetImporterUtils.AsyncImportTexture_MaskMap(data, importSettings);
 
-            Task<TextureAsset> baseColorMapTask = TextureAssetImporterUtils.AsyncImportTexture_BaseColorMap(data);
-            Task<TextureAsset> normalMapTask = TextureAssetImporterUtils.AsyncImportTexture_NormalMap(data);
-            Task<TextureAsset> maskMapTask = TextureAssetImporterUtils.AsyncImportTexture_MaskMap(data);
+            //Task<TextureAsset> baseColorMapTask = TextureAssetImporterUtils.AsyncImportTexture_BaseColorMap(data);
+            //Task<TextureAsset> normalMapTask = TextureAssetImporterUtils.AsyncImportTexture_NormalMap(data);
+            //Task<TextureAsset> maskMapTask = TextureAssetImporterUtils.AsyncImportTexture_MaskMap(data);
+
+            Task<Dictionary<string, TextureAsset>> textureAssetsTask = Task.Run(() => GetTextures(data));
 
             MaterialJson materialJson = SurfaceAssetImporterUtils.LoadMaterialJson(data);
 
@@ -112,11 +115,17 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 foreach (string key in materialJson.Vector.Keys) { if (newMaterial.HasVector(key)) newMaterial.SetVector(key, materialJson.Vector[key]); }
             }
 
-            while (!baseColorMapTask.IsCompleted || !normalMapTask.IsCompleted || !maskMapTask.IsCompleted) yield return null;
+            //while (!baseColorMapTask.IsCompleted || !normalMapTask.IsCompleted || !maskMapTask.IsCompleted) yield return null;
+            while (!textureAssetsTask.IsCompleted) yield return null;
+            var textureAssets = textureAssetsTask.Result;
 
-            var baseColorMap = baseColorMapTask.Result;
-            var normalMap = normalMapTask.Result;
-            var maskMap = maskMapTask.Result;
+            //var baseColorMap = baseColorMapTask.Result;
+            //var normalMap = normalMapTask.Result;
+            //var maskMap = maskMapTask.Result;
+
+            TextureAsset baseColorMap = textureAssets.ContainsKey(TextureAssetImporterUtils.BaseColorMapName) ? textureAssets[TextureAssetImporterUtils.BaseColorMapName] : null;
+            TextureAsset normalMap = textureAssets.ContainsKey(TextureAssetImporterUtils.NormalMapName) ? textureAssets[TextureAssetImporterUtils.NormalMapName] : null;
+            TextureAsset maskMap = textureAssets.ContainsKey(TextureAssetImporterUtils.MaskMapName) ? textureAssets[TextureAssetImporterUtils.MaskMapName] : null;
 
             if (baseColorMap != null)
             {
@@ -148,6 +157,17 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         }
 
+        private Dictionary<string, TextureAsset> GetTextures(PrefabImportData data)
+        {
+            Dictionary<string, TextureAsset> textures = new();
+            TextureAsset baseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
+            if (baseColorMap != null) textures.Add(TextureAssetImporterUtils.BaseColorMapName, baseColorMap);
+            TextureAsset normalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data);
+            if (normalMap != null) textures.Add(TextureAssetImporterUtils.NormalMapName, normalMap);
+            TextureAsset maskMap = TextureAssetImporterUtils.ImportTexture_MaskMap(data);
+            if (maskMap != null) textures.Add(TextureAssetImporterUtils.MaskMapName, maskMap);
+            return textures;
+        }
         private string GetMaterialName(PrefabImportData data)
         {
             return $"{data.FullAssetName}_Material";

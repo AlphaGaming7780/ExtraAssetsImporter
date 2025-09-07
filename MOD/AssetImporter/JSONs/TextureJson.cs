@@ -11,8 +11,8 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
 {
     public class TextureJson
     {
-        public readonly string path = null;
-        public readonly Hash128 CID = Hash128.Empty;
+        public string path = null;
+        public Hash128 CID = Hash128.Empty;
 
         public string GetAssetName()
         {

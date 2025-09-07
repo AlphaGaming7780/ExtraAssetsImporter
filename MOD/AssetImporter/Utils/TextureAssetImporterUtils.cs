@@ -2,7 +2,6 @@
 using Colossal.IO.AssetDatabase;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
-using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;

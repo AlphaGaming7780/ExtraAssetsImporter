@@ -3,6 +3,7 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.Importers;
@@ -228,6 +229,16 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 importer.ExportTemplate(path);
             }
+            //string textureSharing = Path.Combine(path, "TextureSharing");
+            //Directory.CreateDirectory(textureSharing);
+
+            TextureJson textureJson = new TextureJson()
+            {
+                path = "ImporterID\\Category\\AssetName",
+                CID = new()
+            };
+            File.WriteAllText(Path.Combine(path, "TextureSharing.json"), Encoder.Encode(textureJson, EncodeOptions.None));
+
         }
 
         public static List<Type> FindAllDerivedTypes(Type baseType)
