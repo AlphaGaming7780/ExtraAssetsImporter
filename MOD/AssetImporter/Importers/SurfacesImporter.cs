@@ -88,18 +88,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         private IEnumerator<Material> AsyncCreateMaterial(PrefabImportData data)
         {
-            // Disble BC compression for surfaces.
-            //ImportSettings importSettings = ImportSettings.GetDefault();
-            //importSettings.compressBC = false;
-
-            //Task<TextureAsset> baseColorMapTask = TextureAssetImporterUtils.AsyncImportTexture_BaseColorMap(data, importSettings);
-            //Task<TextureAsset> normalMapTask = TextureAssetImporterUtils.AsyncImportTexture_NormalMap(data, importSettings);
-            //Task<TextureAsset> maskMapTask = TextureAssetImporterUtils.AsyncImportTexture_MaskMap(data, importSettings);
-
-            //Task<TextureAsset> baseColorMapTask = TextureAssetImporterUtils.AsyncImportTexture_BaseColorMap(data);
-            //Task<TextureAsset> normalMapTask = TextureAssetImporterUtils.AsyncImportTexture_NormalMap(data);
-            //Task<TextureAsset> maskMapTask = TextureAssetImporterUtils.AsyncImportTexture_MaskMap(data);
-
             Task<Dictionary<string, TextureAsset>> textureAssetsTask = Task.Run(() => GetTextures(data));
 
             MaterialJson materialJson = SurfaceAssetImporterUtils.LoadMaterialJson(data);
@@ -118,10 +106,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             //while (!baseColorMapTask.IsCompleted || !normalMapTask.IsCompleted || !maskMapTask.IsCompleted) yield return null;
             while (!textureAssetsTask.IsCompleted) yield return null;
             var textureAssets = textureAssetsTask.Result;
-
-            //var baseColorMap = baseColorMapTask.Result;
-            //var normalMap = normalMapTask.Result;
-            //var maskMap = maskMapTask.Result;
 
             TextureAsset baseColorMap = textureAssets.ContainsKey(TextureAssetImporterUtils.BaseColorMapName) ? textureAssets[TextureAssetImporterUtils.BaseColorMapName] : null;
             TextureAsset normalMap = textureAssets.ContainsKey(TextureAssetImporterUtils.NormalMapName) ? textureAssets[TextureAssetImporterUtils.NormalMapName] : null;

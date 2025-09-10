@@ -54,7 +54,6 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             importSettings.normalMap = true;
             importSettings.alphaIsTransparency = false;
-            importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
             importSettings.wrapMode = TextureWrapMode.Repeat;
             return ImportTexture(data, NormalMapName, importSettings);
         }
