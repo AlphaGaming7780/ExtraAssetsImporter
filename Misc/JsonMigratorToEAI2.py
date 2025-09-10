@@ -219,6 +219,23 @@ class SurfacesMigrator(Migrator):
                     old_priority
                 )
 
+        old_Roundness = old.get("m_Roundness", None)
+        if old_Roundness is None and "Float" in old:
+            old_Roundness = old["Float"].get("m_Roundness", None)
+
+        if old_Roundness is not None:
+            default_Roundness = get_in(
+                self.prefab_template,
+                ["Components", "Game.Prefabs.RenderedArea", "Roundness"],
+                default=0.5
+            )
+            if not _approx_equal(old_Roundness, default_Roundness):
+                set_in(
+                    prefab_override,
+                    ["Components", "Game.Prefabs.RenderedArea", "Roundness"],
+                    old_Roundness
+                )
+
         # You can add more surface-specific mappings here if needed, e.g.:
         # - mapping old["prefabIdentifierInfos"] to
         #   Components.Game.Prefabs.ObsoleteIdentifiers.PrefabIdentifiers
