@@ -18,7 +18,7 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     static class ImportersUtils
     {
-        public static RenderPrefabBase GetRenderPrefab(PrefabImportData data)
+        public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
 
             if (data.NeedToUpdateAsset)
@@ -27,8 +27,8 @@ namespace ExtraAssetsImporter.AssetImporter
                 return null;
             }
 
-            PrefabID prefabID = new PrefabID(nameof(RenderPrefabBase), GetRenderPrefabName(data));
-            if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is RenderPrefabBase renderPrefab)
+            PrefabID prefabID = new PrefabID(nameof(RenderPrefab), GetRenderPrefabName(data));
+            if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is RenderPrefab renderPrefab)
             {
                 EAI.Logger.Info($"RenderPrefab for {data.FullAssetName} was already loaded and in the prefab system.");
                 return renderPrefab;
@@ -39,7 +39,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 EAI.Logger.Info($"Cached data for {data.FullAssetName}, loading the cache.");
 
                 AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
-                if (data.ImportSettings.dataBase.TryLoadPrefab<RenderPrefabBase>(renderPrefabAssetPath, out renderPrefab))
+                if (data.ImportSettings.dataBase.TryLoadPrefab<RenderPrefab>(renderPrefabAssetPath, out renderPrefab))
                 {
                     EL.m_PrefabSystem.AddPrefab(renderPrefab);
                     return renderPrefab;
