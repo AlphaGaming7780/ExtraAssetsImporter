@@ -3,7 +3,6 @@ using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
-using ExtraAssetsImporter.DataBase;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,10 +55,11 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             }
 
             AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(data.AssetDataPath, $"{data.AssetName}_SurfaceAsset", EscapeStrategy.None);
+
             SurfaceAsset surfaceAsset = new()
             {
                 id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.EAIAssetDataBase
+                database = data.ImportSettings.dataBase
             };
             surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
             surfaceAsset.SetData(surface);
@@ -85,6 +85,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
                 VirtualTexturingConfig virtualTexturingConfig = EAI.textureStreamingSystem.virtualTexturingConfig; //(VirtualTexturingConfig)ScriptableObject.CreateInstance("VirtualTexturingConfig");
                 Dictionary<Colossal.IO.AssetDatabase.TextureAsset, List<SurfaceAsset>> textureReferencesMap = new();
 
+                // TODO : Update that to support texture referencing between multiple assets.
                 foreach (Colossal.IO.AssetDatabase.TextureAsset asset in surfaceAsset.textures.Values)
                 {
                     asset.Save();

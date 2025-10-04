@@ -6,7 +6,7 @@ using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.DataBase;
-using ExtraAssetsImporter.Importers;
+using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
 using Game.Prefabs;
 using System;
@@ -33,6 +33,10 @@ namespace ExtraAssetsImporter.AssetImporter
         public const string k_AssetPacksFolderName = "_AssetPacks";
         public const string k_CompiledAssetPacksFolderName = "_CompiledAssetPacks";
         public const string k_TemplateFolderName = "_DefaultJson";
+
+#if DEBUG
+        private static bool s_firstTimeLoad = true;
+#endif
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
@@ -124,24 +128,57 @@ namespace ExtraAssetsImporter.AssetImporter
             }
         }
 
+        public static void BuildAllAssetPacks()
+        {
+            List<string> assetPacksToBuild = new List<string>();
+
+            string path = Path.Combine(EAI.pathModsData, k_AssetPacksFolderName);
+
+            if (!Directory.Exists(path)) return;
+
+            foreach (DirectoryInfo directoryInfo in new DirectoryInfo(path).GetDirectories())
+            {
+                assetPacksToBuild.Add(directoryInfo.Name);
+            }
+            BuildAssetPack(assetPacksToBuild);
+        }
+
         public static void BuildAssetPack(string assetPackName)
+        {
+            string[] strings = { assetPackName };
+            BuildAssetPack(strings);
+        }
+
+        public static void BuildAssetPack(IEnumerable<string> assetPacksName)
         {
             ImporterSettings importerSettings = new ImporterSettings
             {
                 dataBase = AssetDatabase.user,
-                savePrefab = true,
+                savePrefabs = true,
                 isAssetPack = true,
-                outputFolderOffset = Path.Combine( EAI.pathModsData.Replace(AssetDatabase.user.rootPath + Path.DirectorySeparatorChar, ""), k_CompiledAssetPacksFolderName)
+                outputFolderOffset = Path.Combine(EAI.pathModsData.Replace(AssetDatabase.user.rootPath + Path.DirectorySeparatorChar, ""), k_CompiledAssetPacksFolderName)
             };
 
+            foreach (string assetPackName in assetPacksName)
+            {
+                string path = Path.Combine(EAI.pathModsData, k_AssetPacksFolderName, assetPackName);
 
+                path = PathUtils.Normalize(path);
 
+                // Ignore path that start with "."
+                //if (Path.GetDirectoryName(path).StartsWith(".")) return;
+
+                foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
+                {
+                    importer.AddCustomAssetsFolder(path);
+                }
+            }
+
+            LoadCustomAssets(importerSettings);
         }
 
-        public static void LoadCustomAssets()
+        public static void LoadCustomAssets(ImporterSettings importerSettings)
         {
-
-            ImporterSettings importerSettings = ImporterSettings.GetDefault();
 
             CreateEAILocalAssetPackPrefab();
 
@@ -156,15 +193,8 @@ namespace ExtraAssetsImporter.AssetImporter
 
         private static IEnumerator WaitForPreImportersToFinish(ImporterSettings importerSettings)
         {
-            //bool areDone = false;
-            while (!HasImporterFinished(s_PreImporters.Values.ToArray()))
+            while (!HasImporterFinished(s_PreImporters.Values))
             {
-                //areDone = true;
-                //foreach (ImporterBase importer in s_PreImporters.Values)
-                //{
-                //    if (importer.AssetsLoaded) continue;
-                //    areDone = false;
-                //}
                 yield return null;
             }
 
@@ -175,10 +205,10 @@ namespace ExtraAssetsImporter.AssetImporter
                 EL.extraLibMonoScript.StartCoroutine(importer.LoadCustomAssets(importerSettings));
             }
 
-            //EL.extraLibMonoScript.StartCoroutine(WaitForImportersToFinish());
+            EL.extraLibMonoScript.StartCoroutine(WaitForImportersToFinish(importerSettings));
         }
 
-        internal static IEnumerator WaitForImportersToFinish()
+        internal static IEnumerator WaitForImportersToFinish(ImporterSettings importerSettings)
         {
 
             while (
@@ -194,26 +224,39 @@ namespace ExtraAssetsImporter.AssetImporter
             EAI.Logger.Info("The loading of importers as finished.");
             EAI.m_Setting.ResetCompatibility();
             EAIDataBaseManager.SaveValidateDataBase();
-            EAIDataBaseManager.ClearNotLoadedAssetsFromFiles();
+            EAIDataBaseManager.ClearNotLoadedAssetsFromFiles(importerSettings);
+            //EAIDataBaseManager.UnloadDataBase();
 
+#if DEBUG
+            if(s_firstTimeLoad)
+            {
+                s_firstTimeLoad = false;
+                BuildAllAssetPacks();
+            }
+#endif
             yield break;
         }
 
-        private static bool HasImporterFinished(ImporterBase[] importers )
+        private static bool HasImporterFinished(IEnumerable<ImporterBase> importers )
         {
             bool areDone = true;
             foreach (ImporterBase importer in importers)
             {
                 if (importer.AssetsLoaded) continue;
                 areDone = false;
+                break;
             }
             return areDone;
         }
 
         private static void CreateEAILocalAssetPackPrefab()
         {
+            string packName = $"ExtraAssetsImporter {AssetPackImporter.kAssetEndName}";
+            if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(typeof(AssetPackPrefab).Name, packName), out var existingPrefab))
+                return;
+
             AssetPackPrefab assetPackPrefab = ScriptableObject.CreateInstance<AssetPackPrefab>();
-            assetPackPrefab.name = $"ExtraAssetsImporter {AssetPackImporter.kAssetEndName}";
+            assetPackPrefab.name = packName;
 
             UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
             assetPackUI.m_Icon = Icons.GetIcon(assetPackPrefab);

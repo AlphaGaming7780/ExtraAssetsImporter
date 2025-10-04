@@ -1,21 +1,17 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.VirtualTexturing;
-using Colossal.Json;
 using Colossal.Logging;
 using Colossal.PSI.Environment;
 using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
-using ExtraAssetsImporter.AssetImporter.JSONs;
-using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using ExtraAssetsImporter.DataBase;
-using ExtraAssetsImporter.Importers;
+using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
 using ExtraLib.Debugger;
 using ExtraLib.Helpers;
 using Game;
 using Game.Modding;
-using Game.Prefabs;
 using Game.SceneFlow;
 using System;
 using System.IO;
@@ -37,7 +33,10 @@ namespace ExtraAssetsImporter
 		internal static string ResourcesIcons { get; private set; }
 
 		internal static string pathModsData = Path.Combine(EnvPath.kUserDataPath, "ModsData", nameof(ExtraAssetsImporter));
-        internal static string pathTempFolder => Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, "TempAssetsFolder");
+
+        internal const string kTempFolderName = "TempAssetsFolder";
+
+        internal static string pathTempFolder => Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, kTempFolderName);
 
         internal static TextureStreamingSystem textureStreamingSystem;
 
@@ -190,7 +189,8 @@ namespace ExtraAssetsImporter
                 // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
                 //AutoImportCustomAssets();
 
-                AssetsImporterManager.LoadCustomAssets();
+                ImporterSettings importerSettings = ImporterSettings.GetDefault();
+                AssetsImporterManager.LoadCustomAssets(importerSettings);
             }
 
             if(m_Setting.UseOldImporters)
@@ -200,7 +200,7 @@ namespace ExtraAssetsImporter
                 if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
             }
 
-            EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForImportersToFinish());
+            //EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForImportersToFinish(importerSettings));
 
         }
 

@@ -4,6 +4,12 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
 {
     public class PrefabIDJson
     {
+        public PrefabIDJson(PrefabBase prefab)
+        {
+            Type = prefab.GetType().Name;
+            Name = prefab.name;
+        }
+
         public PrefabIDJson(string type, string name) 
         {
             Type = type;
@@ -22,6 +28,5 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
         {
             return new PrefabID(prefabIDJson.Type, prefabIDJson.Name);
         }
-
     }
 }

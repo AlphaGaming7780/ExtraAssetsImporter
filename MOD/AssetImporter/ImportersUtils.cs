@@ -1,7 +1,5 @@
-﻿using Colossal.AssetPipeline;
-using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO.AssetDatabase;
 using Colossal.Json;
-using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
@@ -18,6 +16,12 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     static class ImportersUtils
     {
+
+        //public static string GetFullAssetDataPath(PrefabImportData data)
+        //{
+        //    return Path.Combine(data.ImportSettings.outputFolderOffset, data.AssetDataPath);
+        //}
+
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
 
@@ -45,12 +49,6 @@ namespace ExtraAssetsImporter.AssetImporter
                     return renderPrefab;
                 }
 
-                //if (EAIDataBaseManager.TryLoadPrefab<RenderPrefabBase>(data.EAIAsset, GetRenderPrefabFileName(data), out renderPrefab))
-                //{
-                //    EL.m_PrefabSystem.AddPrefab(renderPrefab);
-                //    return renderPrefab;
-                //}
-
                 EAI.Logger.Info($"No cached data for {data.FullAssetName}.");
                 return null;
 
@@ -62,36 +60,6 @@ namespace ExtraAssetsImporter.AssetImporter
 
             return null;
 
-            //if (EAIDataBaseManager.IsAssetsInDataBase(data.EAIAsset))
-            //{
-            //    if(data.EAIAsset.AssetHash != EAIDataBaseManager.GetAssetHash(data.FolderPath))
-            //    {
-            //        EAI.Logger.Info($"Need to update the cached data for {data.FullAssetName}.");
-            //        return null;
-            //    }
-
-            //    try
-            //    {
-            //        EAI.Logger.Info($"Cached data for {data.FullAssetName}, loading the cache.");
-            //        List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(data.FullAssetName);
-            //        foreach (PrefabBase prefabBase in loadedObject)
-            //        {
-            //            if (prefabBase is not RenderPrefabBase renderPrefab) continue;
-
-            //            return renderPrefab;
-
-            //        }
-            //    }
-            //    catch (Exception e) 
-            //    {
-            //        EAI.Logger.Warn($"Failed to load the cached data for {data.FullAssetName}.\nException:{e}.");
-            //    }
-
-            //}
-
-            //EAI.Logger.Info($"No cached data for {data.FullAssetName}.");
-
-            //return null;
 
         }
 
@@ -110,7 +78,7 @@ namespace ExtraAssetsImporter.AssetImporter
             GeometryAsset geometryAsset = new()
             {
                 id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.EAIAssetDataBase
+                database = data.ImportSettings.dataBase
             };
             geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
             geometryAsset.SetData(meshes);
@@ -138,7 +106,7 @@ namespace ExtraAssetsImporter.AssetImporter
             if(renderPrefabVariant != null) AssetsImporterManager.ProcessComponentImporters(data, renderPrefabVariant, renderPrefab);
 
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
-            PrefabAsset renderPrefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); //Colossal.Hash128.CreateGuid(renderPrefab.name)
+            PrefabAsset renderPrefabAsset = data.ImportSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); //Colossal.Hash128.CreateGuid(renderPrefab.name)
             renderPrefabAsset.Save();
             //EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
 
@@ -211,6 +179,9 @@ namespace ExtraAssetsImporter.AssetImporter
             string catIconPath = Path.Combine(Directory.GetParent(data.FolderPath).FullName, "icon.svg");
 
             UIAssetChildCategoryPrefab categoryPrefab = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg": null);
+            AssetDataPath assetDataPath = AssetDataPath.Create(EAI.kTempFolderName, $"{categoryPrefab.name}_CategoryPrefab", EscapeStrategy.None);
+            EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, categoryPrefab);
+
             //UIObject uiObject = categoryPrefab.GetComponent<UIObject>();
             //if(uiObject.m_Icon == ExtraLib.Helpers.Icons.Placeholder && File.Exists(catIconPath))
             //{

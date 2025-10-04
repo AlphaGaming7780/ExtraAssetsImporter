@@ -401,7 +401,7 @@ def process_normalmap(src_path: str, dst_path: str):
         r_mean, g_mean, b_mean = mean[0], mean[1], mean[2]
 
         # detect pink normal map (R≈0.9, G≈0.5, B≈1)
-        if abs(r_mean - 0.9) < 0.1 and abs(g_mean - 0.5) < 0.1 and abs(b_mean - 1.0) < 0.1:
+        if abs(r_mean - 0.9) < 0.1 and abs(g_mean - 0.5) < 0.1 and abs(b_mean - 0.9) < 0.1:
             print(f"[INFO] Detected pink NormalMap: {src_path}")
 
             # Convert sRGB -> Linear
@@ -425,7 +425,8 @@ def process_normalmap(src_path: str, dst_path: str):
             img.close()
             img = Image.fromarray(arr)
             # img.save(dst_path)
-        # else:
+        else:
+            print(f"[INFO] NormalMap does not appear pink {mean}, no R inversion: {src_path}")
         #     # aucune modification, réutiliser l'image convertie en RGBA
         #     out_img = img
 
@@ -598,10 +599,12 @@ def main(argv=None):
         }
         found = []
         for fmt, (ind, outd) in autodirs.items():
-            if not os.path.isdir(ind):
-                os.makedirs(ind, exist_ok=True)  # créer si manquant
-            if os.listdir(ind):  # ne considérer que si non vide
+            # if not os.path.isdir(ind):
+            #     os.makedirs(ind, exist_ok=True) 
+            if os.path.isdir(ind) and os.listdir(ind):
                 found.append((fmt, ind, outd))
+
+        print(f"[INFO] Auto-discovered input directories: {found}")
 
         if not found:
             parser.error("No --input/--input-dir provided and no Custom* folders with JSON files found.")
@@ -675,5 +678,11 @@ def main(argv=None):
             exit(1)
 
 if __name__ == "__main__":
-    main()
-    exit(0)
+    try:
+        main()
+    except Exception as err:
+        print(f"{err}")
+        raise
+
+    finally:
+        exit(0)

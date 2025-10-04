@@ -4,7 +4,7 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
-using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.ClassExtension;
@@ -21,7 +21,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
 
-namespace ExtraAssetsImporter.Importers
+namespace ExtraAssetsImporter.OldImporters
 {
     public class JSONDecalsMaterail
     {
@@ -134,7 +134,7 @@ namespace ExtraAssetsImporter.Importers
                         {
                             RenderPrefab renderPrefab = null;
 
-                            if (!EAIDataBaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(decalsFolder))
+                            if (!EAIDataBaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.SourceAssetHash != EAIDataBaseManager.GetAssetHash(decalsFolder))
                             {
                                 EAI.Logger.Info($"No cahed data for {fullDecalName}, creating the cache.");
                                 renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
@@ -573,13 +573,15 @@ namespace ExtraAssetsImporter.Importers
             {
                 //EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");
 
-                if (EAIDataBaseManager.TryLoadPrefab<RenderPrefab>(fullAssetName, $"{assetName}_RenderPrefab", out renderPrefab))
+                if (EAIDataBaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) &&
+                    EAIDataBaseManager.EAIAssetDataBase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}"), 
+                    out renderPrefab))
                 {
                     EL.m_PrefabSystem.AddPrefab(renderPrefab);
                     return renderPrefab;
                 }
 
-                //EAI.Logger.Info($"No cached data for {fullAssetName}.");
+                EAI.Logger.Info($"No cached data for {fullAssetName}.");
                 return null;
 
             }

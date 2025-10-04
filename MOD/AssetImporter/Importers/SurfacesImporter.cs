@@ -1,22 +1,16 @@
-﻿using Colossal.AssetPipeline.Importers;
-using Colossal.IO.AssetDatabase;
-using Colossal.IO.AssetDatabase.Internal;
+﻿using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
-using ExtraAssetsImporter.DataBase;
-using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
 {
@@ -57,7 +51,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             renderedArea.m_Material = material;
             renderedArea.m_DecalLayerMask = (DecalLayers)material.GetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask);
 
-            ImportersUtils.SetupUIObject(this, data, surfacePrefab);
+            //ImportersUtils.SetupUIObject(this, data, surfacePrefab);
 
             yield return surfacePrefab;
         }
@@ -194,69 +188,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             material.shaderKeywords = new[] { "_MATERIAL_AFFECTS_ALBEDO", "_MATERIAL_AFFECTS_MASKMAP", "_MATERIAL_AFFECTS_NORMAL" };
             return material;
         }
-
-        public static IEnumerator<JSONSurfacesMaterail> AsyncLoadJSON(PrefabImportData data)
-        {
-            JSONSurfacesMaterail surfacesMaterail = new();
-
-            string jsonSurfacePath = Path.Combine(data.FolderPath, "surface.json");
-
-            if (File.Exists(jsonSurfacePath))
-            {
-                Task<JSONSurfacesMaterail> task = ImportersUtils.AsyncLoadJson<JSONSurfacesMaterail>(jsonSurfacePath);
-
-                while (!task.IsCompleted) yield return null;
-
-                surfacesMaterail = task.Result;
-
-            }
-            yield return surfacesMaterail;
-        }
-
-        public static JSONSurfacesMaterail LoadJSON(PrefabImportData data)
-        {
-            JSONSurfacesMaterail surfacesMaterail = new();
-
-            string jsonSurfacePath = Path.Combine(data.FolderPath, "surface.json");
-
-            if (File.Exists(jsonSurfacePath))
-            {
-                surfacesMaterail = ImportersUtils.LoadJson<JSONSurfacesMaterail>(jsonSurfacePath);
-            }
-            return surfacesMaterail;
-        }
-
-        private void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName)
-        {
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
-            {
-                PrefabIdentifierInfo prefabIdentifierInfo = new()
-                {
-                    m_Name = $"ExtraAssetsImporter {catName} {surfaceName} Surface",
-                    m_Type = "StaticObjectPrefab"
-                };
-                jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
-            }
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT2)
-            {
-                PrefabIdentifierInfo prefabIdentifierInfo = new()
-                {
-                    m_Name = $"{surfaceName}",
-                    m_Type = "SurfacePrefab"
-                };
-                jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
-            }
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT3)
-            {
-                PrefabIdentifierInfo prefabIdentifierInfo = new()
-                {
-                    m_Name = $"ExtraLandscapingTools_mods_{catName}_{surfaceName}",
-                    m_Type = "SurfacePrefab"
-                };
-                jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
-            }
-        }
-
         public override void ExportTemplate(string path)
         {
             path = Path.Combine(path, FolderName);

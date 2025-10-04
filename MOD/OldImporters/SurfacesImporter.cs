@@ -1,22 +1,21 @@
-﻿using Game.Prefabs;
+﻿using Colossal.IO.AssetDatabase;
+using Colossal.Json;
+using Colossal.Localization;
+using Colossal.PSI.Common;
+using ExtraAssetsImporter.DataBase;
+using ExtraLib;
+using ExtraLib.Helpers;
+using ExtraLib.Prefabs;
+using Game.Prefabs;
+using Game.Rendering;
+using Game.SceneFlow;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using ExtraLib;
-using ExtraLib.Systems.UI;
-using Colossal.PSI.Common;
-using System.Collections;
-using Colossal.Json;
-using Colossal.Localization;
-using Game.SceneFlow;
-using Game.Rendering;
-using Colossal.IO.AssetDatabase;
-using ExtraLib.Helpers;
-using ExtraLib.Prefabs;
-using ExtraAssetsImporter.DataBase;
 
-namespace ExtraAssetsImporter.Importers 
+namespace ExtraAssetsImporter.OldImporters 
 {
     public class JSONSurfacesMaterail
     {

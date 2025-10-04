@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using Colossal.IO.AssetDatabase;
+using Colossal.Json;
 using Colossal.Localization;
 using Game.SceneFlow;
 using Game.UI.Menu;
@@ -6,7 +7,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using UnityEngine.SocialPlatforms;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
 {
@@ -37,6 +37,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
+            LocalizationManager localizationManager = GameManager.instance.localizationManager;
 
             Task<Dictionary<string, Dictionary<string, string>>> task = Task.Run( () =>LoadLocalization(folder));
 
@@ -48,6 +49,15 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             {
                 if(!local.ContainsKey(localeID)) continue;
                 GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(local[localeID]));
+
+                if(importSettings.isAssetPack)
+                {
+                    LocaleData localeData = new LocaleData(localeID, local[localeID], new());
+                    AssetDataPath assetDataPath = AssetDataPath.Create(Path.Combine(importSettings.outputFolderOffset, modName, "Localization"), $"{localeID}", EscapeStrategy.None);
+                    LocaleAsset localeAsset = importSettings.dataBase.AddAsset<LocaleAsset>(assetDataPath);
+                    localeAsset.SetData(localeData, localizationManager.LocaleIdToSystemLanguage(localeID), localizationManager.GetLocalizedName(localeID));
+                    localeAsset.Save();
+                }
             }
         }
 

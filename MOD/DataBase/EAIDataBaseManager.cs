@@ -1,10 +1,14 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter;
 using ExtraLib;
+using ExtraLib.Debugger;
 using Game.Prefabs;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace ExtraAssetsImporter.DataBase
 {
@@ -20,29 +24,83 @@ namespace ExtraAssetsImporter.DataBase
 
         internal static void LoadDataBase()
         {
-            if (File.Exists(pathToAssetsDatabase))
+            if(!File.Exists(pathToAssetsDatabase))
+            {
+                eaiDataBase = new();
+            } else
             {
                 try
                 {
                     eaiDataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDataBase>();
-                    if (eaiDataBase.DataBaseVersion != DataBaseVersion) return;
-                    AssetsDataBase = eaiDataBase.AssetsDataBase;
                 }
                 catch
                 {
-
+                    eaiDataBase = new();
                 }
             }
-            else
+
+            if(eaiDataBase.DataBaseVersion != DataBaseVersion)
             {
+                EAI.Logger.Warn($"The database version is not the good one, expected {DataBaseVersion}, got {eaiDataBase.DataBaseVersion}. The database will be reseted.");
                 eaiDataBase = new();
             }
+
+            AssetsDataBase = eaiDataBase.AssetsDataBase;
 
             CheckIfDataBaseNeedToBeRelocated();
 
             AssetDatabase.global.RegisterDatabase(EAIAssetDataBase).Wait();
 
             EAI.Logger.Info($"DataBase Location : {EAIAssetDataBase.rootPath}.");
+        }
+
+        internal static bool LoadDataBase(string path)
+        {
+
+            if(eaiDataBase != null && eaiDataBase.ActualDataBasePath == path)
+            {
+                EAI.Logger.Info($"The database is already loaded at this path {path}, doing nothing.");
+                return true;
+            } else if(eaiDataBase != null)
+            {
+                EAI.Logger.Warn($"Another database is already loaded at this path {eaiDataBase.ActualDataBasePath}.");
+                return false;
+            }
+
+            if (!File.Exists(pathToAssetsDatabase))
+            {
+                eaiDataBase = new();
+            }
+            else
+            {
+                try
+                {
+                    eaiDataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDataBase>();
+                }
+                catch
+                {
+                    eaiDataBase = new();
+                    eaiDataBase.ActualDataBasePath = path;
+                }
+            }
+
+            if (eaiDataBase.DataBaseVersion != DataBaseVersion)
+            {
+                EAI.Logger.Warn($"The database version is not the good one, expected {DataBaseVersion}, got {eaiDataBase.DataBaseVersion}. The database will be reseted.");
+                eaiDataBase = new();
+                eaiDataBase.ActualDataBasePath = path;
+            }
+
+            AssetsDataBase = eaiDataBase.AssetsDataBase;
+
+            return true;
+        }
+
+        internal static void UnloadDataBase()
+        {
+            AssetsDataBase.Clear();
+            ValidateAssetsDataBase.Clear();
+            eaiDataBase = null;
         }
 
         internal static void SaveValidateDataBase()
@@ -68,13 +126,13 @@ namespace ExtraAssetsImporter.DataBase
             File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(eaiDataBase, EncodeOptions.None));
         }
 
-        internal static void ClearNotLoadedAssetsFromFiles()
+        internal static void ClearNotLoadedAssetsFromFiles(ImporterSettings importerSettings)
         {
             List<EAIAsset> tempDataBase = new(AssetsDataBase);
             EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDataBase.Count}");
             foreach (EAIAsset asset in tempDataBase)
             {
-                string path = Path.Combine(DataBase.EAIAssetDataBaseDescriptor.kRootPath, asset.AssetPath);
+                string path = Path.Combine(importerSettings.dataBase.rootPath, asset.AssetPath);
                 if (Directory.Exists(path))
                 {
                     if (!AssetsDataBase.Remove(asset))
@@ -82,6 +140,36 @@ namespace ExtraAssetsImporter.DataBase
                         EAI.Logger.Warn($"Failed to remove a none loaded asset at path {path} from the data base.");
                         continue;
                     }
+
+                    // Making sure that if a prefab is their and loaded in the prefab system, it is removed from it.
+                    SearchFilter<PrefabAsset> searchFilter = SearchFilter<PrefabAsset>.ByCondition(a => { 
+                        string pathA = a.subPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+                        string pathB = Path.DirectorySeparatorChar + asset.AssetPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);  
+                        return pathA.Contains(pathB);
+                    });
+
+                    IEnumerable<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter);
+                    prefabAssets.Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter));
+
+                    foreach (PrefabAsset prefabAsset in prefabAssets)
+                    {
+                        EAI.Logger.Info($"Removing prefab asset {prefabAsset.name} at {prefabAsset.subPath} from prefab system and unloading it.");
+
+                        PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+
+                        if(EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase existingPrefab))
+                        {
+                            if (EL.m_PrefabSystem.RemovePrefab(existingPrefab)) continue;
+                            EAI.Logger.Warn($"Failed to remove prefab {prefabAsset.name} from prefab system.");
+                        } else
+                        {
+                            EAI.Logger.Info($"Prefab {prefabAsset.name} was not in the prefab system.");
+                        }
+
+                        prefabAsset.Unload();
+                        prefabAsset.database.DeleteAsset(prefabAsset);
+                    }
+
                     Directory.Delete(path, true);
                 }
                 else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
@@ -191,135 +279,137 @@ namespace ExtraAssetsImporter.DataBase
             int hash = 0;
             foreach (FileInfo file in directoryInfo.GetFiles())
             {
+                // Maybe get the hash of the file instead of the last write time ?
                 hash += file.LastWriteTimeUtc.GetHashCode();
             }
             return hash;
         }
 
-        internal static PrefabBase LoadPrefab(string AssetID, string prefabFileName)
-        {
-            return LoadPrefab<PrefabBase>(GetEAIAsset(AssetID), prefabFileName);
-        }
+        //internal static PrefabBase LoadPrefab(string AssetID, string prefabFileName)
+        //{
+        //    return LoadPrefab<PrefabBase>(GetEAIAsset(AssetID), prefabFileName);
+        //}
 
-        internal static PrefabBase LoadPrefab(EAIAsset asset, string prefabFileName)
-        {
-            return LoadPrefab<PrefabBase>(asset, prefabFileName);
-        }
+        //internal static PrefabBase LoadPrefab(EAIAsset asset, string prefabFileName)
+        //{
+        //    return LoadPrefab<PrefabBase>(asset, prefabFileName);
+        //}
 
-        internal static T LoadPrefab<T>(string AssetID, string prefabFileName) where T : PrefabBase
-        {
-            return LoadPrefab<T>(GetEAIAsset(AssetID), prefabFileName);
-        }
+        //internal static T LoadPrefab<T>(string AssetID, string prefabFileName) where T : PrefabBase
+        //{
+        //    return LoadPrefab<T>(GetEAIAsset(AssetID), prefabFileName);
+        //}
 
-        internal static bool TryLoadPrefab<T>( string AssetID, string prefabFileName, out T prefab ) where T : PrefabBase
-        {
-            prefab = LoadPrefab<T>(AssetID, prefabFileName);
-            return prefab != null;
-        }
+        //internal static bool TryLoadPrefab<T>( string AssetID, string prefabFileName, out T prefab ) where T : PrefabBase
+        //{
+        //    prefab = LoadPrefab<T>(AssetID, prefabFileName);
+        //    return prefab != null;
+        //}
 
-        internal static bool TryLoadPrefab<T>(EAIAsset asset, string prefabFileName, out T prefab) where T : PrefabBase
-        {
-            prefab = LoadPrefab<T>(asset, prefabFileName);
-            return prefab != null;
-        }
+        //internal static bool TryLoadPrefab<T>(EAIAsset asset, string prefabFileName, out T prefab) where T : PrefabBase
+        //{
+        //    prefab = LoadPrefab<T>(asset, prefabFileName);
+        //    return prefab != null;
+        //}
 
-        internal static T LoadPrefab<T>(EAIAsset asset, string prefabFileName) where T : PrefabBase
-        {
+        //internal static T LoadPrefab<T>(EAIAsset asset, string prefabFileName) where T : PrefabBase
+        //{
 
-            IAssetData assetData = GetAsset(asset, $"{prefabFileName}{PrefabAsset.kExtension}");
+        //    IAssetData assetData =
+        //    (asset, $"{prefabFileName}{PrefabAsset.kExtension}");
 
-            if(assetData == null)
-            {
-                EAI.Logger.Warn($"Failed to load prefab {prefabFileName} from asset {asset.AssetID}.");
-                return null;
-            }
+        //    if(assetData == null)
+        //    {
+        //        EAI.Logger.Warn($"Failed to load prefab {prefabFileName} from asset {asset.AssetID}.");
+        //        return null;
+        //    }
 
-            if (assetData is not PrefabAsset prefabAsset) return null;
+        //    if (assetData is not PrefabAsset prefabAsset) return null;
 
-            T prefab = prefabAsset.Load<T>();
-            return prefab;
-        }
+        //    T prefab = prefabAsset.Load<T>();
+        //    return prefab;
+        //}
 
-        internal static IAssetData GetAsset(string AssetID, string fileName)
-        {
-            return GetAsset(GetEAIAsset(AssetID), fileName);
-        }
+        //internal static IAssetData GetAsset(string AssetID, string fileName)
+        //{
+        //    return GetAsset(GetEAIAsset(AssetID), fileName);
+        //}
 
-        internal static bool TryGetAsset(string AssetID, string fileName, out IAssetData assetData)
-        {
-            assetData = GetAsset(AssetID, fileName);
-            return assetData != null;
-        }
+        //internal static bool TryGetAsset(string AssetID, string fileName, out IAssetData assetData)
+        //{
+        //    assetData = GetAsset(AssetID, fileName);
+        //    return assetData != null;
+        //}
 
-        internal static bool TryGetAsset(EAIAsset asset, string fileName, out IAssetData assetData)
-        {
-            assetData = GetAsset(asset, fileName);
-            return assetData != null;
-        }
+        //internal static bool TryGetAsset(EAIAsset asset, string fileName, out IAssetData assetData)
+        //{
+        //    assetData = GetAsset(asset, fileName);
+        //    return assetData != null;
+        //}
 
-        internal static bool TryGetAsset<T>(EAIAsset asset, string fileName, out T assetData) where T : IAssetData
-        {
-            assetData = default;
-            IAssetData iAssetData = GetAsset(asset, fileName);
-            if (iAssetData == null) return false;
-            if (iAssetData is not T t) return false;
-            assetData = t;
-            return true;
-        }
+        //internal static bool TryGetAsset<T>(EAIAsset asset, string fileName, out T assetData) where T : IAssetData
+        //{
+        //    assetData = default;
+        //    IAssetData iAssetData = GetAsset(asset, fileName);
+        //    if (iAssetData == null) return false;
+        //    if (iAssetData is not T t) return false;
+        //    assetData = t;
+        //    return true;
+        //}
 
-        internal static IAssetData GetAsset(EAIAsset asset, string fileName)
-        {
-            if (asset == EAIAsset.Null) return null;
-            string assetPath = Path.Combine(DataBase.EAIAssetDataBaseDescriptor.kRootPath, asset.AssetPath);
+        //internal static IAssetData GetAsset(EAIAsset asset, string fileName)
+        //{
+        //    if (asset == EAIAsset.Null) return null;
+        //    string assetPath = Path.Combine(DataBase.EAIAssetDataBaseDescriptor.kRootPath, asset.AssetPath);
 
-            if (!Directory.Exists(assetPath)) { EAI.Logger.Warn("Diretory doesn't exist"); return null; }
-            string filePath = Path.Combine(assetPath, fileName);
-            EAI.Logger.Info($"Trying to get asset at path {filePath}.");
-            if (!File.Exists(filePath)) { EAI.Logger.Warn("File doesn't exist"); return null; }
+        //    if (!Directory.Exists(assetPath)) { EAI.Logger.Warn("Diretory doesn't exist"); return null; }
+        //    string filePath = Path.Combine(assetPath, fileName);
+        //    EAI.Logger.Info($"Trying to get asset at path {filePath}.");
+        //    if (!File.Exists(filePath)) { EAI.Logger.Warn("File doesn't exist"); return null; }
 
-            string assetSubPath = assetPath.Replace(DataBase.EAIAssetDataBaseDescriptor.kRootPath + Path.DirectorySeparatorChar, "");
-            AssetDataPath assetDataPath = AssetDataPath.Create(assetSubPath, fileName, true, EscapeStrategy.None);
+        //    string assetSubPath = assetPath.Replace(DataBase.EAIAssetDataBaseDescriptor.kRootPath + Path.DirectorySeparatorChar, "");
+        //    AssetDataPath assetDataPath = AssetDataPath.Create(assetSubPath, fileName, true, EscapeStrategy.None);
 
-            try
-            {
-                if (EAIAssetDataBase.Exists(assetDataPath, out IAssetData assetData))
-                {
-                    EAI.Logger.Info($"Asset {assetDataPath} already exists in the database, returning existing asset.");
-                    return assetData;
-                }
+        //    try
+        //    {
+        //        if (EAIAssetDataBase.Exists(assetDataPath, out IAssetData assetData))
+        //        {
+        //            EAI.Logger.Info($"Asset {assetDataPath} already exists in the database, returning existing asset.");
+        //            return assetData;
+        //        }
                 
-                return EAIAssetDataBase.AddAsset(assetDataPath);
-            }
-            catch (Exception e)
-            {
-                EAI.Logger.Warn(e);
-                return null;
-            }
+        //        return EAIAssetDataBase.AddAsset(assetDataPath);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        EAI.Logger.Warn(e);
+        //        return null;
+        //    }
 
-        }
+        //}
 
-        internal static List<IAssetData> GetAssets(string AssetID)
-        {
-            return GetAssets(GetEAIAsset(AssetID));
-        }
+        //internal static List<IAssetData> GetAssets(string AssetID)
+        //{
+        //    return GetAssets(GetEAIAsset(AssetID));
+        //}
 
-        internal static List<IAssetData> GetAssets(EAIAsset asset)
-        {
-            List<IAssetData> output = new();
-            string assetPath = Path.Combine(DataBase.EAIAssetDataBaseDescriptor.kRootPath, asset.AssetPath);
-            if (!Directory.Exists(assetPath)) return output;
-            foreach (string s in DefaultAssetFactory.instance.GetSupportedExtensions())
-            {
-                foreach (string file in Directory.GetFiles(assetPath, $"*{s}"))
-                {
-                    if(!TryGetAsset(asset, Path.GetFileName(file), out IAssetData assetData)) continue;
+        //internal static List<IAssetData> GetAssets(EAIAsset asset)
+        //{
+        //    List<IAssetData> output = new();
+        //    string assetPath = Path.Combine(DataBase.EAIAssetDataBaseDescriptor.kRootPath, asset.AssetPath);
+        //    if (!Directory.Exists(assetPath)) return output;
+        //    foreach (string s in DefaultAssetFactory.instance.GetSupportedExtensions())
+        //    {
+        //        foreach (string file in Directory.GetFiles(assetPath, $"*{s}"))
+        //        {
+        //            if(!TryGetAsset(asset, Path.GetFileName(file), out IAssetData assetData)) continue;
                     
-                    output.Add(assetData);
+        //            output.Add(assetData);
 
-                }
-            }
-            return output;
-        }
+        //        }
+        //    }
+        //    return output;
+        //}
 
         //internal static List<PrefabBase> LoadAsset(string AssetID)
         //{
@@ -466,14 +556,16 @@ namespace ExtraAssetsImporter.DataBase
     {
         public static EAIAsset Null => default;
         public string AssetID { get; set; }
-        public int AssetHash { get; set; }
+        public int SourceAssetHash { get; set; }
+        public int BuildAssetHash { get; set; }
         public string AssetPath { get; set; }
 
         public EAIAsset(string assetID, int assetHash, string assetPath)
         {
             AssetID = assetID;
-            AssetHash = assetHash;
+            SourceAssetHash = assetHash;
             AssetPath = assetPath;
+            BuildAssetHash = 0;
         }
 
         public static bool operator ==(EAIAsset lhs, EAIAsset rhs)
@@ -503,7 +595,7 @@ namespace ExtraAssetsImporter.DataBase
 
         public override readonly int GetHashCode()
         {
-            return AssetHash;
+            return SourceAssetHash;
         }
     }
 }

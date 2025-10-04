@@ -1,21 +1,20 @@
 ﻿using Colossal.IO.AssetDatabase;
+using Colossal.Json;
+using Colossal.Localization;
+using Colossal.PSI.Common;
+using ExtraAssetsImporter.DataBase;
+using ExtraLib;
+using ExtraLib.Helpers;
+using ExtraLib.Prefabs;
 using Game.Prefabs;
+using Game.SceneFlow;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using ExtraLib;
-using ExtraLib.Systems.UI;
-using System.Collections;
-using Colossal.PSI.Common;
-using Colossal.Json;
-using Game.SceneFlow;
-using Colossal.Localization;
-using ExtraLib.Helpers;
-using ExtraAssetsImporter.DataBase;
-using ExtraLib.Prefabs;
 
-namespace ExtraAssetsImporter.Importers
+namespace ExtraAssetsImporter.OldImporters
 {
     internal class NetLanesDecalImporter
     {
@@ -131,7 +130,7 @@ namespace ExtraAssetsImporter.Importers
                         {
                             RenderPrefab renderPrefab = null;
 
-                            if (!EAIDataBaseManager.TryGetEAIAsset(fullNetLaneName, out EAIAsset asset) || asset.AssetHash != EAIDataBaseManager.GetAssetHash(netLanesFolder))
+                            if (!EAIDataBaseManager.TryGetEAIAsset(fullNetLaneName, out EAIAsset asset) || asset.SourceAssetHash != EAIDataBaseManager.GetAssetHash(netLanesFolder))
                             {
                                 //renderPrefab = CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath);
                                 renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");

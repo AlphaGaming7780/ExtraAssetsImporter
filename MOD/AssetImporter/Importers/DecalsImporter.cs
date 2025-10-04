@@ -1,15 +1,11 @@
-﻿using Colossal.AssetPipeline;
-using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
-using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
-using ExtraAssetsImporter.Importers;
 using Game.Prefabs;
 using Game.Rendering;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -27,7 +23,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 
-            ImportersUtils.SetupUIObject(this, data, decalPrefab);
+            //ImportersUtils.SetupUIObject(this, data, decalPrefab);
 
             RenderPrefabBase renderPrefab = ImportersUtils.GetRenderPrefab(data);
             if (renderPrefab == null)
@@ -118,61 +114,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (!decalSurface.vectors.ContainsKey("colossal_TextureArea")) decalSurface.AddProperty("colossal_TextureArea", new Vector4(0, 0, 1, 1));
 
             yield return decalSurface;
-        }
-
-        private static void VersionCompatiblity(JSONDecalsMaterail jSONDecalsMaterail, string catName, string decalName)
-        {
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
-            {
-                PrefabIdentifierInfo prefabIdentifierInfo = new()
-                {
-                    m_Name = $"ExtraAssetsImporter {catName} {decalName} Decal",
-                    m_Type = "StaticObjectPrefab"
-                };
-                jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
-            }
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT3)
-            {
-                PrefabIdentifierInfo prefabIdentifierInfo = new()
-                {
-                    m_Name = $"ExtraLandscapingTools_mods_{catName}_{decalName}",
-                    m_Type = "StaticObjectPrefab"
-                };
-                jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
-            }
-        }
-
-        public static IEnumerator<JSONDecalsMaterail> AsyncLoadJSON(PrefabImportData data)
-        {
-            JSONDecalsMaterail decalsMaterail = new();
-            string jsonDecalPath = Path.Combine(data.FolderPath, "decal.json");
-            if (File.Exists(jsonDecalPath))
-            {
-                Task<JSONDecalsMaterail> task = ImportersUtils.AsyncLoadJson<JSONDecalsMaterail>(jsonDecalPath);
-
-                while (!task.IsCompleted) yield return null;
-
-                decalsMaterail = task.Result;
-
-                if (decalsMaterail.Float.ContainsKey("UiPriority")) decalsMaterail.UiPriority = (int)decalsMaterail.Float["UiPriority"];
-            }
-
-            yield return decalsMaterail;
-
-        }
-
-        public static JSONDecalsMaterail LoadJSON(PrefabImportData data)
-        {
-
-            JSONDecalsMaterail decalsMaterail = new();
-            string jsonDecalPath = Path.Combine(data.FolderPath, "decal.json");
-            if (File.Exists(jsonDecalPath))
-            {
-                decalsMaterail = ImportersUtils.LoadJson<JSONDecalsMaterail>(jsonDecalPath);
-
-                if (decalsMaterail.Float.ContainsKey("UiPriority")) decalsMaterail.UiPriority = (int)decalsMaterail.Float["UiPriority"];
-            }
-            return decalsMaterail;
         }
 
         public override void ExportTemplate(string path)

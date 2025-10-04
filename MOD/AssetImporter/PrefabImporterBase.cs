@@ -57,40 +57,65 @@ namespace ExtraAssetsImporter.AssetImporter
                     }
 
                     string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
-                    string assetDataPath = Path.Combine(FolderName, modName, catName, assetName);
+
+                    string assetDataPath = importSettings.isAssetPack ?  
+                        Path.Combine(importSettings.outputFolderOffset, modName, FolderName, catName, assetName) :
+                        Path.Combine(importSettings.outputFolderOffset, FolderName, modName, catName, assetName);
+
+                    string fullAssetDataPath = Path.Combine(importSettings.dataBase.rootPath, assetDataPath);
+
                     string prefabJsonPath = Path.Combine(assetFolder, PrefabJsonName);
                     Variant prefabJson = null;
                     if (File.Exists(prefabJsonPath)) prefabJson = ImportersUtils.LoadJson(Path.Combine(assetFolder, PrefabJsonName));
 
-                    int folderHash = EAIDataBaseManager.GetAssetHash(assetFolder);
+                    int sourceAssetFolderHash = EAIDataBaseManager.GetAssetHash(assetFolder);
                     bool needToUpdateAsset = false;
 
                     if (EAIDataBaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset eaiAsset))
                     {
-                        if (eaiAsset.AssetHash == folderHash && importSettings.isAssetPack)
+
+                        if(eaiAsset.AssetPath != assetDataPath)
+                        {
+                            EAI.Logger.Warn($"EAI asset {eaiAsset.AssetID} doesn't have the right path, old path {eaiAsset.AssetPath}, new path {assetDataPath}");
+
+                            string fullPath = Path.Combine(importSettings.dataBase.rootPath, eaiAsset.AssetPath);
+                            if (Directory.Exists(fullPath))
+                            {
+                                Directory.Delete(fullPath, true);
+                            }
+
+                            needToUpdateAsset = true;
+                            eaiAsset.AssetPath = assetDataPath;
+                        }
+
+                        if (eaiAsset.SourceAssetHash != sourceAssetFolderHash)
+                        {
+                            EAI.Logger.Info($"The asset {fullAssetName} source files has changed, updating it. Old hash {eaiAsset.SourceAssetHash}, new hash {sourceAssetFolderHash}.");
+                            needToUpdateAsset = true;
+                            eaiAsset.SourceAssetHash = sourceAssetFolderHash;
+                        }
+
+                        if (!Directory.Exists(fullAssetDataPath) || eaiAsset.BuildAssetHash != EAIDataBaseManager.GetAssetHash(fullAssetDataPath))
+                        {
+                            needToUpdateAsset = true;
+                        }
+
+                        if (!needToUpdateAsset && importSettings.savePrefabs)
                         {
                             EAIDataBaseManager.AddOrValidateAsset(eaiAsset);
                             continue;
                         }
-
-                        if(eaiAsset.AssetHash != folderHash) 
-                        {
-                            EAI.Logger.Info($"The asset {fullAssetName} has changed, updating it. Old hash {eaiAsset.AssetHash}, new hash {folderHash}.");
-                            needToUpdateAsset = true;
-                            eaiAsset.AssetHash = folderHash;
-                        }
-
                     } 
                     else
                     {
                         EAI.Logger.Info($"The asset {fullAssetName} is new, adding it.");
-                        eaiAsset = new(fullAssetName, folderHash, assetDataPath);
+                        eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath);
                         needToUpdateAsset = true;
                     }
 
-                    if (needToUpdateAsset && Directory.Exists(Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath)))
+                    if (needToUpdateAsset && Directory.Exists(fullAssetDataPath))
                     {
-                        Directory.Delete(Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath), true);
+                        Directory.Delete(fullAssetDataPath, true);
                     }
 
                     PrefabImportData importData = new(
@@ -154,35 +179,44 @@ namespace ExtraAssetsImporter.AssetImporter
                             assetPackItem.m_Packs = new[] { assetPackPrefab };
                         }
 
+                        ImportersUtils.SetupUIObject(this, importData, prefab);
+
                         AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
                         AssetDataPath prefabAssetPath;
                         if (importSettings.isAssetPack)
                         {
-                            //prefabAssetPath = AssetDataPath.Create(importData.AssetDataPath, $"{importData.AssetName}{PrefabAsset.kExtension}", EscapeStrategy.None);
-                            prefabAssetPath = AssetDataPath.Create(importData.AssetDataPath, importData.AssetName, EscapeStrategy.None);
+                            prefabAssetPath = AssetDataPath.Create(importData.AssetDataPath, $"{importData.AssetName}{PrefabAsset.kExtension}", EscapeStrategy.None);
                         }
                         else
                         {
-                            prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
+                            prefabAssetPath = AssetDataPath.Create(EAI.kTempFolderName, importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
                         }
 
-                        PrefabAsset prefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
+                        //PrefabAsset prefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
+                        PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
                         
-                        if(importSettings.savePrefab) prefabAsset.Save();
+                        if(importSettings.savePrefabs) prefabAsset.Save();
 
                         if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
                             EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old one and adding the new one.");
                             EL.m_PrefabSystem.RemovePrefab(existingPrefab);
+                            existingPrefab.asset.Dispose();
                         }
 
                         EL.m_PrefabSystem.AddPrefab(prefab);
+
+                        if( needToUpdateAsset )
+                        {
+                            int buildAssetFolderHash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
+                            eaiAsset.BuildAssetHash = buildAssetFolderHash;
+                        }
 
                         EAIDataBaseManager.AddOrValidateAsset(eaiAsset);
 
                         if (!localisation.ContainsKey($"Assets.NAME[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullAssetName}]")) localisation.Add($"Assets.NAME[{fullAssetName}]", assetName);
                         if (!localisation.ContainsKey($"Assets.DESCRIPTION[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullAssetName}]")) localisation.Add($"Assets.DESCRIPTION[{fullAssetName}]", assetName);
 
-                    } 
+                    }
                     catch (Exception e)
                     {
                         ImportFailed(assetFolder, assetDataPath, e);
