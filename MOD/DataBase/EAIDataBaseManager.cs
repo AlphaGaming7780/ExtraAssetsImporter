@@ -497,6 +497,8 @@ namespace ExtraAssetsImporter.DataBase
                 if (saveSettings) EAI.m_Setting.ApplyAndSave();
             }
 
+            LoadDataBase(pathToAssetsDatabase);
+
             if (newPath != eaiDataBase.ActualDataBasePath)
             {
                 if (!RelocateAssetDataBase(newPath))

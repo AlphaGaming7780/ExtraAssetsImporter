@@ -140,6 +140,9 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 assetPacksToBuild.Add(directoryInfo.Name);
             }
+
+            if(assetPacksToBuild.Count <= 0) return;
+
             BuildAssetPack(assetPacksToBuild);
         }
 
@@ -151,13 +154,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void BuildAssetPack(IEnumerable<string> assetPacksName)
         {
-            ImporterSettings importerSettings = new ImporterSettings
-            {
-                dataBase = AssetDatabase.user,
-                savePrefabs = true,
-                isAssetPack = true,
-                outputFolderOffset = Path.Combine(EAI.pathModsData.Replace(AssetDatabase.user.rootPath + Path.DirectorySeparatorChar, ""), k_CompiledAssetPacksFolderName)
-            };
+            List<string> paths = new List<string>();
 
             foreach (string assetPackName in assetPacksName)
             {
@@ -166,12 +163,34 @@ namespace ExtraAssetsImporter.AssetImporter
                 path = PathUtils.Normalize(path);
 
                 // Ignore path that start with "."
-                //if (Path.GetDirectoryName(path).StartsWith(".")) return;
+                if (Path.GetDirectoryName(path).StartsWith(".")) return;
 
-                foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
+                if (!Directory.Exists(path))
                 {
-                    importer.AddCustomAssetsFolder(path);
+                    EAI.Logger.Warn($"The asset pack folder {path} doesn't exist.");
+                    continue;
                 }
+                
+                paths.Add(path);
+            }
+
+            if(paths.Count <= 0) return;
+
+            // Would maybe be better to use a new database system, maybe one per asset pack?
+            if (!EAIDataBaseManager.LoadDataBase(Path.Combine(EAI.pathModsData, "AssetPacksDataBase.json"))) return;
+
+            ImporterSettings importerSettings = new ImporterSettings
+            {
+                dataBase = AssetDatabase.user,
+                savePrefabs = true,
+                isAssetPack = true,
+                outputFolderOffset = Path.Combine(EAI.pathModsData.Replace(AssetDatabase.user.rootPath + Path.DirectorySeparatorChar, ""), k_CompiledAssetPacksFolderName)
+            };
+
+
+            foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
+            {
+                importer.AddCustomAssetsFolder(paths);
             }
 
             LoadCustomAssets(importerSettings);
@@ -225,10 +244,11 @@ namespace ExtraAssetsImporter.AssetImporter
             EAI.m_Setting.ResetCompatibility();
             EAIDataBaseManager.SaveValidateDataBase();
             EAIDataBaseManager.ClearNotLoadedAssetsFromFiles(importerSettings);
-            //EAIDataBaseManager.UnloadDataBase();
+            EAIDataBaseManager.UnloadDataBase();
 
 #if DEBUG
-            if(s_firstTimeLoad)
+            // don't really like that way of doing it, but it will do for now and I don't have a better idea.
+            if (s_firstTimeLoad)
             {
                 s_firstTimeLoad = false;
                 BuildAllAssetPacks();

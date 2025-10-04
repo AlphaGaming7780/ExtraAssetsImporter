@@ -27,6 +27,9 @@ namespace ExtraAssetsImporter
         public bool DisableCondition_UseNewImporters => UseNewImporters;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
+        public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.None;
+
+        [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool ExportDefaultJson { set { AssetsImporterManager.ExportImportersTemplate(); } }
 
         [SettingsUISection(kMainSection, kOldImportersGroup)]
@@ -45,8 +48,8 @@ namespace ExtraAssetsImporter
         [SettingsUIDisableByConditionAttribute(typeof(Setting), nameof(DisableCondition_UseOldImporters))]
         public bool NetLanes { get; set; } = true;
 
-        [SettingsUISection(kMainSection, kMPHGroup)]
-        public EAICompatibility CompatibilityDropDown { get; set; } = EAICompatibility.None;
+        [SettingsUISection(kMainSection, kOldImportersGroup)]
+        public EAIOldImportersCompatibility OldImportersCompatibilityDropDown { get; set; } = EAIOldImportersCompatibility.None;
 
         [SettingsUISection(kDataBaseSection, "")]
         [SettingsUIDirectoryPicker]
@@ -74,21 +77,27 @@ namespace ExtraAssetsImporter
             Decals = true;
             Surfaces = true;
             NetLanes = true;
-            CompatibilityDropDown = EAICompatibility.None;
+            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
         }
 
         internal void ResetCompatibility()
         {
-            CompatibilityDropDown = EAICompatibility.None;
+            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
             ApplyAndSave();
         }
     }
 
-    public enum EAICompatibility
+    public enum EAIOldImportersCompatibility
     {
         None,
         ELT2,
         ELT3,
+        LocalAsset,
+    }
+
+    public enum EAINewImportersCompatibility
+    {
+        None,
         LocalAsset,
     }
 

@@ -2,7 +2,9 @@
 using Colossal.Json;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
 using ExtraLib.ClassExtension;
 using ExtraLib.Helpers;
@@ -14,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter
@@ -182,6 +185,8 @@ namespace ExtraAssetsImporter.AssetImporter
                         ImportersUtils.SetupUIObject(this, importData, prefab);
 
                         AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
+                        VersionCompatiblity(prefab, importData);
+
                         AssetDataPath prefabAssetPath;
                         if (importSettings.isAssetPack)
                         {
@@ -199,13 +204,20 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
                             EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old one and adding the new one.");
-                            EL.m_PrefabSystem.RemovePrefab(existingPrefab);
+                            EL.m_PrefabSystem.RemovePrefab(existingPrefab); // Maybe, this is crashing the game ??
                             existingPrefab.asset.Dispose();
                         }
 
                         EL.m_PrefabSystem.AddPrefab(prefab);
 
-                        if( needToUpdateAsset )
+                        //Fixe for surfaces that might not have a folder in the database is they share all their textures with other surfaces.
+                        if(!Directory.Exists(fullAssetDataPath) && this is SurfacesImporterNew)
+                        {
+                            // By creating the directory, this allow the coede to calculate the hash.
+                            Directory.CreateDirectory(fullAssetDataPath);
+                        }
+
+                        if ( needToUpdateAsset )
                         {
                             int buildAssetFolderHash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
                             eaiAsset.BuildAssetHash = buildAssetFolderHash;
@@ -238,61 +250,36 @@ namespace ExtraAssetsImporter.AssetImporter
             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
         }
 
-        //private void CreateEditorAssetCategories(PrefabImportData importData)
-        //{
+        private void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)
+        {
 
-        //    //$"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}"
+            if (EAI.m_Setting.NewImportersCompatibilityDropDown == EAINewImportersCompatibility.None) return;
 
-        //    if (!EL.m_EditorAssetCategorySystem.TryGetCategory("EAI", out var eaiCat))
-        //    {
-        //        eaiCat = new()
-        //        {
-        //            id = "EAI",
-        //            path = "EAI"
-        //        };
-        //        EL.m_EditorAssetCategorySystem.AddCategory(eaiCat);
-        //    }
+            ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponent<ObsoleteIdentifiers>();
 
-        //    if (!EL.m_EditorAssetCategorySystem.TryGetCategory($"{ImporterId}", out var importerCat))
-        //    {
-        //        importerCat = new()
-        //        {
-        //            id = $"{ImporterId}",
-        //            path = $"EAI/{ImporterId}",
-        //            icon = $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/{ImporterId}.svg",
-        //        };
-        //        EL.m_EditorAssetCategorySystem.AddCategory(importerCat, eaiCat);
-        //    }
+            string name = "";
 
-        //    if (!EL.m_EditorAssetCategorySystem.TryGetCategory($"{importData.ModName}", out var modCat))
-        //    {
-        //        modCat = new()
-        //        {
-        //            id = $"{importData.ModName}",
-        //            path = $"EAI/{ImporterId}/{importData.ModName}",
-        //            icon = null,
-        //        };
+            switch (EAI.m_Setting.NewImportersCompatibilityDropDown)
+            {
+                case EAINewImportersCompatibility.LocalAsset:
+                    name = $"ExtraAssetsImporter {data.CatName} {data.AssetName} {this.AssetEndName}";
+                    break;
+                case EAINewImportersCompatibility.None:
+                    // You shouldn't be here because of the first if;
+                    return;
+                default:
+                    throw new Exception("Unknown NewImportersCompatibilityDropDown");
+            }
 
-        //        if (AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab))
-        //        {
-        //            modCat.icon = assetPackPrefab.GetComponent<UIObject>().m_Icon;
-        //        }
+            PrefabIdentifierInfo prefabIdentifierInfo = new()
+            {
+                m_Name = name,
+                m_Type = prefabBase.GetType().Name
+            };
 
-        //        EL.m_EditorAssetCategorySystem.AddCategory(modCat, importerCat);
-        //    }
+            obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo);
 
-        //    if (!EL.m_EditorAssetCategorySystem.TryGetCategory($"{importData.CatName}", out var cat))
-        //    {
-        //        cat = new()
-        //        {
-        //            id = $"{importData.CatName}",
-        //            path = $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}",
-        //            icon = File.Exists($"{EL.ResourcesIcons}/UIAssetChildCategoryPrefab/{importData.CatName} {ImporterId}.svg") ? $"{ExtraLib.Helpers.Icons.COUIBaseLocation}/Icons/UIAssetChildCategoryPrefab/{importData.CatName} {ImporterId}.svg" : "",
-        //        };
-        //        EL.m_EditorAssetCategorySystem.AddCategory(cat, modCat);
-        //    }
-
-        //}
+        }
     }
     public struct PrefabImportData
     {

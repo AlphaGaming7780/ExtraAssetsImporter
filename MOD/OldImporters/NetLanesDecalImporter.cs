@@ -315,7 +315,7 @@ namespace ExtraAssetsImporter.OldImporters
 
         private static void VersionCompatiblity(JsonNetLanes jSONNetLanesMaterail, string catName, string netLanesName)
         {
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
+            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.LocalAsset)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -324,7 +324,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT3)
+            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.ELT3)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {

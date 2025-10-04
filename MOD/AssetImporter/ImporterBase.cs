@@ -59,6 +59,12 @@ namespace ExtraAssetsImporter.AssetImporter
             return true;
         }
 
+        public virtual void AddCustomAssetsFolder( IEnumerable<string> paths)
+        {
+            foreach( string path in paths )
+                AddCustomAssetsFolder(path);
+        }
+
         //public virtual void RemoveCustomAssetsFolder(string path)
         //{
         //    if (!_FolderToLoadAssets.Contains(path)) return;

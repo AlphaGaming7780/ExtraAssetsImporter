@@ -325,7 +325,7 @@ namespace ExtraAssetsImporter.OldImporters
 
         private static void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName)
         {
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.LocalAsset)
+            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.LocalAsset)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -334,7 +334,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT2)
+            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.ELT2)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -343,7 +343,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.CompatibilityDropDown == EAICompatibility.ELT3)
+            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.ELT3)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {

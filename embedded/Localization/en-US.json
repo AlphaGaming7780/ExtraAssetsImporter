@@ -5,6 +5,8 @@
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "New importers",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use new EAI importers (ALPHA)",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Enable this to use the new importers.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "Compatibility Fix",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "This setting have for goal to try to fix missing prefabs caused by an EAI update. To use it, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save and check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.ExportDefaultJson]": "Export default JSONs",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.ExportDefaultJson]": "Create default JSON files for every new importer. You can find the created JSON in ModsData/ExtraAssetsImporter/_DefaultJson.",
 
@@ -18,13 +20,16 @@
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Custom NetLanes",
 	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NetLanes]": "Load the custom net lanes, take effect after restarting the game.",
 	"Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.MissingPrefabHelper]": "Missing Prefab Fixer",
-	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "Compatibility Fix",
-	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.CompatibilityDropDown]": "This setting have for goal to try to fix missing prefabs caused by an EAI update. To use it, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save and check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
+	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.OldImportersCompatibilityDropDown]": "Compatibility Fix",
+	"Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.OldImportersCompatibilityDropDown]": "This setting have for goal to try to fix missing prefabs caused by an EAI update. To use it, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save and check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
 
-	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[None]": "Disabled",
-	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT2]": "ELT 2.0",
-	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[ELT3]": "ELT 3.0",
-	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAICOMPATIBILITY[LocalAsset]": "Local Assets",
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAIOldImportersCompatibility[None]": "Disabled",
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAIOldImportersCompatibility[ELT2]": "ELT 2.0",
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAIOldImportersCompatibility[ELT3]": "ELT 3.0",
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAIOldImportersCompatibility[LocalAsset]": "Local Assets",
+
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINewImportersCompatibility[None]": "Disabled",
+	"Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINewImportersCompatibility[LocalAsset]": "Local Assets",
 
 	"Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "DataBase",
 	"Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "Database location",
