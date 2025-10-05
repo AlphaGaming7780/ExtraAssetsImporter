@@ -46,11 +46,24 @@ import sys
 from typing import Any, Dict, Tuple, List
 import hashlib
 
-# For NormalMap processing
+
+# For NormalMap processing and 8bit conversion
 from PIL import Image
+from PIL.Image import Quantize
 import numpy as np
 
+script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+os.chdir(script_dir)
+
 Json = Dict[str, Any]
+
+
+
+TEXTURE_NAMES = { 
+    "_basecolormap": "_BaseColorMap",
+    "_normalmap": "_NormalMap",
+    "_maskmap": "_MaskMap"
+ }
 
 # global registry of seen textures by type -> hash -> asset_relative_path
 SEEN_TEXTURES = {
@@ -401,7 +414,7 @@ def process_normalmap(src_path: str, dst_path: str):
         r_mean, g_mean, b_mean = mean[0], mean[1], mean[2]
 
         # detect pink normal map (R≈0.9, G≈0.5, B≈1)
-        if abs(r_mean - 0.9) < 0.1 and abs(g_mean - 0.5) < 0.1 and abs(b_mean - 0.9) < 0.1:
+        if abs(r_mean - 0.9) < 0.11 and abs(g_mean - 0.5) < 0.11 and abs(b_mean - 0.9) < 0.11:
             print(f"[INFO] Detected pink NormalMap: {src_path}")
 
             # Convert sRGB -> Linear
@@ -430,11 +443,14 @@ def process_normalmap(src_path: str, dst_path: str):
         #     # aucune modification, réutiliser l'image convertie en RGBA
         #     out_img = img
 
+        if args.force_8bit and TEXTURE_NAMES["_normalmap"] in args.force_8bit_types:
+            img = QuantizeImageTo8Bit(img)  # Ensure 8-bit per channel
+
         # save final image
         img.save(dst_path)
 
         # compute hash from the saved image buffer (no reopen needed)
-        h = hashlib.sha1(img.tobytes()).hexdigest()
+        h = hash_image(img) #hashlib.sha1(img.tobytes()).hexdigest()
         try:
             img.close()
         except Exception:
@@ -447,11 +463,19 @@ def process_normalmap(src_path: str, dst_path: str):
         shutil.copy2(src_path, dst_path)
         return hash_image_file(dst_path)
 
+def hash_image(img: Image.Image) -> str:
+
+    # if img.mode not in ("RGB", "RGBA"):
+    #     raise Exception(f"Unsupported image mode for hashing: {img.mode}")
+
+    return hashlib.sha1(img.tobytes()).hexdigest()
+
 def hash_image_file(path: str) -> str:
     """Return SHA1 of image pixels (RGBA). Opens file and closes it properly."""
     with Image.open(path) as img:
-        img_rgba = img.convert("RGBA")
-        return hashlib.sha1(img_rgba.tobytes()).hexdigest()
+        return hash_image(img)
+        # img_rgba = img.convert("RGBA")
+        # return hashlib.sha1(img_rgba.tobytes()).hexdigest()
 
 def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, precomputed_hash: str = None):
     """
@@ -495,7 +519,8 @@ def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, precomp
     else:
         # new texture: ensure it's on disk at dst_path (if we already saved it, fine; else copy)
         if not os.path.exists(dst_path):
-            shutil.copy2(src_path, dst_path)
+            if( not ensure_8bit_texture(src_path, dst_path)):
+                shutil.copy2(src_path, dst_path)
 
         # asset folder (dst_path parent) relative to pack_root but prefixed by pack folder name
         asset_dir = os.path.dirname(dst_path)
@@ -509,6 +534,57 @@ def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, precomp
         # debug
         # print(f"[REGISTER] {h} -> {asset_ref}")
 
+def ensure_8bit_texture(src_path: str, dst_path: str) -> bool:
+    """
+    Copies the texture from src_path to dst_path if needed, ensures it's in 8-bit
+    per channel format, and returns the SHA-1 hash of the resulting file.
+
+    Returns:
+        bool: True if conversion was applied, False if not needed or failed.
+    """
+
+    fname_lower = os.path.basename(src_path).lower()
+
+    if not args.force_8bit or not any(val.lower() in fname_lower for val in args.force_8bit_types):
+        return False
+
+    try:
+        with Image.open(src_path) as img:
+            mode = img.mode
+            if mode not in ("RGB", "RGBA"):
+
+                if(img.has_transparency_data):
+                    print(f"[INFO] Converting {src_path} from {mode} to 8-bit with alpha")
+                    img = img.convert("RGBA")
+                else:
+                    print(f"[INFO] Converting {src_path} from {mode} to 8-bit")
+                    img = img.convert("RGB")
+
+            img = QuantizeImageTo8Bit(img)
+
+            img.save(dst_path)
+            try:
+                img.close()
+            except Exception:
+                pass
+            return True
+
+    except Exception as e:
+        print(f"[WARN] Failed to ensure 8-bit for {src_path}: {e}")
+        return False
+
+def QuantizeImageTo8Bit(img : Image.Image) -> str | None:
+    if args.force_8bit_method == "PIL":
+        return img.quantize(256, Quantize.LIBIMAGEQUANT)  # Ensure 8-bit per channel
+    elif args.force_8bit_method == "libimagequant":
+        import imagequant
+        return imagequant.quantize_pil_image(
+            img,
+            max_colors=256,
+        )
+    else:
+        raise ValueError(f"Unknown 8-bit conversion method: {args.force_8bit_method}")
+
 def copy_sibling_files(src_dir: str, dst_dir: str, fmt: str, pack_root: str):
     for f in os.listdir(src_dir):
         spath = os.path.join(src_dir, f)
@@ -518,7 +594,7 @@ def copy_sibling_files(src_dir: str, dst_dir: str, fmt: str, pack_root: str):
         os.makedirs(dst_dir, exist_ok=True)
 
         # NormalMap processing (returns hash of the saved file)
-        if fmt == "surfaces" and "_normalmap" in f.lower():
+        if fmt == "surfaces" and TEXTURE_NAMES["_normalmap"].lower() in f.lower():
             h = process_normalmap(spath, dpath)
             handle_texture_sharing(dpath, dpath, pack_root, precomputed_hash=h)
         else:
@@ -588,6 +664,36 @@ def main(argv=None):
     parser.add_argument("--material-template", help="Path to the Material.json template for the target format.")
     parser.add_argument("--fail-fast", action="store_true", help="Stop on first conversion error (default continues).")
 
+    parser.add_argument(
+        "--force-8bit",
+        action="store_true",
+        default=True,
+        help="Force textures to be converted to 8-bit per channel before hashing/sharing. (default: enabled)"
+    )
+
+    parser.add_argument(
+        "--no-force-8bit",
+        action="store_false",
+        dest="force_8bit",
+        help="Disable automatic 8-bit conversion."
+    )
+
+    parser.add_argument(
+        "--force-8bit-types",
+        nargs="+",
+        choices=TEXTURE_NAMES.values(),
+        default=TEXTURE_NAMES.values(),
+        help="Specify which texture types to apply 8-bit conversion to. Default: all."
+    )
+
+    parser.add_argument(
+        "--force-8bit-method",
+        choices=["PIL", "libimagequant"],
+        default="libimagequant",
+        help="Method to use for 8-bit conversion. 'PIL' uses Pillow's built-in quantization, 'libimagequant' uses the imagequant library for better quality. (default: libimagequant)"
+    )
+
+    global args
     args = parser.parse_args(argv)
 
     # ------------------- Default auto-discovery mode ------------------- #
