@@ -573,7 +573,7 @@ def ensure_8bit_texture(src_path: str, dst_path: str) -> bool:
         print(f"[WARN] Failed to ensure 8-bit for {src_path}: {e}")
         return False
 
-def QuantizeImageTo8Bit(img : Image.Image) -> str | None:
+def QuantizeImageTo8Bit(img : Image.Image) -> Image.Image:
     if args.force_8bit_method == "PIL":
         return img.quantize(256, Quantize.LIBIMAGEQUANT)  # Ensure 8-bit per channel
     elif args.force_8bit_method == "libimagequant":
