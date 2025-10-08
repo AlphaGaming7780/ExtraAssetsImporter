@@ -375,7 +375,7 @@ def load_templates(prefab_path: str, material_path: str) -> Tuple[Json, Json]:
     return prefab_template, material_template
 
 
-def migrate_file(fmt: str, input_path: str, out_dir: str, prefab_tmpl: str, material_tmpl: str) -> Tuple[str, str]:
+def migrate_file(fmt: str, input_path: str, out_dir: str, prefab_tmpl: str, material_tmpl: str) -> Tuple [ str | None, str | None] :
     prefab_template, material_template = load_templates(prefab_tmpl, material_tmpl)
 
     migrator_cls = MIGRATORS.get(fmt.lower())
@@ -477,7 +477,7 @@ def hash_image_file(path: str) -> str:
         # img_rgba = img.convert("RGBA")
         # return hashlib.sha1(img_rgba.tobytes()).hexdigest()
 
-def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, precomputed_hash: str = None):
+def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, precomputed_hash: str | None = None):
     """
     If identical texture already seen, remove dst_path (if any) and write JSON redirect
     with path pointing to the asset folder (relative to pack_root, prefixed by pack folder name).
