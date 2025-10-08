@@ -628,8 +628,7 @@ def main(argv=None):
     )
     parser.add_argument("--format", choices=list(MIGRATORS.keys()),
                         help="Input type (surfaces, decals, netlanes). Required if using --input-dir or --output-dir.")
-    group_in = parser.add_mutually_exclusive_group()
-    group_in.add_argument("--input-dir", help="Path to a directory of an old importer. If not set, defaults to 'CustomSurfaces', 'CustomDecals', 'CustomNetLanes' depending on format.")
+    parser.add_argument("--input-dir", help="Path to a directory of an old importer. If not set, defaults to 'CustomSurfaces', 'CustomDecals', 'CustomNetLanes' depending on format.")
 
     parser.add_argument("--output-dir", help="Output base directory. If not set, defaults to 'Surfaces', 'Decals', 'NetLanesDecal' depending on format.")
     parser.add_argument("--fail-fast", action="store_true", help="Stop on first conversion error (default continues).")
