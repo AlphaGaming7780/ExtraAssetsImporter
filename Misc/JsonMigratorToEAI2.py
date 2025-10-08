@@ -1,42 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-JSON Migrator: old -> new split format (Prefab.json + Material.json)
-
-Features
---------
-- Reads an input "old" JSON and produces two outputs:
-  * Prefab.json (only values different from Prefab template)
-  * Material.json (only values different from Material template)
-- Uses template JSONs as defaults so outputs only contain effective overrides.
-- Extensible: format-specific migrators (surfaces, decals, netlanes).
-
-Assumptions (v1)
-----------------
-- For "surfaces":
-    - Old JSON resembles the provided DefaultSurface.json (keys: "UiPriority",
-      "Float", "Vector", "prefabIdentifierInfos").
-    - New "Material.json" preserves "Float" and "Vector" values from old JSON.
-    - New "Prefab.json" maps:
-        * UI priority: old["UiPriority"] ->
-          Components.Game.Prefabs.UIObject.m_Priority
-      Other Prefab settings are left to template defaults unless you add more
-      mapping rules below.
-- For "decals" and "netlanes":
-    - Placeholders/stubs are provided; add your mapping rules in the respective
-      migrator functions or create new plugins.
-
-Usage
------
-python json_migrator.py \
-    --format surfaces \
-    --input /path/to/old.json \
-    --out-dir /path/to/out \
-    --prefab-template /path/to/templates/Surfaces/Prefab.json \
-    --material-template /path/to/templates/Surfaces/Material.json
-
-You can also point to a directory of inputs using --input-dir.
-"""
 
 import argparse
 import json
@@ -57,7 +20,11 @@ os.chdir(script_dir)
 
 Json = Dict[str, Any]
 
-
+DIRS = {
+    "surfaces": ("CustomSurfaces", "Surfaces"),
+    "decals": ("CustomDecals", "Decals"),
+    "netlanes": ("CustomNetLanes", "NetLanesDecal"),
+}
 
 TEXTURE_NAMES = { 
     "_basecolormap": "_BaseColorMap",
@@ -404,10 +371,7 @@ def process_normalmap(src_path: str, dst_path: str):
     try:
 
         with Image.open(src_path).convert("RGB") as img:
-            arr = np.array(img).astype(np.float32) / 255.0  # normalisé [0,1]
-
-        # img = Image.open(src_path).convert("RGB")
-        # arr = np.array(img).astype(np.float32) / 255.0  # normalisé [0,1]
+            arr = np.array(img).astype(np.float32) / 255.0 
 
         # compute mean color for detection
         mean = arr.mean(axis=(0,1))
@@ -652,16 +616,22 @@ def exit(code: int):
     sys.exit(code)
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Migrate old JSON to new split format with template-based overrides.")
+    parser = argparse.ArgumentParser(description = (
+        "Migrate old importer folders to the new importer format:\n"
+        "\t- Convert old JSON files to the new split format using template-based overrides,\n"
+        "\t- Fix pink Normal Maps for surfaces,\n"
+        "\t- Optionally convert textures to 8-bit to save space.\n\n"
+        "This script must be placed next to the old importer folders and then run. "
+        "It will automatically discover all supported old importer folders.\n"
+        "You can specify a specific asset type to convert using --format. "
+        "If no --input-dir or --output-dir is provided, the default folders will be used.")
+    )
     parser.add_argument("--format", choices=list(MIGRATORS.keys()),
-                        help="Input type (surfaces, decals, netlanes). Required if using --input or --input-dir.")
+                        help="Input type (surfaces, decals, netlanes). Required if using --input-dir or --output-dir.")
     group_in = parser.add_mutually_exclusive_group()
-    group_in.add_argument("--input", help="Path to a single input JSON file.")
-    group_in.add_argument("--input-dir", help="Path to a directory of old JSON files (recursive).")
+    group_in.add_argument("--input-dir", help="Path to a directory of an old importer. If not set, defaults to 'CustomSurfaces', 'CustomDecals', 'CustomNetLanes' depending on format.")
 
-    parser.add_argument("--out-dir", help="Output base directory. If not set, defaults to 'Surfaces', 'Decals', 'NetLanesDecal' depending on format.")
-    parser.add_argument("--prefab-template", help="Path to the Prefab.json template for the target format.")
-    parser.add_argument("--material-template", help="Path to the Material.json template for the target format.")
+    parser.add_argument("--output-dir", help="Output base directory. If not set, defaults to 'Surfaces', 'Decals', 'NetLanesDecal' depending on format.")
     parser.add_argument("--fail-fast", action="store_true", help="Stop on first conversion error (default continues).")
 
     parser.add_argument(
@@ -697,30 +667,23 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     # ------------------- Default auto-discovery mode ------------------- #
-    if not (args.input or args.input_dir):
-        autodirs = {
-            "surfaces": ("CustomSurfaces", "Surfaces"),
-            "decals": ("CustomDecals", "Decals"),
-            "netlanes": ("CustomNetLanes", "NetLanesDecal"),
-        }
+    if not ( args.format or args.input_dir or args.output_dir):
         found = []
-        for fmt, (ind, outd) in autodirs.items():
-            # if not os.path.isdir(ind):
-            #     os.makedirs(ind, exist_ok=True) 
+        for fmt, (ind, outd) in DIRS.items():
             if os.path.isdir(ind) and os.listdir(ind):
                 found.append((fmt, ind, outd))
 
         print(f"[INFO] Auto-discovered input directories: {found}")
 
         if not found:
-            parser.error("No --input/--input-dir provided and no Custom* folders with JSON files found.")
+            parser.error("No --input-dir/--output-dir provided and no Custom* folders found.")
 
         errors = 0
         for fmt, ind, outd in found:
             os.makedirs(outd, exist_ok=True)
 
-            prefab_tmpl = args.prefab_template or find_template_path(outd, "Prefab.json")
-            material_tmpl = args.material_template or find_template_path(outd, "Material.json")
+            prefab_tmpl = find_template_path(outd, "Prefab.json")
+            material_tmpl = find_template_path(outd, "Material.json")
 
             if not os.path.isfile(prefab_tmpl) or not os.path.isfile(material_tmpl):
                 print(f"[ERROR] Missing template(s) for {fmt}: {prefab_tmpl}, {material_tmpl}", file=sys.stderr)
@@ -740,48 +703,30 @@ def main(argv=None):
 
     # ------------------- Explicit mode ------------------- #
     if not args.format:
-        parser.error("--format is required when using --input or --input-dir.")
+        parser.error("--format is required when using --output_dir or --input-dir.")
 
-    out_dir = args.out_dir or {
-        "surfaces": "Surfaces",
-        "decals": "Decals",
-        "netlanes": "NetLanesDecal"
-    }[args.format]
+    ( in_dir , out_dir ) = DIRS[args.format]
     os.makedirs(out_dir, exist_ok=True)
 
-    if not (args.prefab_template and args.material_template):
-        args.prefab_template = find_template_path(args.format, "Prefab.json")
-        args.material_template = find_template_path(args.format, "Material.json")
+    prefab_tmpl = find_template_path(out_dir, "Prefab.json")
+    material_tmpl = find_template_path(out_dir, "Material.json")
 
-    if not (os.path.isfile(args.prefab_template) and os.path.isfile(args.material_template)):
-        parser.error(f"Missing template files: {args.prefab_template}, {args.material_template}")
+    if not os.path.isfile(prefab_tmpl) or not os.path.isfile(material_tmpl):
+        print(f"[ERROR] Missing template file(s) : {prefab_tmpl}, {material_tmpl}", file=sys.stderr)
+        exit(1)
 
-    if args.input:
-        try:
-            out_prefab, out_material = migrate_file(
-                fmt=args.format,
-                input_path=args.input,
-                out_dir=out_dir,
-                prefab_tmpl=args.prefab_template,
-                material_tmpl=args.material_template
-            )
-            print(f"[OK] {args.input} -> Prefab: {out_prefab}, Material: {out_material}")
-        except Exception as e:
-            print(f"[ERROR] {args.input}: {e}", file=sys.stderr)
-            exit(1)
-    else:
-        try:
-            migrate_directory(
-                fmt=args.format,
-                in_dir=args.input_dir,
-                out_dir=out_dir,
-                prefab_tmpl=args.prefab_template,
-                material_tmpl=args.material_template,
-                fail_fast=args.fail_fast
-            )
-        except Exception as e:
-            print(f"[ERROR] {args.input_dir}: {e}", file=sys.stderr)
-            exit(1)
+    try:
+        migrate_directory(
+            fmt=args.format,
+            in_dir= args.input_dir or in_dir,
+            out_dir= args.output_dir or out_dir,
+            prefab_tmpl = prefab_tmpl,
+            material_tmpl = material_tmpl,
+            fail_fast=args.fail_fast
+        )
+    except Exception as e:
+        print(f"[ERROR] {args.input_dir}: {e}", file=sys.stderr)
+        exit(1)
 
 if __name__ == "__main__":
     try:
