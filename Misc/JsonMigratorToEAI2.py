@@ -539,7 +539,7 @@ def ensure_8bit_texture(src_path: str, dst_path: str) -> bool:
 
 def QuantizeImageTo8Bit(img : Image.Image) -> Image.Image:
     if args.force_8bit_method == "PIL":
-        return img.quantize(256, Quantize.LIBIMAGEQUANT)  # Ensure 8-bit per channel
+        return img.quantize(256)  # Ensure 8-bit per channel
     elif args.force_8bit_method == "libimagequant":
         import imagequant
         return imagequant.quantize_pil_image(
