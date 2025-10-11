@@ -5,8 +5,10 @@ using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using Game.Prefabs;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
@@ -55,6 +57,24 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             netLanesPrefab.AddNetLaneMeshInfo(renderPrefab);
 
             yield return netLanesPrefab;
+        }
+
+        protected override void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)
+        {
+            base.VersionCompatiblity(prefabBase, data);
+
+            ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponent<ObsoleteIdentifiers>();
+
+            obsoleteIdentifiers.m_PrefabIdentifiers ??= new PrefabIdentifierInfo[0];
+
+            PrefabIdentifierInfo prefabIdentifierInfo = new()
+            {
+                m_Name = $"{data.ModName} {data.CatName} {data.AssetName} NetLane",
+                m_Type = prefabBase.GetType().Name
+            };
+
+            obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo);
+
         }
 
         public override void ExportTemplate(string path)

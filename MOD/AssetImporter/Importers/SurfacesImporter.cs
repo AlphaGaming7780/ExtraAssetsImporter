@@ -7,6 +7,7 @@ using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using Game.Prefabs;
 using Game.Rendering;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -107,21 +108,62 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             if (baseColorMap != null)
             {
-                Texture2D texture = baseColorMap.Load<Texture2D>();
+                // Avoid file already used or other kind of stuff.
+                Texture2D texture = null;
+                while (texture == null)
+                {
+                    try
+                    {
+                        texture = baseColorMap.Load<Texture2D>();
+                    }
+                    catch (Exception e)
+                    {
+                        EAI.Logger.Warn(e);
+                    }
+                    yield return null;
+                }
+
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.BaseColorMap, texture);
             }
 
             if (normalMap != null)
             {
-                Texture2D texture = normalMap.Load<Texture2D>();
+                // Avoid file already used or other kind of stuff.
+                Texture2D texture = null;
+                while (texture == null)
+                {
+                    try
+                    {
+                        texture = normalMap.Load<Texture2D>();
+                    } catch ( Exception e)
+                    {
+                        EAI.Logger.Warn(e);
+                    }
+                    yield return null;
+                }
+
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.NormalMap, texture);
             }
 
             if (maskMap != null)
             {
-                Texture2D texture = maskMap.Load<Texture2D>();
+                // Avoid file already used or other kind of stuff.
+                Texture2D texture = null;
+                while (texture == null)
+                {
+                    try
+                    {
+                        texture = maskMap.Load<Texture2D>();
+                    }
+                    catch (Exception e)
+                    {
+                        EAI.Logger.Warn(e);
+                    }
+                    yield return null;
+                }
+
                 texture.wrapMode = TextureWrapMode.Repeat;
                 newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture);
             }

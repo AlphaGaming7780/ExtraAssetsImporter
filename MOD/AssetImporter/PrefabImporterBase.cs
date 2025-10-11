@@ -250,12 +250,14 @@ namespace ExtraAssetsImporter.AssetImporter
             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
         }
 
-        private void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)
+        protected virtual void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)
         {
 
             if (EAI.m_Setting.NewImportersCompatibilityDropDown == EAINewImportersCompatibility.None) return;
 
             ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponent<ObsoleteIdentifiers>();
+
+            obsoleteIdentifiers.m_PrefabIdentifiers ??= new PrefabIdentifierInfo[0];
 
             string name = "";
 

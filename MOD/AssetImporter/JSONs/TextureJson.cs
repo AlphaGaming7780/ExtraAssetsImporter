@@ -88,7 +88,7 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
 
             AssetDataPath textureDataPath = AssetDataPath.Create(assetDataPath, textureFullFileName, true, EscapeStrategy.None);
 
-            return TextureAssetImporterUtils.ImportTexture_Impl(importSettings, data, path, textureDataPath, fullAssetTextureName);
+            return TextureAssetImporterUtils.ImportTexture_Impl(importSettings, data, filePath, textureDataPath, fullAssetTextureName);
 
         }
 

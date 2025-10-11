@@ -57,13 +57,9 @@ namespace ExtraAssetsImporter.DataBase
         internal static bool LoadDataBase(string path)
         {
 
-            if(eaiDataBase != null && eaiDataBase.ActualDataBasePath == path)
+            if(eaiDataBase != null)
             {
-                EAI.Logger.Info($"The database is already loaded at this path {path}, doing nothing.");
-                return true;
-            } else if(eaiDataBase != null)
-            {
-                EAI.Logger.Warn($"Another database is already loaded at this path {eaiDataBase.ActualDataBasePath}.");
+                EAI.Logger.Warn($"Another database is already loaded for {eaiDataBase.ActualDataBasePath}.");
                 return false;
             }
 
@@ -497,7 +493,7 @@ namespace ExtraAssetsImporter.DataBase
                 if (saveSettings) EAI.m_Setting.ApplyAndSave();
             }
 
-            LoadDataBase(pathToAssetsDatabase);
+            if(eaiDataBase == null) LoadDataBase(pathToAssetsDatabase);
 
             if (newPath != eaiDataBase.ActualDataBasePath)
             {
