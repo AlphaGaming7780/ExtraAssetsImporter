@@ -102,7 +102,7 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             if(prefabJson == null)
             {
-                EAI.Logger.Warn($"The asset {data.FullAssetName} doesn't have any JSON data to process.");
+                EAI.Logger.Info($"The asset {data.FullAssetName} doesn't have any JSON data to process.");
                 return;
             }
 
@@ -110,7 +110,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             if(componentsVariant == null)
             {
-                EAI.Logger.Warn($"The prefab {prefabBase.name} doesn't have any components to process.");
+                EAI.Logger.Info($"The prefab {prefabBase.name} doesn't have any components to process.");
                 return;
             }
 

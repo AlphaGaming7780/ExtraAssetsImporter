@@ -47,6 +47,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 }
 
                 SurfaceAsset surfaceAsset = enumerator.Current;
+                enumerator.Dispose();
 
                 //Surface surface = DecalsImporterNew.CreateSurface(data, decalsMaterail, k_DefaultMaterialName);
                 Mesh[] meshes = DecalsImporterNew.CreateMeshes(surfaceAsset);

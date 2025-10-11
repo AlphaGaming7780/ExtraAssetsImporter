@@ -45,6 +45,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                     yield return null;
                 }
                 material = materialEnumerator.Current;
+                materialEnumerator.Dispose();
             }
 
             RenderedArea renderedArea = surfacePrefab.AddComponent<RenderedArea>();
@@ -106,66 +107,40 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             TextureAsset normalMap = textureAssets.ContainsKey(TextureAssetImporterUtils.NormalMapName) ? textureAssets[TextureAssetImporterUtils.NormalMapName] : null;
             TextureAsset maskMap = textureAssets.ContainsKey(TextureAssetImporterUtils.MaskMapName) ? textureAssets[TextureAssetImporterUtils.MaskMapName] : null;
 
+
             if (baseColorMap != null)
             {
-                // Avoid file already used or other kind of stuff.
-                Texture2D texture = null;
-                while (texture == null)
+                IEnumerator<Material> mat = LoadTexture(newMaterial, baseColorMap, ShaderPropertiesIDs.BaseColorMap);
+                while (mat.Current == null && mat.MoveNext())
                 {
-                    try
-                    {
-                        texture = baseColorMap.Load<Texture2D>();
-                    }
-                    catch (Exception e)
-                    {
-                        EAI.Logger.Warn(e);
-                    }
                     yield return null;
                 }
-
-                texture.wrapMode = TextureWrapMode.Repeat;
-                newMaterial.SetTexture(ShaderPropertiesIDs.BaseColorMap, texture);
+                newMaterial = mat.Current;
+                mat.Dispose();
             }
 
             if (normalMap != null)
             {
-                // Avoid file already used or other kind of stuff.
-                Texture2D texture = null;
-                while (texture == null)
+
+                IEnumerator<Material> mat = LoadTexture(newMaterial, normalMap, ShaderPropertiesIDs.NormalMap);
+                while (mat.Current == null && mat.MoveNext())
                 {
-                    try
-                    {
-                        texture = normalMap.Load<Texture2D>();
-                    } catch ( Exception e)
-                    {
-                        EAI.Logger.Warn(e);
-                    }
                     yield return null;
                 }
-
-                texture.wrapMode = TextureWrapMode.Repeat;
-                newMaterial.SetTexture(ShaderPropertiesIDs.NormalMap, texture);
+                newMaterial = mat.Current;
+                mat.Dispose();
             }
 
             if (maskMap != null)
             {
-                // Avoid file already used or other kind of stuff.
-                Texture2D texture = null;
-                while (texture == null)
+
+                IEnumerator<Material> mat = LoadTexture(newMaterial, maskMap, ShaderPropertiesIDs.MaskMap);
+                while (mat.Current == null && mat.MoveNext())
                 {
-                    try
-                    {
-                        texture = maskMap.Load<Texture2D>();
-                    }
-                    catch (Exception e)
-                    {
-                        EAI.Logger.Warn(e);
-                    }
                     yield return null;
                 }
-
-                texture.wrapMode = TextureWrapMode.Repeat;
-                newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture);
+                newMaterial = mat.Current;
+                mat.Dispose();
             }
 
             // Doesn't work, we get the error "No material were mapped for {m_MaterialTemplateHash}", because the material Surface use doesn't have a template in MaterialLibrary.
@@ -175,6 +150,40 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             yield return newMaterial;
 
+        }
+
+        private IEnumerator<Material> LoadTexture(Material material, TextureAsset textureAsset, int shaderPropertiesIDs)
+        {
+            // Évite les fichiers déjà utilisés ou autres problèmes.
+            Texture2D texture = null;
+            int i = 0;
+
+            while (texture == null && i <= 10)
+            {
+                if (File.Exists(textureAsset.path))
+                {
+                    try
+                    {
+                        texture = textureAsset.Load<Texture2D>();
+                    }
+                    catch (Exception e)
+                    {
+                        EAI.Logger.Warn(e);
+                    }
+                }
+                i++;
+                yield return null;
+            }
+
+            if (texture != null)
+            {
+                texture.wrapMode = TextureWrapMode.Repeat;
+                material.SetTexture(shaderPropertiesIDs, texture);
+                yield return material;
+            }
+
+            EAI.Logger.Error($"Failed to load the texture {textureAsset} at path {textureAsset.path}");
+            yield return material;
         }
 
         private Dictionary<string, TextureAsset> GetTextures(PrefabImportData data)

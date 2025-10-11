@@ -37,6 +37,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 }
 
                 SurfaceAsset surface = enumerator.Current;
+                enumerator.Dispose();
                 Mesh[] meshes = CreateMeshes(surface);
 
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, SetupDecalRenderPrefab);
