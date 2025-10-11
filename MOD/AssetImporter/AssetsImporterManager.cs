@@ -154,6 +154,8 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void BuildAssetPack(IEnumerable<string> assetPacksName)
         {
+            if (!EAI.m_Setting.UseNewImporters) return;
+
             List<string> paths = new List<string>();
 
             foreach (string assetPackName in assetPacksName)
@@ -196,9 +198,31 @@ namespace ExtraAssetsImporter.AssetImporter
             LoadCustomAssets(importerSettings);
         }
 
+#if DEBUG
+        public static void ReloadAllAsset()
+        {
+            if(EAIDataBaseManager.eaiDataBase != null || !EAI.m_Setting.UseNewImporters)
+            {
+                return;
+            }
+
+            if(!EAIDataBaseManager.LoadDataBase(EAIDataBaseManager.pathToAssetsDatabase)) return;
+
+            
+            foreach(string path in s_AddAssetFolder)
+            {
+                foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
+                {
+                    importer.AddCustomAssetsFolder(path);
+                }
+            }
+
+            LoadCustomAssets(ImporterSettings.GetDefault());
+
+        }
+#endif
         public static void LoadCustomAssets(ImporterSettings importerSettings)
         {
-
             CreateEAILocalAssetPackPrefab();
 
             foreach (ImporterBase importer in s_PreImporters.Values)

@@ -15,7 +15,7 @@ namespace ExtraAssetsImporter.DataBase
     internal static class EAIDataBaseManager
     {
         const int DataBaseVersion = 2;
-        private static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
+        internal static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
         public static EAIDataBase eaiDataBase;
         private static readonly List<EAIAsset> ValidateAssetsDataBase = new List<EAIAsset>();
         private static List<EAIAsset> AssetsDataBase = new List<EAIAsset>();
@@ -63,7 +63,7 @@ namespace ExtraAssetsImporter.DataBase
                 return false;
             }
 
-            if (!File.Exists(pathToAssetsDatabase))
+            if (!File.Exists(path))
             {
                 eaiDataBase = new();
             }
@@ -71,7 +71,7 @@ namespace ExtraAssetsImporter.DataBase
             {
                 try
                 {
-                    eaiDataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDataBase>();
+                    eaiDataBase = Decoder.Decode(File.ReadAllText(path)).Make<EAIDataBase>();
                 }
                 catch
                 {

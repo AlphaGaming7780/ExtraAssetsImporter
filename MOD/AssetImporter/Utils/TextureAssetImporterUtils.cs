@@ -2,6 +2,7 @@
 using Colossal.IO.AssetDatabase;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -117,7 +118,18 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             if (!data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset))
             {
-                var texture = defaultTextureImporter.Import(importSettings, textureFilePath);
+                TextureImporter.Texture texture = null;
+
+                while (texture == null) {
+                    try
+                    {
+                        texture = defaultTextureImporter.Import(importSettings, textureFilePath);
+                    }
+                    catch (Exception e)
+                    {
+                        EAI.Logger.Warn(e);
+                    }
+                }
                 textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
                 textureAsset.Save();
                 textureAsset.Unload();

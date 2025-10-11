@@ -182,17 +182,6 @@ namespace ExtraAssetsImporter
 		{
             EAI.Logger.Info("Start loading custom stuff.");
 
-            // Load the custom assets with the new importers
-            if (m_Setting.UseNewImporters)
-            {
-                // Auto load custom assets into new importer if they have the correct folder names
-                // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
-                //AutoImportCustomAssets();
-
-                ImporterSettings importerSettings = ImporterSettings.GetDefault();
-                AssetsImporterManager.LoadCustomAssets(importerSettings);
-            }
-
             if(m_Setting.UseOldImporters)
             {
                 if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
@@ -200,8 +189,18 @@ namespace ExtraAssetsImporter
                 if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
             }
 
-            //EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForImportersToFinish(importerSettings));
-
+            // Load the custom assets with the new importers
+            if (m_Setting.UseNewImporters)
+            {
+                // Auto load custom assets into new importer if they have the correct folder names
+                // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
+                //AutoImportCustomAssets();
+                ImporterSettings importerSettings = ImporterSettings.GetDefault();
+                AssetsImporterManager.LoadCustomAssets(importerSettings);
+            } else
+            {
+                EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForImportersToFinish(ImporterSettings.GetDefault()));
+            }
         }
 
 

@@ -74,7 +74,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 m_Type = prefabBase.GetType().Name
             };
 
-            obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo);
+            obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo).ToArray();
 
         }
 

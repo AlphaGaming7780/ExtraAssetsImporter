@@ -100,6 +100,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if (!Directory.Exists(fullAssetDataPath) || eaiAsset.BuildAssetHash != EAIDataBaseManager.GetAssetHash(fullAssetDataPath))
                         {
+                            EAI.Logger.Info($"The asset {fullAssetName} builded files has changed, updating it.");
                             needToUpdateAsset = true;
                         }
 
@@ -279,7 +280,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 m_Type = prefabBase.GetType().Name
             };
 
-            obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo);
+            obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo).ToArray();
 
         }
     }
