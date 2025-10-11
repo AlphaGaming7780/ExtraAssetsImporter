@@ -205,7 +205,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
                             EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old one and adding the new one.");
-                            EL.m_PrefabSystem.RemovePrefab(existingPrefab); // Maybe, this is crashing the game ??
+                            //EL.m_PrefabSystem.RemovePrefab(existingPrefab); // Maybe, this is crashing the game ?? YES.
                             existingPrefab.asset.Dispose();
                         }
 
