@@ -2,7 +2,7 @@
   "Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Principal",
   "Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "Importadores nuevos",
-  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Usar importadores nuevos de EAI (ALPHA)",
+  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use new EAI importers (BETA)",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Habilitar esto para usar los importadores nuevos.",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "Correcciones de Compatibilidad",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "Esta configuración tiene por meta, tratar de corregir prefabricados faltantes causado por la actualización de EAI. Su uso es simple, active la configuración correspondiente a la versión del mod que utilizó en el juego salvado, reinicie el juego, cargue el juego salvado, verifique si los prefabricados faltantes se muestran nuevamente y si nada esta mal. Si esta todo correcto, salve la partida y reinicie el juego. Si hay algo incorrecto, salga del juego sin salvar la partida. Esta configuración se desactivará automáticamente luego de reiniciar el juego, para evitar futuros conflictos o inconvenientes.",
