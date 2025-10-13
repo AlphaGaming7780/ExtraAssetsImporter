@@ -120,7 +120,8 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             {
                 TextureImporter.Texture texture = null;
 
-                while (texture == null) {
+                int i = 0;
+                while (texture == null && i <= 10) {
                     try
                     {
                         texture = defaultTextureImporter.Import(importSettings, textureFilePath);
@@ -129,7 +130,15 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
                     {
                         EAI.Logger.Warn(e);
                     }
+                    i++;
                 }
+
+                // Can happen if file is already used by another process
+                if (texture == null)
+                {
+                    throw new NullReferenceException($"Failed to load the texture at ${textureFilePath}");
+                }
+
                 textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
                 textureAsset.Save();
                 textureAsset.Unload();

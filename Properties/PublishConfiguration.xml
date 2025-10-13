@@ -52,19 +52,19 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ✔️French 100% : aricoseco, Edou24, Triton Supreme, Morgan Touverey Quilling (mtouverey)
+- ⚠️French 66% : aricoseco, Edou24, Triton Supreme, Morgan Touverey Quilling (mtouverey)
 - ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204, Kelvin Ong (kelvinspaces)
-- ⚠️Chinese Traditional 90% : Tiger Zhang (tiger42231), Source Design (source_design), Kelvin Ong (kelvinspaces), nd381
-- ✔️German 100% : Konsi, Fuchs23
+- ⚠️Chinese Traditional 66% : Tiger Zhang (tiger42231), Source Design (source_design), Kelvin Ong (kelvinspaces), nd381
+- ⚠️German 66% : Konsi, Fuchs23
 - ⚠️Italian 16% : Stefano (Furios)
-- ⚠️Japanese 72% : nd381
-- ⚠️Korean 75% : Hinanchovo
+- ⚠️Japanese 47% : nd381
+- ⚠️Korean 66% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
-- ⚠️Portuguese 75% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
-- ⚠️Portuguese, Brazilian 75% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
-- ⚠️Russian 32% : Mihail (kaktyc), Lek0ms, MrSandcraft
+- ⚠️Portuguese 62% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ⚠️Portuguese, Brazilian 50% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
+- ⚠️Russian 20% : Mihail (kaktyc), Lek0ms, MrSandcraft
 - ✔️Spanish 100% : elGendo87
-  </LongDescription>
+	</LongDescription>
 	<!--Thumbnail-->
 	<Thumbnail Value="Properties/EAI.png" />
 	<!--Screenshot, can be set multiple times-->
@@ -74,23 +74,37 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.5.8" />
+	<ModVersion Value="1.6.0" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.3.*" />
 	<!--Dependency for the mod, can be set multiple times-->
-  <Dependency Id="75724" />
+	<Dependency Id="75724" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
-  <ChangeLog>
+	<ChangeLog>
+### Improvements 
+- New Importers (BETA)
+> - New importers are now in Beta.  
+> - You can enable or disable the new importers in the EAI settings.  
+> - You can now create an asset with only one texture — it can be a NormalMap, a MaskMap, or a BaseColorMap.  
+> - This fixes the pink normal map issue for surfaces.  
+> - Possibility to have an AssetPack filter in-game.  
+> - Possibility to have localization for assets.  
+> - Unified the JSON files (`Prefab.json` and `Material.json`) for every asset.  
+> - Added support for components.  
+> - EAI can now create default JSON files for every importer.  
+> - [Texture Sharing](https://github.com/AlphaGaming7780/ExtraAssetsImporter/wiki/%5BNEW%5D-Texture-Sharing)  
+> - Surface textures are now saved in the database.  
+> - Surface textures are now BC-compressed (like Decals and NetLanes).  
 ### Fixes:
-- For new importers
-> - Multiple loading of assets fixed.
-> - Mip maps issue for Surfaces fixed.
-> - Fixed issue where an asset pack wouldn't load if the pack was loaded before EAI. (Removed old temp fix)
+- For new importers  
+> - Various fixes.  
 ### Translations:
-- ✔️French 100% : Morgan Touverey Quilling (mtouverey)
-- ✔️German 100% : Fuchs23
-  </ChangeLog>
+- ✔️ Chinese (Simplified) 100%: RilkeXS (无手文)  
+- ✔️ Polish 100%: karmel68  
+- ✔️ Spanish 100%: elGendo87  
+
+	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
 	<ExternalLink Type="crowdin" Url="https://crowdin.com/project/extraassetsimporter" />

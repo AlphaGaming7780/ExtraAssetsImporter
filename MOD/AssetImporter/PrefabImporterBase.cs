@@ -204,8 +204,9 @@ namespace ExtraAssetsImporter.AssetImporter
                         if(importSettings.savePrefabs) prefabAsset.Save();
 
                         if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
+                            //EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist.");
                             EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old one and adding the new one.");
-                            //EL.m_PrefabSystem.RemovePrefab(existingPrefab); // Maybe, this is crashing the game ?? YES.
+                            EL.m_PrefabSystem.RemovePrefab(existingPrefab); // Maybe, this is crashing the game ?? YES if they where already loaded, doesn't cause issue if they are duplicate or render prefabs.
                             existingPrefab.asset.Dispose();
                         }
 
