@@ -2,7 +2,7 @@
   "Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Główne",
   "Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "Nowe importery",
-  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Użyj nowych importerów EAI (ALPHA)",
+  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Użyj nowych importerów EAI (BETA)",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Włącz to, aby skorzystać z nowych importerów.",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "Poprawka zgodności",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "To ustawienie ma na celu naprawę brakującego prefabu spowodowanego aktualizacją EAI. Aby z niego skorzystać, włącz ustawienie odpowiadające wersji moda, którego użyłeś w zapisie, uruchom ponownie grę, wczytaj zapis i sprawdź, czy brakujące prefaby wróciły i czy wszystko jest w porządku. Jeśli wszystko jest w porządku, zapisz i uruchom ponownie grę, jeśli coś jest nie tak, wyjdź z gry bez zapisywania. To ustawienie wyłącza się automatycznie po ponownym uruchomieniu, aby uniknąć przyszłych konfliktów i problemów.",

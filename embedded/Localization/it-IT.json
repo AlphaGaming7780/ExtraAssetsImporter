@@ -2,7 +2,7 @@
   "Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Importatore di extra Assets",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Principale",
   "Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "New importers",
-  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use new EAI importers (ALPHA)",
+  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use new EAI importers (BETA)",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Enable this to use the new importers.",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "Compatibility Fix",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "This setting have for goal to try to fix missing prefabs caused by an EAI update. To use it, enable the setting corresponding to the version of the mod you have used in your save, restart the game, load your save and check if the missing prefabs are back and if nothing is wrong. If nothing is wrong save your save and restart the game, if there is wrong stuff quit the game without saving. This setting automatically disable itself after the restart to avoid future conflict and issue.",
