@@ -2,7 +2,7 @@
   "Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "主要",
   "Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "新导入器",
-  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use new EAI importers (BETA)",
+  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "使用新的 EAI 导入器 (BETA 版本)",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "启用此选项以使用新导入器。",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "兼容性修复",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "此选项的作用是尝试修复由 EAI 更新导致缺失的预制件。使用方法为：启用与存档中使用的模组的版本相符合的选项，重启游戏，加载您的存档，检查缺失的预制件是否已恢复，以及是否有其他问题。如果没有问题，请保存存档并重启游戏；如果有出现了问题，请不要保存并退出游戏。重启游戏后，此选项会自动禁用，以避免将来引起冲突等问题。",
