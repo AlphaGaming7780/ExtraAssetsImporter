@@ -3,7 +3,9 @@ using Colossal.IO.AssetDatabase;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
@@ -23,6 +25,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public const string NormalMapName = "_NormalMap.png";
         public const string MaskMapName = "_MaskMap.png";
 
+        private static readonly List<string> s_TexturePaths = new List<string>();
         public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
@@ -116,33 +119,27 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
         internal static TextureAsset ImportTexture_Impl(ImportSettings importSettings, PrefabImportData data, string textureFilePath, AssetDataPath textureDataPath, string fullAssetTextureName)
         {
+
+            while (s_TexturePaths.Contains(textureFilePath))
+            {
+                EAI.Logger.Info($"{data.FullAssetName} is waiting for {textureFilePath}.");
+                Thread.Sleep(500);
+            }
+
             if (!data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset))
             {
-                TextureImporter.Texture texture = null;
 
-                int i = 0;
-                while (texture == null && i <= 10) {
-                    try
-                    {
-                        texture = defaultTextureImporter.Import(importSettings, textureFilePath);
-                    }
-                    catch (Exception e)
-                    {
-                        EAI.Logger.Warn(e);
-                    }
-                    i++;
-                }
+                s_TexturePaths.Add(textureFilePath);
 
-                // Can happen if file is already used by another process
-                if (texture == null)
-                {
-                    throw new NullReferenceException($"Failed to load the texture at ${textureFilePath}");
-                }
+                var texture = defaultTextureImporter.Import(importSettings, textureFilePath);
 
                 textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
                 textureAsset.Save();
                 textureAsset.Unload();
                 texture.Dispose();
+
+                s_TexturePaths.Remove(textureFilePath);
+
             }
 
             return textureAsset;
