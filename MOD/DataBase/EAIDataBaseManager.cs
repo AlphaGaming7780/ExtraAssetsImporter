@@ -483,24 +483,24 @@ namespace ExtraAssetsImporter.DataBase
             }
         }
 
-        internal static void CheckIfDataBaseNeedToBeRelocated(bool saveSettings = true)
+        internal static void CheckIfDataBaseNeedToBeRelocated()
         {
+            if (eaiDataBase == null) LoadDataBase(pathToAssetsDatabase);
+
             string newPath = EAI.m_Setting.SavedDatabasePath ?? eaiDataBase.ActualDataBasePath;
 
             if (EAI.m_Setting.SavedDatabasePath == null)
             {
                 EAI.m_Setting.SavedDatabasePath = newPath;
-                if (saveSettings) EAI.m_Setting.ApplyAndSave();
+                EAI.m_Setting.Apply();
             }
-
-            if(eaiDataBase == null) LoadDataBase(pathToAssetsDatabase);
 
             if (newPath != eaiDataBase.ActualDataBasePath)
             {
                 if (!RelocateAssetDataBase(newPath))
                 {
                     EAI.m_Setting.SavedDatabasePath = eaiDataBase.ActualDataBasePath;
-                    if (saveSettings) EAI.m_Setting.ApplyAndSave();
+                    EAI.m_Setting.Apply();
                 }
             }
         }

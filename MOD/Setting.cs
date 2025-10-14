@@ -83,7 +83,7 @@ namespace ExtraAssetsImporter
         internal void ResetCompatibility()
         {
             OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
-            ApplyAndSave();
+            Apply();
         }
     }
 
