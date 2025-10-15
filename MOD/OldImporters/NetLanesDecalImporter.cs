@@ -135,7 +135,6 @@ namespace ExtraAssetsImporter.OldImporters
                                 //renderPrefab = CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath);
                                 renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
                                 asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
-                                EAIDataBaseManager.AddAsset(asset);
                             }
                             else
                             {
@@ -157,16 +156,15 @@ namespace ExtraAssetsImporter.OldImporters
                                     EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
                                     renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
                                     asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
-                                    EAIDataBaseManager.AddAsset(asset);
                                 }
                             }
+
+                            EAIDataBaseManager.AddOrValidateAsset(asset);
 
                             CreateCustomNetLane(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, assetCat, renderPrefab);
 
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullNetLaneName}]")) csLocalisation.Add($"Assets.NAME[{fullNetLaneName}]", netLanesName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullNetLaneName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullNetLaneName}]", netLanesName);
-
-                            EAIDataBaseManager.ValidateAsset(fullNetLaneName);
 
                         }
                         catch (Exception e)

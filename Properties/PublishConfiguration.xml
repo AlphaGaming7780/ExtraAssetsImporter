@@ -52,7 +52,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ⚠️French 65% : aricoseco, Edou24, Triton Supreme, Morgan Touverey Quilling (mtouverey)
+- ✔️French 100% : aricoseco, Edou24, Triton Supreme, Morgan Touverey Quilling (mtouverey)
 - ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204, Kelvin Ong (kelvinspaces)
 - ⚠️Chinese Traditional 58% : Tiger Zhang (tiger42231), Source Design (source_design), Kelvin Ong (kelvinspaces), nd381
 - ⚠️German 65% : Konsi, Fuchs23
@@ -60,7 +60,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 - ⚠️Japanese 47% : nd381
 - ⚠️Korean 65% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
-- ⚠️Portuguese 98% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
 - ⚠️Portuguese, Brazilian 50% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
 - ⚠️Russian 20% : Mihail (kaktyc), Lek0ms, MrSandcraft
 - ✔️Spanish 100% : elGendo87
@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.6.2" />
+	<ModVersion Value="1.6.3" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.3.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -82,8 +82,11 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
 	<ChangeLog>
-### Fixe:
-- `Collection was modified; enumeration operation may not execute.` error
+### Improvements:
+- Database management code, can potentially fix some issue.
+### Translations:
+- ✔️French 100% : Morgan Touverey Quilling (mtouverey)
+- ✔️Portuguese 100% : Tiago Correia (ti4go)
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />

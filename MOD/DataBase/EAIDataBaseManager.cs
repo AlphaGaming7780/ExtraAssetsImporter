@@ -186,80 +186,31 @@ namespace ExtraAssetsImporter.DataBase
             SaveDataBase();
         }
 
-        internal static void ValidateAsset(string AssetID)
-        {
-            if (AssetID == null) { EAI.Logger.Warn("Try to validate an assets with a null AssetID."); return; }
-            ValidateAsset(GetEAIAsset(AssetID));
-        }
-
-        internal static void ValidateAsset(EAIAsset asset)
-        {
-            if (asset == EAIAsset.Null) return;
-            AssetsDataBase.Remove(asset);
-            ValidateAssetsDataBase.Add(asset);
-        }
-
-        //   internal static void AddAssets(string AssetID, int Hash, string AssetPath)
-        //{
-        //	EAIAsset asset = new()
-        //	{
-        //		AssetID = AssetID,
-        //		AssetHash = Hash
-        //	};
-        //	AddAssets(asset);
-        //}
-
         internal static void AddOrValidateAsset(EAIAsset asset)
         {
-            if(IsAssetsInDataBase(asset))
+            if (AssetsDataBase.Contains(asset))
             {
-                ValidateAsset(asset);
+                AssetsDataBase.RemoveAll( (Asset2) => Asset2 == asset);
             }
-            else
-            {
-                ValidateAssetsDataBase.Add(asset);
-            }
-        }
 
-        internal static void AddAsset(EAIAsset asset)
-        {
-            if (IsAssetsInDataBase(asset))
+            if(ValidateAssetsDataBase.Contains(asset))
             {
-                EAI.Logger.Info($"Try to add {asset.AssetID} in the data base, it is already in the data base. Validating this asset instead.");
-                ValidateAsset(asset);
-                return;
+                EAI.Logger.Warn($"Validating an already validated asset {asset.AssetID}, removing the old one and adding the new one.");
+                ValidateAssetsDataBase.RemoveAll( (asset2) => asset2 == asset);
             }
+
             ValidateAssetsDataBase.Add(asset);
-        }
-
-        internal static bool IsAssetsInDataBase(EAIAsset asset)
-        {
-            return IsAssetsInDataBase(asset.AssetID);
-        }
-
-        internal static bool IsAssetsInDataBase(string AssetID)
-        {
-            foreach (var asset in AssetsDataBase)
-            {
-                if (asset.AssetID == AssetID) return true;
-            }
-
-            foreach (var asset in ValidateAssetsDataBase)
-            {
-                if (asset.AssetID == AssetID) return true;
-            }
-
-            return false;
+            
         }
 
         internal static EAIAsset GetEAIAsset(string AssetID)
         {
-            foreach (var asset in AssetsDataBase)
-            {
-                if (asset.AssetID == AssetID) return asset;
-            }
+            EAIAsset asset = AssetsDataBase.Find( (asset) => asset.AssetID == AssetID );
+
+            if(asset != EAIAsset.Null) return asset;
+
             EAI.Logger.Warn($"Try to get an asset with this ID '{AssetID}', but it's not in the dataBase");
-            return EAIAsset.Null;
+            return asset;
         }
 
         internal static bool TryGetEAIAsset(string AssetID, out EAIAsset asset)
@@ -593,7 +544,7 @@ namespace ExtraAssetsImporter.DataBase
 
         public override readonly int GetHashCode()
         {
-            return SourceAssetHash;
+            return AssetID.GetHashCode();
         }
     }
 }

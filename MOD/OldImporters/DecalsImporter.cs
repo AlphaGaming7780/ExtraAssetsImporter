@@ -139,35 +139,12 @@ namespace ExtraAssetsImporter.OldImporters
                                 EAI.Logger.Info($"No cahed data for {fullDecalName}, creating the cache.");
                                 renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
                                 asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
-                                EAIDataBaseManager.AddAsset(asset);
                             }
                             else
                             {
                                 try
                                 {
-
                                     renderPrefab = GetRenderPrefab(fullDecalName, decalName);
-
-
-                                    //if (!EAIDataBaseManager.TryLoadPrefab<RenderPrefab>(fullDecalName, $"{decalName}_RenderPrefab", out renderPrefab))
-                                    //{
-                                    //    EAI.Logger.Warn($"EAI failed to load the cached RenderPrefab for {fullDecalName}.");
-                                    //    //EL.m_PrefabSystem.AddPrefab(renderPrefab);
-                                    //}
-                                    //else
-                                    //{
-                                    //    EAI.Logger.Info($"EAI loaded the cached RenderPrefab for {fullDecalName} : {renderPrefab.name}.");
-                                    //}
-
-                                    //List<PrefabBase> loadedObject = EAIDataBaseManager.LoadAsset(fullDecalName);
-                                    //foreach (PrefabBase prefabBase in loadedObject)
-                                    //{
-                                    //    if (prefabBase is RenderPrefab renderPrefab1)
-                                    //    {
-                                    //        renderPrefab = renderPrefab1;
-                                    //        break;
-                                    //    }
-                                    //}
                                 }
                                 catch (Exception e)
                                 {
@@ -182,16 +159,15 @@ namespace ExtraAssetsImporter.OldImporters
                                     EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
                                     renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
                                     asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
-                                    EAIDataBaseManager.AddAsset(asset);
                                 }
                             }
+
+                            EAIDataBaseManager.AddOrValidateAsset(asset);
 
                             CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
 
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullDecalName}]")) csLocalisation.Add($"Assets.NAME[{fullDecalName}]", decalName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullDecalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullDecalName}]", decalName);
-
-                            EAIDataBaseManager.ValidateAsset(fullDecalName);
 
                         }
                         catch (Exception e)
