@@ -2,7 +2,7 @@
   "Options.SECTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI]": "Extra Assets Importer",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Main]": "Principal",
   "Options.GROUP[ExtraAssetsImporter.ExtraAssetsImporter.EAI.NewImporters]": "Novas importações",
-  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Use new EAI importers (BETA)",
+  "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Usar novo importador EAI (BETA)",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.UseNewImporters]": "Active para utilizar os novos importadores.",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "Correção de compatibilidade",
   "Options.OPTION_DESCRIPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.NewImportersCompatibilityDropDown]": "Esta definição tem como objetivo tentar corrigir prefabs em falta causados por uma atualização do EAI. Para a usar, ativa a definição correspondente à versão do mod que usaste no teu save, reinicia o jogo, carrega o teu save e verifica se os prefabs em falta voltaram e se está tudo em ordem. Se estiver tudo bem, guarda o teu save e reinicia o jogo. Se houver algum problema, sai do jogo sem guardar. Esta definição desativa-se automaticamente após o reinício para evitar conflitos e problemas futuros.",
