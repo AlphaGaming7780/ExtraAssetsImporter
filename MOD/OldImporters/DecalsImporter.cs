@@ -118,9 +118,10 @@ namespace ExtraAssetsImporter.OldImporters
                         notificationInfo.text = $"Loading : {decalName}";
                         EL.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
 
-                        if (decalName.StartsWith("."))
+                        if (decalName.StartsWith(".") || Directory.GetFiles(decalsFolder).Length == 0)
                         {
                             skipedDecal++;
+                            ammoutOfDecalsloaded++;
                             continue;
                         }
 
@@ -156,7 +157,7 @@ namespace ExtraAssetsImporter.OldImporters
 
                                 if (renderPrefab == null)
                                 {
-                                    EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
+                                    //EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
                                     renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
                                     asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
                                 }

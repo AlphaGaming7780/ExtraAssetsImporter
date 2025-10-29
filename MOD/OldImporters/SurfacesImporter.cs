@@ -13,6 +13,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Unity.Entities;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.OldImporters 
@@ -98,9 +99,10 @@ namespace ExtraAssetsImporter.OldImporters
                         notificationInfo.progress = (int)(ammoutOfSurfacesloaded / (float)numberOfSurfaces * 100);
                         notificationInfo.text = $"Loading : {surfaceName}";
 
-                        if (surfaceName.StartsWith("."))
+                        if (surfaceName.StartsWith(".") || Directory.GetFiles(surfaceFolder).Length == 0)
                         {
                             skippedSurface++;
+                            ammoutOfSurfacesloaded++;
                             continue;
                         }
 

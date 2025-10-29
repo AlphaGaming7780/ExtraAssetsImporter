@@ -1,4 +1,5 @@
 ﻿using Colossal.IO.AssetDatabase;
+using Colossal.PSI.Common;
 using System;
 
 namespace ExtraAssetsImporter.DataBase
@@ -16,7 +17,9 @@ namespace ExtraAssetsImporter.DataBase
 		//public IDataSourceProvider dataSourceProvider => new CachedFileSystemDataSource(name, kRootPath, assetFactory);
 		public IDataSourceProvider dataSourceProvider => new FileSystemDataSource(name, kRootPath, assetFactory);
 
-		public bool Equals(EAIAssetDataBaseDescriptor other)
+        public DlcId dlcId => DlcId.Virtual;
+
+        public bool Equals(EAIAssetDataBaseDescriptor other)
 		{
 			return true;
 		}

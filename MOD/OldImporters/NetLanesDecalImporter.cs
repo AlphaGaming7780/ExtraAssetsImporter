@@ -114,9 +114,10 @@ namespace ExtraAssetsImporter.OldImporters
                         notificationInfo.progress = (int)(ammoutOfNetLanesloaded / (float)numberOfNetLanes * 100);
                         notificationInfo.text = $"Loading : {netLanesName}";
 
-                        if (netLanesName.StartsWith("."))
+                        if (netLanesName.StartsWith(".") || Directory.GetFiles(netLanesFolder).Length == 0)
                         {
                             skipedNetLane++;
+                            ammoutOfNetLanesloaded++;
                             continue;
                         }
 
@@ -153,7 +154,7 @@ namespace ExtraAssetsImporter.OldImporters
 
                                 if (renderPrefab == null)
                                 {
-                                    EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
+                                    //EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
                                     renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
                                     asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
                                 }
