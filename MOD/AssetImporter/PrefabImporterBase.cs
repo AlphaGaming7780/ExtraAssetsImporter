@@ -41,6 +41,9 @@ namespace ExtraAssetsImporter.AssetImporter
                 string catName = new DirectoryInfo(catFolder).Name;
                 if (catName.StartsWith("."))
                 {
+                    int num = Directory.GetDirectories(catFolder).Length;
+                    skipedAsset += num;
+                    ammoutOfAssetsloaded += num;
                     continue;
                 }
 
@@ -55,6 +58,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     if (assetName.StartsWith(".")) // || catName.StartsWith(".")
                     {
                         skipedAsset++;
+                        ammoutOfAssetsloaded++;
                         //yield return null;
                         continue;
                     }

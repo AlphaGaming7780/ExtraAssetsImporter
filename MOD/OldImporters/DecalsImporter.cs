@@ -98,7 +98,10 @@ namespace ExtraAssetsImporter.OldImporters
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
                     foreach (string decalsFolder in Directory.GetDirectories(catFolder))
-                        numberOfDecals++;
+                        if(Directory.GetFiles(decalsFolder).Length > 0)
+                            numberOfDecals++;
+                        else
+                            Directory.Delete(decalsFolder, false);
             }
 
             UIAssetParentCategoryPrefab assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab("Decals");
@@ -118,7 +121,7 @@ namespace ExtraAssetsImporter.OldImporters
                         notificationInfo.text = $"Loading : {decalName}";
                         EL.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
 
-                        if (decalName.StartsWith(".") || Directory.GetFiles(decalsFolder).Length == 0)
+                        if (decalName.StartsWith("."))
                         {
                             skipedDecal++;
                             ammoutOfDecalsloaded++;

@@ -105,7 +105,10 @@ namespace ExtraAssetsImporter.AssetImporter
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
                     foreach (string assetsFolder in Directory.GetDirectories(catFolder))
-                        numberOfAssets++;
+                        if (Directory.GetFiles(assetsFolder).Length > 0)
+                            numberOfAssets++;
+                        else
+                            Directory.Delete(assetsFolder, false);
             }
 
             PreLoadCustomAssetFolder(importSettings);
@@ -154,12 +157,12 @@ namespace ExtraAssetsImporter.AssetImporter
             EL.m_NotificationUISystem.RemoveNotification(
                 identifier: notificationInfo.id,
                 delay: 5f,
-                text: $"Complete, {numberOfAssets - failedAssets} Loaded, {failedAssets} failed, {skipedAsset} skipped.",
+                text: $"Complete, {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped.",
                 progressState: ProgressState.Complete,
                 progress: 100
             );
 
-            EAI.Logger.Info($"The {ImporterId} importer finish to load all is assets. {numberOfAssets - failedAssets} Loaded, {failedAssets} failed, {skipedAsset} skipped.");
+            EAI.Logger.Info($"The {ImporterId} importer finish to load all is assets. {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped.");
 
             AssetsLoaded = true;
             AssetsLoading = false;

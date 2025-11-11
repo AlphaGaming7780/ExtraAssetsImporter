@@ -94,7 +94,10 @@ namespace ExtraAssetsImporter.OldImporters
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
                     foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
-                        numberOfNetLanes++;
+                        if (Directory.GetFiles(netLanesFolder).Length > 0)
+                            numberOfNetLanes++;
+                        else
+                            Directory.Delete(netLanesFolder, false);
             }
 
 
@@ -109,12 +112,13 @@ namespace ExtraAssetsImporter.OldImporters
                 {
                     foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
                     {
+
                         string netLanesName = new DirectoryInfo(netLanesFolder).Name;
                         notificationInfo.progressState = ProgressState.Progressing;
                         notificationInfo.progress = (int)(ammoutOfNetLanesloaded / (float)numberOfNetLanes * 100);
                         notificationInfo.text = $"Loading : {netLanesName}";
 
-                        if (netLanesName.StartsWith(".") || Directory.GetFiles(netLanesFolder).Length == 0)
+                        if (netLanesName.StartsWith("."))
                         {
                             skipedNetLane++;
                             ammoutOfNetLanesloaded++;

@@ -79,7 +79,10 @@ namespace ExtraAssetsImporter.OldImporters
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
                     foreach (string surfaceFolder in Directory.GetDirectories(catFolder))
-                        numberOfSurfaces++;
+                        if (Directory.GetFiles(surfaceFolder).Length > 0)
+                            numberOfSurfaces++;
+                        else
+                            Directory.Delete(surfaceFolder, false);
             }
 
 
@@ -94,12 +97,13 @@ namespace ExtraAssetsImporter.OldImporters
                 {
                     foreach (string surfaceFolder in Directory.GetDirectories(surfacesCat))
                     {
+
                         string surfaceName = new DirectoryInfo(surfaceFolder).Name;
                         notificationInfo.progressState = ProgressState.Progressing;
                         notificationInfo.progress = (int)(ammoutOfSurfacesloaded / (float)numberOfSurfaces * 100);
                         notificationInfo.text = $"Loading : {surfaceName}";
 
-                        if (surfaceName.StartsWith(".") || Directory.GetFiles(surfaceFolder).Length == 0)
+                        if (surfaceName.StartsWith("."))
                         {
                             skippedSurface++;
                             ammoutOfSurfacesloaded++;
