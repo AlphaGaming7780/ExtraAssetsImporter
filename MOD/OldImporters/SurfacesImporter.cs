@@ -95,6 +95,16 @@ namespace ExtraAssetsImporter.OldImporters
                 if (!Directory.Exists(folder)) continue;
                 foreach (string surfacesCat in Directory.GetDirectories(folder))
                 {
+
+                    string catName = new DirectoryInfo(surfacesCat).Name;
+                    if (catName.StartsWith("."))
+                    {
+                        int num = Directory.GetDirectories(surfacesCat).Length;
+                        skippedSurface += num;
+                        ammoutOfSurfacesloaded += num;
+                        continue;
+                    }
+
                     foreach (string surfaceFolder in Directory.GetDirectories(surfacesCat))
                     {
 
@@ -112,7 +122,6 @@ namespace ExtraAssetsImporter.OldImporters
 
                         try
                         {
-                            string catName = new DirectoryInfo(surfacesCat).Name;
                             FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
                             string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
                             string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";

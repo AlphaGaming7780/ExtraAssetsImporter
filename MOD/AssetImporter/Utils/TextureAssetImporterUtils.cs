@@ -82,6 +82,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             importSettings.wrapMode = TextureWrapMode.Repeat;
             importSettings.alphaIsTransparency = false;
+            importSettings.linearTexture = true;
             return ImportTexture(data, MaskMapName, importSettings);
         }
 

@@ -110,6 +110,15 @@ namespace ExtraAssetsImporter.OldImporters
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
                 {
+                    string catName = new DirectoryInfo(catFolder).Name;
+                    if (catName.StartsWith("."))
+                    {
+                        int num = Directory.GetDirectories(catFolder).Length;
+                        skipedNetLane += num;
+                        ammoutOfNetLanesloaded += num;
+                        continue;
+                    }
+
                     foreach (string netLanesFolder in Directory.GetDirectories(catFolder))
                     {
 
@@ -125,7 +134,6 @@ namespace ExtraAssetsImporter.OldImporters
                             continue;
                         }
 
-                        string catName = new DirectoryInfo(catFolder).Name;
                         FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
                         string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
                         string fullNetLaneName = $"{modName} {catName} {netLanesName} NetLane";

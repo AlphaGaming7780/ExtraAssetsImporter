@@ -4,7 +4,7 @@
 		<OutputType>Library</OutputType>
 		<TargetFramework>net48</TargetFramework>
 		<Configurations>Debug;Release;Debug+Extra4;Release+Extra4</Configurations>
-    <LangVersion>9</LangVersion>
+		<LangVersion>9</LangVersion>
 		
 		<!--The folder where Game.dll is located. Set it only if the game is not installed in the default location, otherwise keep it empty-->
     <CustomManagedPath>C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>

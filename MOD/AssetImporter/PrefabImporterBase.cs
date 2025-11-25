@@ -151,6 +151,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     catch (Exception e)
                     {
                         ImportFailed(assetFolder, assetDataPath, e);
+                        continue;
                     }
 
                     bool value = true;
@@ -163,17 +164,22 @@ namespace ExtraAssetsImporter.AssetImporter
                         }
                         catch (Exception e)
                         {
-                            ImportFailed(assetFolder, assetDataPath, e);
+                            //ImportFailed(assetFolder, assetDataPath, e);
+                            EAI.Logger.Error(e);
+                            break;
                         }
                     }
 
-                    if (enumerator.Current == null) yield return null;
+                    if(enumerator.Current == null)
+                    {
+                        ImportFailed(assetFolder, assetDataPath, new NullReferenceException("enumerator.Current is null."));
+                        continue;
+                    }
 
                     try
                     {
-                        if (enumerator.Current is not PrefabBase prefab) throw new Exception("Import didn't return a PrefabBase.");
+                        if (enumerator.Current is not PrefabBase prefab) throw new Exception("Importer didn't return a PrefabBase.");
 
-                        //PrefabBase prefab = pre
                         prefab.name = importData.FullAssetName;
 
                         //CreateEditorAssetCategories(importData);
@@ -238,6 +244,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     catch (Exception e)
                     {
                         ImportFailed(assetFolder, assetDataPath, e);
+                        continue;
                     }
 
                     ammoutOfAssetsloaded++;

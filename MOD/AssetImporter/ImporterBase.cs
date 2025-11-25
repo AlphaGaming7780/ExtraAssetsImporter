@@ -5,6 +5,7 @@ using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using Game.SceneFlow;
 using Game.UI.Menu;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -108,7 +109,13 @@ namespace ExtraAssetsImporter.AssetImporter
                         if (Directory.GetFiles(assetsFolder).Length > 0)
                             numberOfAssets++;
                         else
-                            Directory.Delete(assetsFolder, false);
+                        {
+                            try
+                            {
+                                Directory.Delete(assetsFolder, false);
+                            }
+                            catch (Exception ex) { EAI.Logger.Warn(ex); }
+                        }
             }
 
             PreLoadCustomAssetFolder(importSettings);
