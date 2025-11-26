@@ -8,8 +8,8 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs.Components
     internal class RenderedAreaJson : ComponentJson
     {
 
-        public float Roundness = 0.5f;
-        public float LodBias = 0;
+        //public float Roundness = 0.5f;
+        //public float LodBias = 0;
 
         public float m_Roundness = 0.5f;
 
@@ -21,11 +21,11 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs.Components
 
         public Color m_BaseColor = Color.white;
 
-        public AssetReference<TextureAsset> m_BaseColorMap;
+        //public AssetReference<TextureAsset> m_BaseColorMap;
 
-        public AssetReference<TextureAsset> m_NormalMap;
+        //public AssetReference<TextureAsset> m_NormalMap;
 
-        public AssetReference<TextureAsset> m_MaskMap;
+        //public AssetReference<TextureAsset> m_MaskMap;
 
         public float m_Metallic = 1f;
 

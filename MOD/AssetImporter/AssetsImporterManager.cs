@@ -138,6 +138,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             foreach (DirectoryInfo directoryInfo in new DirectoryInfo(path).GetDirectories())
             {
+                if(directoryInfo.Name.StartsWith('.')) continue;
                 assetPacksToBuild.Add(directoryInfo.Name);
             }
 
@@ -178,15 +179,18 @@ namespace ExtraAssetsImporter.AssetImporter
 
             if(paths.Count <= 0) return;
 
+            string databasePath = Path.Combine(AssetDatabase.user.rootPath, "ImportedData");
+
             // Would maybe be better to use a new database system, maybe one per asset pack?
-            if (!EAIDataBaseManager.LoadDataBase(Path.Combine(EAI.pathModsData, "AssetPacksDataBase.json"))) return;
+            if (!EAIDataBaseManager.LoadDataBase(Path.Combine(EAI.pathModsData, "AssetPacksDataBase.json"), databasePath)) return;
 
             ImporterSettings importerSettings = new ImporterSettings
             {
                 dataBase = AssetDatabase.user,
                 savePrefabs = true,
                 isAssetPack = true,
-                outputFolderOffset = Path.Combine(EAI.pathModsData.Replace(AssetDatabase.user.rootPath + Path.DirectorySeparatorChar, ""), k_CompiledAssetPacksFolderName)
+                //outputFolderOffset = Path.Combine(EAI.pathModsData.Replace(AssetDatabase.user.rootPath + Path.DirectorySeparatorChar, ""), k_CompiledAssetPacksFolderName)
+                outputFolderOffset = databasePath
             };
 
 

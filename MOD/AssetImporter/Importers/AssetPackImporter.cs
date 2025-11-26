@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using Colossal.IO.AssetDatabase;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraLib;
 using Game.Prefabs;
@@ -53,7 +54,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
             EAI.Logger.Info($"{modName} {AssetEndName}");
-            
+
+            string assetDataPath = importSettings.isAssetPack ?
+                        Path.Combine(importSettings.outputFolderOffset, modName) :
+                        Path.Combine(importSettings.outputFolderOffset, ImporterId, modName);
+
             AssetPackJson assetPackJson = LoadJSON(folder);
 
             AssetPackPrefab assetPackPrefab = ScriptableObject.CreateInstance<AssetPackPrefab>();
@@ -63,6 +68,20 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
             assetPackUI.m_Icon = File.Exists(Path.Combine( Path.GetDirectoryName(folder), $"{modName}.svg" )) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
+
+            AssetDataPath prefabAssetPath;
+            if (importSettings.isAssetPack)
+            {
+                prefabAssetPath = AssetDataPath.Create(assetDataPath, $"{fullAssetName}{PrefabAsset.kExtension}", EscapeStrategy.None);
+            }
+            else
+            {
+                prefabAssetPath = AssetDataPath.Create(EAI.kTempFolderName, fullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
+            }
+
+            PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, assetPackPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullAssetName));
+
+            if (importSettings.savePrefabs) prefabAsset.Save();
 
             EL.m_PrefabSystem.AddPrefab(assetPackPrefab);
 

@@ -14,9 +14,10 @@ namespace ExtraAssetsImporter.DataBase
 {
     internal static class EAIDataBaseManager
     {
-        const int DataBaseVersion = 2;
+        public const int DataBaseVersion = 2;
         internal static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
         public static EAIDataBase eaiDataBase;
+        public static string actualPathToAssetDataBase = pathToAssetsDatabase;
         private static readonly List<EAIAsset> ValidateAssetsDataBase = new List<EAIAsset>();
         private static List<EAIAsset> AssetsDataBase = new List<EAIAsset>();
         //public static ILocalAssetDatabase assetDataBaseEAI { get; private set; } = AssetDatabase<AssetDataBaseEAI>.instance;
@@ -45,6 +46,7 @@ namespace ExtraAssetsImporter.DataBase
                 eaiDataBase = new();
             }
 
+            actualPathToAssetDataBase = pathToAssetsDatabase;
             AssetsDataBase = eaiDataBase.AssetsDataBase;
 
             CheckIfDataBaseNeedToBeRelocated();
@@ -54,12 +56,12 @@ namespace ExtraAssetsImporter.DataBase
             EAI.Logger.Info($"DataBase Location : {EAIAssetDataBase.rootPath}.");
         }
 
-        internal static bool LoadDataBase(string path)
+        internal static bool LoadDataBase(string path, string databasePath = null)
         {
 
             if(eaiDataBase != null)
             {
-                EAI.Logger.Warn($"Another database is already loaded for {eaiDataBase.ActualDataBasePath}.");
+                EAI.Logger.Warn($"Another database is already loaded at {actualPathToAssetDataBase} for {eaiDataBase.ActualDataBasePath}.");
                 return false;
             }
 
@@ -76,7 +78,6 @@ namespace ExtraAssetsImporter.DataBase
                 catch
                 {
                     eaiDataBase = new();
-                    eaiDataBase.ActualDataBasePath = path;
                 }
             }
 
@@ -84,8 +85,11 @@ namespace ExtraAssetsImporter.DataBase
             {
                 EAI.Logger.Warn($"The database version is not the good one, expected {DataBaseVersion}, got {eaiDataBase.DataBaseVersion}. The database will be reseted.");
                 eaiDataBase = new();
-                eaiDataBase.ActualDataBasePath = path;
             }
+
+            eaiDataBase.ActualDataBasePath = databasePath;
+
+            actualPathToAssetDataBase = path;
 
             AssetsDataBase = eaiDataBase.AssetsDataBase;
 
@@ -116,10 +120,15 @@ namespace ExtraAssetsImporter.DataBase
 
         internal static void SaveDataBase()
         {
-            EAI.Logger.Info($"Saving the database at {pathToAssetsDatabase}, saving {eaiDataBase.AssetsDataBase.Count} assets.");
-            string directoryPath = Path.GetDirectoryName(pathToAssetsDatabase);
+            if(eaiDataBase == null)
+            {
+                EAI.Logger.Warn("Trying to save a database that is not loaded.");
+                return;
+            }
+            EAI.Logger.Info($"Saving the database at {actualPathToAssetDataBase}, saving {eaiDataBase.AssetsDataBase.Count} assets.");
+            string directoryPath = Path.GetDirectoryName(actualPathToAssetDataBase);
             if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
-            File.WriteAllText(pathToAssetsDatabase, Encoder.Encode(eaiDataBase, EncodeOptions.None));
+            File.WriteAllText(actualPathToAssetDataBase, Encoder.Encode(eaiDataBase, EncodeOptions.None));
         }
 
         internal static void ClearNotLoadedAssetsFromFiles(ImporterSettings importerSettings)
@@ -496,7 +505,7 @@ namespace ExtraAssetsImporter.DataBase
 
     internal class EAIDataBase
     {
-        public int DataBaseVersion = 0;
+        public int DataBaseVersion = EAIDataBaseManager.DataBaseVersion;
         public string ActualDataBasePath = Path.Combine(EAI.pathModsData, "Database");
         public List<EAIAsset> AssetsDataBase = new List<EAIAsset>();
     }

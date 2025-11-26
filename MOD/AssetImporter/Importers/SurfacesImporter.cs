@@ -27,6 +27,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
             surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
+            RenderedArea renderedArea = surfacePrefab.AddComponent<RenderedArea>();
 
             if (data.PrefabJson != null)
             {
@@ -34,26 +35,44 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 areaPrefabJson.Process(surfacePrefab);
             }
 
-            Material material = GetMaterial(data);
-
-            if(material == null)
+            if(data.ImportSettings.isAssetPack)
             {
-                // If the material is not found, we create it asynchronously.
-                IEnumerator<Material> materialEnumerator = AsyncCreateMaterial(data);
-                while (materialEnumerator.Current == null && materialEnumerator.MoveNext())
+
+                Task<Dictionary<string, TextureAsset>> textureAssetsTask = Task.Run(() => GetTextures(data));
+
+                while (!textureAssetsTask.IsCompleted)
                 {
                     yield return null;
                 }
-                material = materialEnumerator.Current;
-                materialEnumerator.Dispose();
+
+                Dictionary<string, TextureAsset> textureAssets = textureAssetsTask.Result;
+
+                renderedArea.m_BaseColorMap = textureAssets[TextureAssetImporterUtils.BaseColorMapName];
+                renderedArea.m_NormalMap = textureAssets[TextureAssetImporterUtils.NormalMapName];
+                renderedArea.m_MaskMap = textureAssets[TextureAssetImporterUtils.MaskMapName];
+
+
+            } else
+            {
+                Material material = GetMaterial(data);
+
+                if (material == null)
+                {
+                    // If the material is not found, we create it asynchronously.
+                    IEnumerator<Material> materialEnumerator = AsyncCreateMaterial(data);
+                    while (materialEnumerator.Current == null && materialEnumerator.MoveNext())
+                    {
+                        yield return null;
+                    }
+                    material = materialEnumerator.Current;
+                    materialEnumerator.Dispose();
+                }
+
+                renderedArea.m_RendererPriority = (int)material.GetFloat(ShaderPropertiesIDs.DrawOrder);
+                renderedArea.m_Material = material;
+                renderedArea.m_DecalLayerMask = (DecalLayers)material.GetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask);
             }
 
-            RenderedArea renderedArea = surfacePrefab.AddComponent<RenderedArea>();
-            renderedArea.m_RendererPriority = (int)material.GetFloat(ShaderPropertiesIDs.DrawOrder);
-            renderedArea.m_Material = material;
-            renderedArea.m_DecalLayerMask = (DecalLayers)material.GetFloat(ShaderPropertiesIDs.colossal_DecalLayerMask);
-
-            //ImportersUtils.SetupUIObject(this, data, surfacePrefab);
 
             yield return surfacePrefab;
         }
@@ -103,9 +122,9 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             while (!textureAssetsTask.IsCompleted) yield return null;
             var textureAssets = textureAssetsTask.Result;
 
-            TextureAsset baseColorMap = textureAssets.ContainsKey(TextureAssetImporterUtils.BaseColorMapName) ? textureAssets[TextureAssetImporterUtils.BaseColorMapName] : null;
-            TextureAsset normalMap = textureAssets.ContainsKey(TextureAssetImporterUtils.NormalMapName) ? textureAssets[TextureAssetImporterUtils.NormalMapName] : null;
-            TextureAsset maskMap = textureAssets.ContainsKey(TextureAssetImporterUtils.MaskMapName) ? textureAssets[TextureAssetImporterUtils.MaskMapName] : null;
+            TextureAsset baseColorMap = textureAssets[TextureAssetImporterUtils.BaseColorMapName]; // textureAssets.ContainsKey(TextureAssetImporterUtils.BaseColorMapName) ? textureAssets[TextureAssetImporterUtils.BaseColorMapName] : null;
+            TextureAsset normalMap = textureAssets[TextureAssetImporterUtils.NormalMapName]; // textureAssets.ContainsKey(TextureAssetImporterUtils.NormalMapName) ? textureAssets[TextureAssetImporterUtils.NormalMapName] : null;
+            TextureAsset maskMap = textureAssets[TextureAssetImporterUtils.MaskMapName]; // textureAssets.ContainsKey(TextureAssetImporterUtils.MaskMapName) ? textureAssets[TextureAssetImporterUtils.MaskMapName] : null;
 
 
             if (baseColorMap != null)
@@ -190,11 +209,14 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             Dictionary<string, TextureAsset> textures = new();
             TextureAsset baseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
-            if (baseColorMap != null) textures.Add(TextureAssetImporterUtils.BaseColorMapName, baseColorMap);
+            //if (baseColorMap != null) 
+                textures.Add(TextureAssetImporterUtils.BaseColorMapName, baseColorMap);
             TextureAsset normalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data);
-            if (normalMap != null) textures.Add(TextureAssetImporterUtils.NormalMapName, normalMap);
+            //if (normalMap != null) 
+                textures.Add(TextureAssetImporterUtils.NormalMapName, normalMap);
             TextureAsset maskMap = TextureAssetImporterUtils.ImportTexture_MaskMap(data);
-            if (maskMap != null) textures.Add(TextureAssetImporterUtils.MaskMapName, maskMap);
+            //if (maskMap != null) 
+                textures.Add(TextureAssetImporterUtils.MaskMapName, maskMap);
             return textures;
         }
         private string GetMaterialName(PrefabImportData data)
