@@ -193,7 +193,7 @@ namespace ExtraAssetsImporter.AssetImporter
                             assetPackItem.m_Packs = new[] { assetPackPrefab };
                         }
 
-                        if(!importSettings.isAssetPack) ImportersUtils.SetupUIObject(this, importData, prefab);
+                        ImportersUtils.SetupUIObject(this, importData, prefab);
 
                         AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
                         VersionCompatiblity(prefab, importData);

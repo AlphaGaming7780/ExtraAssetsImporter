@@ -178,9 +178,19 @@ namespace ExtraAssetsImporter.AssetImporter
 
             string catIconPath = Path.Combine(Directory.GetParent(data.FolderPath).FullName, "icon.svg");
 
-            UIAssetChildCategoryPrefab categoryPrefab = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg": null);
-            AssetDataPath assetDataPath = AssetDataPath.Create(EAI.kTempFolderName, $"{categoryPrefab.name}_CategoryPrefab", EscapeStrategy.None);
-            EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, categoryPrefab);
+            UIObject prefabUI = prefab.AddComponent<UIObject>();
+            prefabUI.m_IsDebugObject = false;
+            prefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/{data.AssetName}/icon.png" : Icons.DecalPlaceholder;
+            prefabUI.m_Priority = UiPriority;
+
+            if (!data.ImportSettings.isAssetPack) 
+            {
+                UIAssetChildCategoryPrefab categoryPrefab = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null);
+                AssetDataPath assetDataPath = AssetDataPath.Create(EAI.kTempFolderName, $"{categoryPrefab.name}_CategoryPrefab", EscapeStrategy.None);
+                EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, categoryPrefab);
+                prefabUI.m_Group = categoryPrefab;
+            }
+
 
             //UIObject uiObject = categoryPrefab.GetComponent<UIObject>();
             //if(uiObject.m_Icon == ExtraLib.Helpers.Icons.Placeholder && File.Exists(catIconPath))
@@ -188,12 +198,8 @@ namespace ExtraAssetsImporter.AssetImporter
             //    uiObject.m_Icon = $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg";
             //}
 
-            UIObject prefabUI = prefab.AddComponent<UIObject>();
-            prefabUI.m_IsDebugObject = false;
-            prefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/{data.AssetName}/icon.png" : Icons.DecalPlaceholder;
-            prefabUI.m_Priority = UiPriority;
-            prefabUI.m_Group = categoryPrefab;
             return prefabUI;
+
         }
 
         public static Mesh CreateBoxMesh(float length, float height, float width)
