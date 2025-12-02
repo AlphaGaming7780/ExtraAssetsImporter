@@ -5,8 +5,6 @@ using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using Game.Prefabs;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -23,7 +21,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public override string CatName => "NetLanes";
 
-        protected override IEnumerator<PrefabBase> Import(PrefabImportData data)
+        protected override PrefabBase Import(PrefabImportData data)
         {
             NetLaneGeometryPrefab netLanesPrefab = ScriptableObject.CreateInstance<NetLaneGeometryPrefab>();
 
@@ -33,23 +31,10 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 netLanePrefabJson.Process(netLanesPrefab);
             }
 
-            //ImportersUtils.SetupUIObject(this, data, netLanesPrefab);
-
             RenderPrefab renderPrefab = (RenderPrefab)ImportersUtils.GetRenderPrefab(data);
             if (renderPrefab == null)
             {
-
-                IEnumerator<SurfaceAsset> enumerator = DecalsImporterNew.AsyncCreateSurface(data, k_DefaultMaterialName);
-
-                while (enumerator.Current == null && enumerator.MoveNext())
-                {
-                    yield return null;
-                }
-
-                SurfaceAsset surfaceAsset = enumerator.Current;
-                enumerator.Dispose();
-
-                //Surface surface = DecalsImporterNew.CreateSurface(data, decalsMaterail, k_DefaultMaterialName);
+                SurfaceAsset surfaceAsset = DecalsImporterNew.CreateSurface(data, k_DefaultMaterialName);
                 Mesh[] meshes = DecalsImporterNew.CreateMeshes(surfaceAsset);
 
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surfaceAsset, meshes, DecalsImporterNew.SetupDecalRenderPrefab);
@@ -57,7 +42,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             netLanesPrefab.AddNetLaneMeshInfo(renderPrefab);
 
-            yield return netLanesPrefab;
+            return netLanesPrefab;
         }
 
         protected override void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)

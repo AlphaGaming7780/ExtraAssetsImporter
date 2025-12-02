@@ -38,7 +38,6 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
         public static SurfaceAsset CreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
         {
-            string path = Path.Combine(data.FolderPath, MaterialJsonFileName);
             MaterialJson materialJson = LoadMaterialJson(data);
             return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }

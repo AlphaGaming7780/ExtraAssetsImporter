@@ -1,11 +1,11 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal.Core;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraLib;
 using Game.Prefabs;
 using Game.SceneFlow;
 using Game.UI.Menu;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -28,7 +28,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
 
             AssetPackJson assetPackJson = new();
-            //string jsonPath = Path.Combine(path, "decal.json");
             if (File.Exists(path))
             {
                 assetPackJson = Decoder.Decode(File.ReadAllText(path)).Make<AssetPackJson>();
@@ -40,7 +39,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             assetPackPrefab = null;
 
-            if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(AssetPackPrefab), $"{data.ModName} {kAssetEndName}"), out var p1)
+            if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(AssetPackPrefab), $"{data.ModName} {kAssetEndName}", Colossal.Hash128.CreateGuid($"{data.ModName} {kAssetEndName}")), out var p1)
                 && p1 is AssetPackPrefab assetPack)
             {
                 assetPackPrefab = assetPack;
@@ -51,7 +50,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         }
 
-        protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
             EAI.Logger.Info($"{modName} {AssetEndName}");
 
@@ -67,7 +66,19 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             assetPackPrefab.name = fullAssetName;
 
             UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
-            assetPackUI.m_Icon = File.Exists(Path.Combine( Path.GetDirectoryName(folder), $"{modName}.svg" )) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
+
+            string iconPath = Path.Combine(Path.GetDirectoryName(folder), $"{modName}.svg"); // Doesn't work with SVG, fuck.
+
+            if (importSettings.isAssetPack)
+            {
+                ImageAsset imageAsset = ImportersUtils.ImportImageFromPath(iconPath, assetDataPath, importSettings, fullAssetName);
+
+                assetPackUI.m_Icon = imageAsset != null ? imageAsset.uri : Icons.GetIcon(assetPackPrefab);
+            }
+            else
+            {
+                assetPackUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
+            }
 
             AssetDataPath prefabAssetPath;
             if (importSettings.isAssetPack)
@@ -79,16 +90,15 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 prefabAssetPath = AssetDataPath.Create(EAI.kTempFolderName, fullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
             }
 
-            PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, assetPackPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullAssetName));
+            PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, assetPackPrefab, Colossal.Hash128.CreateGuid(fullAssetName));
 
             if (importSettings.savePrefabs) prefabAsset.Save();
 
-            EL.m_PrefabSystem.AddPrefab(assetPackPrefab);
+            MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddPrefab(assetPackPrefab));
 
             if (!localisation.ContainsKey($"Assets.NAME[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullAssetName}]")) localisation.Add($"Assets.NAME[{fullAssetName}]", assetPackJson.PackName);
             if (!localisation.ContainsKey($"Assets.DESCRIPTION[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullAssetName}]")) localisation.Add($"Assets.DESCRIPTION[{fullAssetName}]", assetPackJson.PackName);
 
-            yield return null;
         }
 
         public override void ExportTemplate(string path)

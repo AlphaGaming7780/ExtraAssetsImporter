@@ -15,14 +15,17 @@ namespace ExtraAssetsImporter.AssetImporter
 
     public struct ImporterSettings
     {
+        internal EAIDatabase eaiDatabase;
         public ILocalAssetDatabase dataBase;
         public bool savePrefabs;
         public bool isAssetPack;
         public string outputFolderOffset;
+        public string assetPackName;
 
         public static ImporterSettings GetDefault()
         {
             ImporterSettings result = default(ImporterSettings);
+            result.eaiDatabase = EAIDataBaseManager.eaiDataBase;
             result.dataBase = EAIDataBaseManager.EAIAssetDataBase;
             result.savePrefabs = false;
             result.isAssetPack = false;
@@ -72,15 +75,15 @@ namespace ExtraAssetsImporter.AssetImporter
         //    _FolderToLoadAssets.Remove(path);
         //    Icons.UnLoadIcons(new DirectoryInfo(path).Parent.FullName);
         //}
-
-        internal virtual IEnumerator LoadCustomAssets(ImporterSettings importSettings)
+        //IEnumerator
+        internal virtual void LoadCustomAssets(ImporterSettings importSettings)
         {
-            if (AssetsLoading) yield break;
+            if (AssetsLoading) return; // yield break;
 
             if (_FolderToLoadAssets.Count <= 0)
             {
                 AssetsLoaded = true;
-                yield break;
+                return;
             }
 
             AssetsLoading = true;
@@ -94,8 +97,8 @@ namespace ExtraAssetsImporter.AssetImporter
             skipedAsset = 0;
 
             var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotification(
-                $"{nameof(ExtraAssetsImporter)}.{nameof(EAI)}.{nameof(LoadCustomAssets)}.{ImporterId}",
-                title: $"EAI, Importing {ImporterId}.",
+                importSettings.isAssetPack ? $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}.{importSettings.assetPackName}" : $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}",
+                title: importSettings.isAssetPack ? $"{importSettings.assetPackName} - Importing {ImporterId}." : $"EAI - Importing {ImporterId}.",
                 progressState: ProgressState.Indeterminate,
                 thumbnail: $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/{ImporterId}.svg",
                 progress: 0
@@ -151,7 +154,8 @@ namespace ExtraAssetsImporter.AssetImporter
                     modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(importerFolder).Parent.Name.Split('_')[0];
                 }
 
-                yield return LoadCustomAssetFolder(importSettings, importerFolder, modName, csLocalisation, notificationInfo);
+                //yield return 
+                LoadCustomAssetFolder(importSettings, importerFolder, modName, csLocalisation, notificationInfo);
             }
 
             AfterLoadCustomAssetFolder(importSettings);
@@ -182,7 +186,8 @@ namespace ExtraAssetsImporter.AssetImporter
         }
 
         protected virtual void PreLoadCustomAssetFolder(ImporterSettings importSettings) { }
-        protected abstract IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
+        //IEnumerator
+        protected abstract void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
         protected virtual void AfterLoadCustomAssetFolder(ImporterSettings importSettings) { }
         public abstract void ExportTemplate(string path);
 

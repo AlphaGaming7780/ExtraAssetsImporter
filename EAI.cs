@@ -17,6 +17,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace ExtraAssetsImporter
 {
@@ -104,7 +105,7 @@ namespace ExtraAssetsImporter
                 {
                     try
                     {
-                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? new EAIDataBase().ActualDataBasePath);
+                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? new EAIDatabase().ActualDataBasePath);
                     }
                     catch
                     {
@@ -196,10 +197,24 @@ namespace ExtraAssetsImporter
                 // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
                 //AutoImportCustomAssets();
                 ImporterSettings importerSettings = ImporterSettings.GetDefault();
-                AssetsImporterManager.LoadCustomAssets(importerSettings);
+
+                Task task = AssetsImporterManager.LoadCustomAssetsAsync(importerSettings);
+
+                task.ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}");
+                    }
+
+                    AssetsImporterManager.BuildAllAssetPacks();
+
+                });
+
+
             } else
             {
-                EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForImportersToFinish(ImporterSettings.GetDefault()));
+                EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
             }
         }
 

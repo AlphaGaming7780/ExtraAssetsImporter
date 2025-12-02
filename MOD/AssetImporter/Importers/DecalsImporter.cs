@@ -6,7 +6,6 @@ using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using Game.Prefabs;
 using Game.Rendering;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -19,25 +18,14 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public override string ImporterId => "Decals";
         public override string AssetEndName => "Decal";
 
-        protected override IEnumerator<PrefabBase> Import(PrefabImportData data)
+        protected override PrefabBase Import(PrefabImportData data)
         {
             StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
-
-            //ImportersUtils.SetupUIObject(this, data, decalPrefab);
 
             RenderPrefabBase renderPrefab = ImportersUtils.GetRenderPrefab(data);
             if (renderPrefab == null)
             {
-
-                IEnumerator<SurfaceAsset> enumerator = AsyncCreateSurface(data);
-
-                while (enumerator.Current == null && enumerator.MoveNext())
-                {
-                    yield return null;
-                }
-
-                SurfaceAsset surface = enumerator.Current;
-                enumerator.Dispose();
+                SurfaceAsset surface = CreateSurface(data);
                 Mesh[] meshes = CreateMeshes(surface);
 
                 renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, SetupDecalRenderPrefab);
@@ -50,10 +38,10 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             placeableObject.m_ConstructionCost = 0;
             placeableObject.m_XPReward = 0;
 
-            yield return decalPrefab;
+            return decalPrefab;
         }
 
-        public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, SurfaceAsset surface, Mesh[] meshes)
+        public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, SurfaceAsset surface)
         {
             Vector4 TextureArea = surface.vectors.ContainsKey("colossal_TextureArea") ? surface.vectors["colossal_TextureArea"] : new Vector4(0, 0, 1, 1);
             DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
@@ -71,50 +59,22 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 surface.AddProperty("colossal_MeshSize", new Vector4(1f, 1f, 1f, 0f));
             }
             Vector4 MeshSize = surface.vectors["colossal_MeshSize"];
-            return new[] { ImportersUtils.CreateBoxMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
+
+            Task<Mesh> task = ImportersUtils.CreateBoxMeshAsyncOnMainThread(MeshSize);
+
+            task.Wait();
+
+            Mesh mesh = task.Result;
+            return new[] { mesh };
         }
 
         public static SurfaceAsset CreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
         {
             SurfaceAsset decalSurface = SurfaceAssetImporterUtils.CreateSurface(data, materialName);
-
-            if(decalSurface.floats["colossal_DecalLayerMask"] == 0) decalSurface.AddProperty("colossal_DecalLayerMask", 1f);
-
-            //decalSurface.AddProperty("colossal_DecalLayerMask", 1);
-
-            //foreach (string key in decalsMaterail.Float.Keys)
-            //{
-            //    if (key == "UiPriority") continue;
-            //    decalSurface.AddProperty(key, decalsMaterail.Float[key]);
-            //}
-            //foreach (string key in decalsMaterail.Vector.Keys) { decalSurface.AddProperty(key, decalsMaterail.Vector[key]); }
-
-            return decalSurface;
-        }
-
-        public static IEnumerator<SurfaceAsset> AsyncCreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
-        {
-
-            //IEnumerator<Surface> enumerator = TexturesImporterUtils.AsyncCreateSurface(data, materialName);s
-            Task<SurfaceAsset> task = SurfaceAssetImporterUtils.AsyncCreateSurface(data, materialName);
-
-            //bool value = true;
-            //while (enumerator.Current == null && value)
-            //{
-            //    yield return null;
-            //    value = enumerator.MoveNext();
-            //}
-
-            //Surface decalSurface = enumerator.Current;
-
-            while (!task.IsCompleted) yield return null;
-
-            SurfaceAsset decalSurface = task.Result;
-
             if (!decalSurface.floats.ContainsKey("colossal_DecalLayerMask")) decalSurface.AddProperty("colossal_DecalLayerMask", 1f);
             if (!decalSurface.vectors.ContainsKey("colossal_TextureArea")) decalSurface.AddProperty("colossal_TextureArea", new Vector4(0, 0, 1, 1));
 
-            yield return decalSurface;
+            return decalSurface;
         }
 
         public override void ExportTemplate(string path)

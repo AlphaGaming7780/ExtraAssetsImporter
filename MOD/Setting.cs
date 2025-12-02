@@ -78,11 +78,13 @@ namespace ExtraAssetsImporter
             Surfaces = true;
             NetLanes = true;
             OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
+            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
         }
 
         internal void ResetCompatibility()
         {
             OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
+            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
             Apply();
         }
     }
@@ -99,6 +101,7 @@ namespace ExtraAssetsImporter
     {
         None,
         LocalAsset,
+        PreEditor,
     }
 
 }

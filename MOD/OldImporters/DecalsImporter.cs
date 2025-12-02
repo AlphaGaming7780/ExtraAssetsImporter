@@ -414,7 +414,7 @@ namespace ExtraAssetsImporter.OldImporters
             decalProperties.m_EnableInfoviewColor = false;
 
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(assetDataPath, $"{decalName}_RenderPrefab", EscapeStrategy.None);
-            PrefabAsset renderPrefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab); // Colossal.Hash128.CreateGuid(fullDecalName)
+            PrefabAsset renderPrefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Colossal.Hash128.CreateGuid(renderPrefab.name)); // Colossal.Hash128.CreateGuid(fullDecalName)
             renderPrefabAsset.Save();
             //EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
 
@@ -549,22 +549,21 @@ namespace ExtraAssetsImporter.OldImporters
 
         public static RenderPrefab GetRenderPrefab(string fullAssetName, string assetName )
         {
-
-            PrefabID prefabID = new PrefabID(nameof(RenderPrefab), $"{fullAssetName}_RenderPrefab");
+            string renderPrefabName = $"{fullAssetName}_RenderPrefab";
+            PrefabID prefabID = new PrefabID(nameof(RenderPrefab), renderPrefabName, Colossal.Hash128.CreateGuid(renderPrefabName));
             if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is RenderPrefab renderPrefab)
             {
-                //EAI.Logger.Info($"RenderPrefab for {fullAssetName} was already loaded and in the prefab system.");
+                EAI.Logger.Info($"RenderPrefab for {fullAssetName} was already loaded and in the prefab system.");
                 return renderPrefab;
             }
 
             try
             {
-                //EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");
-
                 if (EAIDataBaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) &&
-                    EAIDataBaseManager.EAIAssetDataBase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}"), 
+                    EAIDataBaseManager.EAIAssetDataBase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true), 
                     out renderPrefab))
                 {
+                    EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");
                     EL.m_PrefabSystem.AddPrefab(renderPrefab);
                     return renderPrefab;
                 }
@@ -575,7 +574,7 @@ namespace ExtraAssetsImporter.OldImporters
             }
             catch (Exception e)
             {
-                //EAI.Logger.Warn($"Failed to load the cached data for {fullAssetName}.\nException:{e}.");
+                EAI.Logger.Warn($"Failed to load the cached data for {fullAssetName}.\nException:{e}.");
             }
 
             return null;

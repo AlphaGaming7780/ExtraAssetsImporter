@@ -14,7 +14,7 @@ namespace ExtraAssetsImporter
 		internal static readonly int DrawOrder = Shader.PropertyToID("_DrawOrder");
 
 
-		internal static readonly int DecalStencilRef = Shader.PropertyToID("_DecalStencilRef");
+        internal static readonly int DecalStencilRef = Shader.PropertyToID("_DecalStencilRef");
 		internal static readonly int DecalStencilWriteMask = Shader.PropertyToID("_DecalStencilWriteMask");
 
 

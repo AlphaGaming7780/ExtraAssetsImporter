@@ -30,6 +30,7 @@
 
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[None]": "Disabled",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[LocalAsset]": "Local Assets",
+  "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[PreEditor]": "Pre Editor (DOESN'T WORK)",
 
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "DataBase",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "Database location",

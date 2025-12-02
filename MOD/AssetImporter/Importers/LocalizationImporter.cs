@@ -3,10 +3,8 @@ using Colossal.Json;
 using Colossal.Localization;
 using Game.SceneFlow;
 using Game.UI.Menu;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
 {
@@ -35,15 +33,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             }
         }
 
-        protected override IEnumerator LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
         {
             LocalizationManager localizationManager = GameManager.instance.localizationManager;
 
-            Task<Dictionary<string, Dictionary<string, string>>> task = Task.Run( () =>LoadLocalization(folder));
-
-            while (!task.IsCompleted) yield return null;
-
-            Dictionary<string, Dictionary<string, string>> local = task.Result;
+            Dictionary<string, Dictionary<string, string>> local = LoadLocalization(folder);
 
             foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
             {
