@@ -26,6 +26,7 @@
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAIOLDIMPORTERSCOMPATIBILITY[LocalAsset]": "Assets locaux",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[None]": "Désactivé",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[LocalAsset]": "Assets locaux",
+  "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[PreEditor]": "Pre Editor (DOESN'T WORK)",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "Base de données",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "Emplacement de la base de données",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Supprimer les assets non chargés.",
