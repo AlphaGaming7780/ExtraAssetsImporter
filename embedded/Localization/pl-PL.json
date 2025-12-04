@@ -26,7 +26,7 @@
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAIOLDIMPORTERSCOMPATIBILITY[LocalAsset]": "Obiekty lokalne",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[None]": "Wył.",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[LocalAsset]": "Obiekty lokalne",
-  "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[PreEditor]": "Pre Editor (DOESN'T WORK)",
+  "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[PreEditor]": "Przed Edytorem (NIE DZIAŁA)",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "Baza danych",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "Lokalizacja bazy danych",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "Usuń niezaładowane obiekty.",
