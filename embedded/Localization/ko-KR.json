@@ -26,6 +26,7 @@
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAIOLDIMPORTERSCOMPATIBILITY[LocalAsset]": "로컬 에셋",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[None]": "Disabled",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[LocalAsset]": "Local Assets",
+  "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[PreEditor]": "Pre Editor (DOESN'T WORK)",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "데이터베이스",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "데이터베이스 경로",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "로드되지 않은 에셋 삭제",
