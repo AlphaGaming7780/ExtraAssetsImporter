@@ -26,7 +26,7 @@
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAIOLDIMPORTERSCOMPATIBILITY[LocalAsset]": "本地资产",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[None]": "已禁用",
   "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[LocalAsset]": "本地资产",
-  "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[PreEditor]": "Pre Editor (DOESN'T WORK)",
+  "Options.ExtraAssetsImporter.ExtraAssetsImporter.EAI.EAINEWIMPORTERSCOMPATIBILITY[PreEditor]": "预编辑器（暂时无法使用）",
   "Options.TAB[ExtraAssetsImporter.ExtraAssetsImporter.EAI.DataBase]": "数据库设置",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DatabasePath]": "数据库位置",
   "Options.OPTION[ExtraAssetsImporter.ExtraAssetsImporter.EAI.Setting.DeleteNotLoadedAssets]": "删除未加载的资产。",
