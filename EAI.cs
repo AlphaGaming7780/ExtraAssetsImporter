@@ -158,7 +158,6 @@ namespace ExtraAssetsImporter
 
                 textureStreamingSystem = updateSystem.World.GetOrCreateSystemManaged<TextureStreamingSystem>(); // to use VT, should not be used normally.
                 
-                EAIDataBaseManager.LoadDataBase();
                 EL.AddOnInitialize(Initialize);
 
                 updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
@@ -181,6 +180,8 @@ namespace ExtraAssetsImporter
 
 		internal static void Initialize()
 		{
+            EAIDataBaseManager.LoadDataBase();
+
             EAI.Logger.Info("Start loading custom stuff.");
 
             if(m_Setting.UseOldImporters)

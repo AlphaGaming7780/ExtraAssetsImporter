@@ -1,6 +1,7 @@
 ﻿using Colossal.Core;
 using Colossal.IO.AssetDatabase;
 using Colossal.Json;
+using Colossal.UI;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraLib;
 using Game.Prefabs;
@@ -50,7 +51,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         }
 
-        protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
         {
             EAI.Logger.Info($"{modName} {AssetEndName}");
 
@@ -76,7 +77,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
                 if (imageAsset == null) EAI.Logger.Warn("Image asset is null.");
 
-                assetPackUI.m_Icon = imageAsset != null ? imageAsset.identifier : Icons.GetIcon(assetPackPrefab);
+                assetPackUI.m_Icon = imageAsset != null ? imageAsset.ToGlobalUri() : Icons.GetIcon(assetPackPrefab);
             }
             else
             {
@@ -99,8 +100,13 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddPrefab(assetPackPrefab));
 
-            if (!localisation.ContainsKey($"Assets.NAME[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullAssetName}]")) localisation.Add($"Assets.NAME[{fullAssetName}]", assetPackJson.PackName);
-            if (!localisation.ContainsKey($"Assets.DESCRIPTION[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullAssetName}]")) localisation.Add($"Assets.DESCRIPTION[{fullAssetName}]", assetPackJson.PackName);
+            Dictionary<string, string> localisation = new()
+            {
+                { $"Assets.NAME[{fullAssetName}]", assetPackJson.PackName },
+                { $"Assets.DESCRIPTION[{fullAssetName}]", assetPackJson.PackName }
+            };
+
+            ImportersUtils.SetupLocalisationForPrefab(localisation, importSettings, assetDataPath, fullAssetName);
 
         }
 

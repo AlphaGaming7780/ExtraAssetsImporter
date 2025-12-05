@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -69,14 +70,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 AddCustomAssetsFolder(path);
         }
 
-        //public virtual void RemoveCustomAssetsFolder(string path)
-        //{
-        //    if (!_FolderToLoadAssets.Contains(path)) return;
-        //    _FolderToLoadAssets.Remove(path);
-        //    Icons.UnLoadIcons(new DirectoryInfo(path).Parent.FullName);
-        //}
-        //IEnumerator
-        internal virtual void LoadCustomAssets(ImporterSettings importSettings)
+        internal void LoadCustomAssets(ImporterSettings importSettings)
         {
             if (AssetsLoading) return; // yield break;
 
@@ -123,7 +117,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             PreLoadCustomAssetFolder(importSettings);
 
-            Dictionary<string, string> csLocalisation = new();
+            //Dictionary<string, string> csLocalisation = new();
 
             foreach (string importerFolder in _FolderToLoadAssets)
             {
@@ -155,15 +149,15 @@ namespace ExtraAssetsImporter.AssetImporter
                 }
 
                 //yield return 
-                LoadCustomAssetFolder(importSettings, importerFolder, modName, csLocalisation, notificationInfo);
+                LoadCustomAssetFolder(importSettings, importerFolder, modName, notificationInfo);
             }
 
             AfterLoadCustomAssetFolder(importSettings);
 
-            foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-            {
-                GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
-            }
+            //foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+            //{
+            //    GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
+            //}
 
             EL.m_NotificationUISystem.RemoveNotification(
                 identifier: notificationInfo.id,
@@ -187,7 +181,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         protected virtual void PreLoadCustomAssetFolder(ImporterSettings importSettings) { }
         //IEnumerator
-        protected abstract void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo);
+        protected abstract void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, NotificationUISystem.NotificationInfo notificationInfo);
         protected virtual void AfterLoadCustomAssetFolder(ImporterSettings importSettings) { }
         public abstract void ExportTemplate(string path);
 

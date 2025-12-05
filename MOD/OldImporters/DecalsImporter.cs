@@ -237,7 +237,7 @@ namespace ExtraAssetsImporter.OldImporters
 
                 if (jSONMaterail.Float.ContainsKey("UiPriority")) jSONMaterail.UiPriority = (int)jSONMaterail.Float["UiPriority"];
 
-                VersionCompatiblity(jSONMaterail, catName, decalName);
+                VersionCompatiblity(jSONMaterail, catName, decalName, fullDecalName);
                 if (jSONMaterail.prefabIdentifierInfos.Count > 0)
                 {
                     ObsoleteIdentifiers obsoleteIdentifiers = decalPrefab.AddComponent<ObsoleteIdentifiers>();
@@ -524,7 +524,7 @@ namespace ExtraAssetsImporter.OldImporters
             return mesh;
         }
 
-        private static void VersionCompatiblity(JSONDecalsMaterail jSONDecalsMaterail, string catName, string decalName)
+        private static void VersionCompatiblity(JSONDecalsMaterail jSONDecalsMaterail, string catName, string decalName, string fullDecalName)
         {
             if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.LocalAsset)
             {
@@ -540,6 +540,15 @@ namespace ExtraAssetsImporter.OldImporters
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
                     m_Name = $"ExtraLandscapingTools_mods_{catName}_{decalName}",
+                    m_Type = "StaticObjectPrefab"
+                };
+                jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+            }
+            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.PreEditor)
+            {
+                PrefabIdentifierInfo prefabIdentifierInfo = new()
+                {
+                    m_Name = fullDecalName,
                     m_Type = "StaticObjectPrefab"
                 };
                 jSONDecalsMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);

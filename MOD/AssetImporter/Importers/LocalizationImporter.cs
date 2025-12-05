@@ -1,4 +1,5 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal.Core;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
 using Game.SceneFlow;
@@ -15,6 +16,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public override string AssetEndName => "local";
 
         public override bool PreImporter => true;
+
+        private readonly List<string> LoadedLocales = new();
 
         public override void ExportTemplate(string path)
         {
@@ -33,26 +36,40 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             }
         }
 
-        protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, Dictionary<string, string> cslocalisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
         {
             LocalizationManager localizationManager = GameManager.instance.localizationManager;
 
             Dictionary<string, Dictionary<string, string>> local = LoadLocalization(folder);
 
+            LoadedLocales.AddRange(local[GameManager.instance.localizationManager.fallbackLocaleId].Keys);
+
             foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
             {
                 if(!local.ContainsKey(localeID)) continue;
-                GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(local[localeID]));
 
-                if(importSettings.isAssetPack)
+                if (importSettings.isAssetPack)
                 {
                     LocaleData localeData = new LocaleData(localeID, local[localeID], new());
                     AssetDataPath assetDataPath = AssetDataPath.Create(Path.Combine(importSettings.outputFolderOffset, modName, "Localization"), $"{localeID}", EscapeStrategy.None);
                     LocaleAsset localeAsset = importSettings.dataBase.AddAsset<LocaleAsset>(assetDataPath);
                     localeAsset.SetData(localeData, localizationManager.LocaleIdToSystemLanguage(localeID), localizationManager.GetLocalizedName(localeID));
                     localeAsset.Save();
+                    MainThreadDispatcher.RunOnMainThread(() => localizationManager.AddLocale(localeAsset));
+                    //GameManager.instance.localizationManager.AddLocale(localeAsset);
+                } else
+                {
+                    MainThreadDispatcher.RunOnMainThread(() => localizationManager.AddSource(localeID, new MemorySource(local[localeID])));
+                    //GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(local[localeID]));
                 }
+                MainThreadDispatcher.WaitXFrames(1).Wait();
             }
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
+            LoadedLocales.Clear();
         }
 
         private Dictionary<string, Dictionary<string, string>> LoadLocalization(string folder)

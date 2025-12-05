@@ -198,7 +198,7 @@ namespace ExtraAssetsImporter.OldImporters
                 }
                 foreach (string key in jSONMaterail.Vector.Keys) { if (newMaterial.HasVector(key)) newMaterial.SetVector(key, jSONMaterail.Vector[key]); }
 
-                VersionCompatiblity(jSONMaterail, catName, surfaceName);
+                VersionCompatiblity(jSONMaterail, catName, surfaceName, fullSurfaceName);
                 if (jSONMaterail.prefabIdentifierInfos.Count > 0)
                 {
                     ObsoleteIdentifiers obsoleteIdentifiers = surfacePrefab.AddComponent<ObsoleteIdentifiers>();
@@ -338,7 +338,7 @@ namespace ExtraAssetsImporter.OldImporters
             return material;
         }
 
-        private static void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName)
+        private static void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName, string fullSurfaceName)
         {
             if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.LocalAsset)
             {
@@ -363,6 +363,15 @@ namespace ExtraAssetsImporter.OldImporters
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
                     m_Name = $"ExtraLandscapingTools_mods_{catName}_{surfaceName}",
+                    m_Type = "SurfacePrefab"
+                };
+                jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+            }
+            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.PreEditor)
+            {
+                PrefabIdentifierInfo prefabIdentifierInfo = new()
+                {
+                    m_Name = fullSurfaceName,
                     m_Type = "SurfacePrefab"
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);

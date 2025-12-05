@@ -27,7 +27,7 @@ namespace ExtraAssetsImporter
         public bool DisableCondition_UseNewImporters => UseNewImporters;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
-        public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.None;
+        public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.PreEditor;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool ExportDefaultJson { set { AssetsImporterManager.ExportImportersTemplate(); } }
@@ -49,7 +49,7 @@ namespace ExtraAssetsImporter
         public bool NetLanes { get; set; } = true;
 
         [SettingsUISection(kMainSection, kOldImportersGroup)]
-        public EAIOldImportersCompatibility OldImportersCompatibilityDropDown { get; set; } = EAIOldImportersCompatibility.None;
+        public EAIOldImportersCompatibility OldImportersCompatibilityDropDown { get; set; } = EAIOldImportersCompatibility.PreEditor;
 
         [SettingsUISection(kDataBaseSection, "")]
         [SettingsUIDirectoryPicker]
@@ -94,6 +94,7 @@ namespace ExtraAssetsImporter
         None,
         ELT2,
         ELT3,
+        PreEditor,
         LocalAsset,
     }
 

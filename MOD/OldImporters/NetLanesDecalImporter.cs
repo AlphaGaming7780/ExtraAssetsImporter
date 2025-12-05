@@ -225,7 +225,7 @@ namespace ExtraAssetsImporter.OldImporters
             {
                 jsonNetLane = Decoder.Decode(File.ReadAllText(jsonNetLanesPath)).Make<JsonNetLanes>();
 
-                VersionCompatiblity(jsonNetLane, catName, netLanesName);
+                VersionCompatiblity(jsonNetLane, catName, netLanesName, fullNetLaneName);
                 if (jsonNetLane.prefabIdentifierInfos.Count > 0)
                 {
                     ObsoleteIdentifiers obsoleteIdentifiers = netLanesPrefab.AddComponent<ObsoleteIdentifiers>();
@@ -324,7 +324,7 @@ namespace ExtraAssetsImporter.OldImporters
             EL.m_PrefabSystem.AddPrefab(netLanesPrefab);
         }
 
-        private static void VersionCompatiblity(JsonNetLanes jSONNetLanesMaterail, string catName, string netLanesName)
+        private static void VersionCompatiblity(JsonNetLanes jSONNetLanesMaterail, string catName, string netLanesName, string fullNetLaneName)
         {
             if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.LocalAsset)
             {
@@ -340,6 +340,15 @@ namespace ExtraAssetsImporter.OldImporters
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
                     m_Name = $"ExtraLandscapingTools_mods_{catName}_{netLanesName}",
+                    m_Type = "StaticObjectPrefab"
+                };
+                jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+            }
+            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.PreEditor)
+            {
+                PrefabIdentifierInfo prefabIdentifierInfo = new()
+                {
+                    m_Name = fullNetLaneName,
                     m_Type = "StaticObjectPrefab"
                 };
                 jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);

@@ -1,6 +1,7 @@
 ﻿using Colossal.Core;
 using Colossal.IO.AssetDatabase;
 using Colossal.Json;
+using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.DataBase;
@@ -34,7 +35,7 @@ namespace ExtraAssetsImporter.AssetImporter
             assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab( CatName ?? ImporterId );
         }
 
-        protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, Dictionary<string, string> localisation, NotificationUISystem.NotificationInfo notificationInfo)
+        protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
         {
             foreach (string catFolder in Directory.GetDirectories(importerFolder))
             {
@@ -190,26 +191,18 @@ namespace ExtraAssetsImporter.AssetImporter
                             prefabAssetPath = AssetDataPath.Create(EAI.kTempFolderName, importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
                         }
 
-                        //PrefabAsset prefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, forceGuid: Colossal.Hash128.CreateGuid(importData.FullAssetName));
                         PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, Hash128.CreateGuid(importData.FullAssetName));
 
                         if (importSettings.savePrefabs) prefabAsset.Save();
 
-                        if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
-                            //EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist.");
-                            EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old one and adding the new one.");
-                            EL.m_PrefabSystem.RemovePrefab(existingPrefab); // Maybe, this is crashing the game ?? YES if they where already loaded, doesn't cause issue if they are duplicate or render prefabs.
-                            existingPrefab.asset.Dispose();
-                        }
-
-                        MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddPrefab(prefab));
-
-                        ////Fixe for surfaces that might not have a folder in the database if they share all their textures with other surfaces.
-                        //if (!Directory.Exists(fullAssetDataPath) && this is SurfacesImporterNew)
-                        //{
-                        //    // By creating the directory, this allow the code to calculate the hash.
-                        //    Directory.CreateDirectory(fullAssetDataPath);
+                        //if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
+                        //    //EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist.");
+                        //    EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old one and adding the new one.");
+                        //    EL.m_PrefabSystem.AddOrUpdatePrefab(prefab);
+                        //    existingPrefab.asset.Dispose();
                         //}
+
+                        MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab));
 
                         if ( needToUpdateAsset )
                         {
@@ -225,8 +218,13 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
 
-                        if (!localisation.ContainsKey($"Assets.NAME[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullAssetName}]")) localisation.Add($"Assets.NAME[{fullAssetName}]", assetName);
-                        if (!localisation.ContainsKey($"Assets.DESCRIPTION[{fullAssetName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullAssetName}]")) localisation.Add($"Assets.DESCRIPTION[{fullAssetName}]", assetName);
+                        Dictionary<string, string> localisation = new()
+                        {
+                            { $"Assets.NAME[{fullAssetName}]", assetName },
+                            { $"Assets.DESCRIPTION[{fullAssetName}]", assetName }
+                        };
+
+                        ImportersUtils.SetupLocalisationForPrefab(localisation, importSettings, assetDataPath, assetName);
 
                     }
                     catch (Exception e)
@@ -244,6 +242,7 @@ namespace ExtraAssetsImporter.AssetImporter
         internal void ImportFailed(string assetFolder, string assetDataPath, Exception e)
         {
             failedAssets++;
+            ammoutOfAssetsloaded++;
             EAI.Logger.Error($"Failed to load the custom asset at {assetFolder} | ERROR : {e}");
             string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);

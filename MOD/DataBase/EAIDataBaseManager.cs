@@ -34,13 +34,13 @@ namespace ExtraAssetsImporter.DataBase
                 }
             }
 
-            if(eaiDataBase.DataBaseVersion != DataBaseVersion)
+            eaiDataBase._DatabasePath = pathToAssetsDatabase;
+
+            if (eaiDataBase.DataBaseVersion != DataBaseVersion)
             {
                 EAI.Logger.Warn($"The database version is not the good one, expected {DataBaseVersion}, got {eaiDataBase.DataBaseVersion}. The database will be reseted.");
-                eaiDataBase = new();
+                eaiDataBase.ClearDatabase();
             }
-
-            eaiDataBase._DatabasePath = pathToAssetsDatabase;
 
             CheckIfDataBaseNeedToBeRelocated();
 
@@ -350,6 +350,7 @@ namespace ExtraAssetsImporter.DataBase
             _ValidateAssetsDataBase.Clear();
             AssetsDataBase.Clear();
             SaveDataBase();
+            Directory.Delete(ActualDataBasePath, true);
         }
 
     }

@@ -3,6 +3,8 @@ using Colossal.Core;
 using Colossal.IO;
 using Colossal.IO.AssetDatabase;
 using Colossal.Json;
+using Colossal.Localization;
+using Colossal.UI;
 using Commons;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.DataBase;
@@ -10,13 +12,15 @@ using ExtraLib;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
+using Game.SceneFlow;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 using static Colossal.IO.AssetDatabase.ImageAsset;
-using MainThreadDispatcher = Colossal.Core.MainThreadDispatcher;
 using Hash128 = Colossal.Hash128;
+using MainThreadDispatcher = Colossal.Core.MainThreadDispatcher;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -136,6 +140,31 @@ namespace ExtraAssetsImporter.AssetImporter
             return renderPrefab;
         }
 
+        public static void SetupLocalisationForPrefab(Dictionary<string, string> localisation, ImporterSettings importSettings, string assetDataPath, string assetName)
+        {
+            LocalizationManager localizationManager = GameManager.instance.localizationManager;
+
+            string localeID = localizationManager.fallbackLocaleId;
+
+            if (importSettings.isAssetPack)
+            {
+                LocaleData localeData = new LocaleData(localeID, localisation, new());
+                AssetDataPath localAssetDataPath = AssetDataPath.Create(assetDataPath, $"{assetName}_{localeID}", EscapeStrategy.None);
+                LocaleAsset localeAsset = importSettings.dataBase.AddAsset<LocaleAsset>(localAssetDataPath);
+                localeAsset.SetData(localeData, localizationManager.LocaleIdToSystemLanguage(localeID), localizationManager.GetLocalizedName(localeID));
+                localeAsset.Save();
+                MainThreadDispatcher.RunOnMainThread(() => localizationManager.AddLocale(localeAsset));
+            } else
+            {
+
+                MainThreadDispatcher.RunOnMainThread( () => localizationManager.AddSource(localeID, new MemorySource(localisation)));
+
+                //foreach (string localeID in localizationManager.GetSupportedLocales())
+                //{
+                //    localizationManager.AddSource(localeID, new MemorySource(localisation));
+                //}
+            }
+        }
         public static string GetRenderPrefabName(PrefabImportData data)
         {
             return $"{data.FullAssetName}_RenderPrefab";
@@ -257,7 +286,7 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 ImageAsset imageAsset = ImportImageFromPath(iconPath, data);
                 if (imageAsset != null)
-                    iconString = imageAsset.identifier;
+                    iconString = imageAsset.ToGlobalUri();
             }
 
             UIObject prefabUI = prefab.AddComponent<UIObject>();
