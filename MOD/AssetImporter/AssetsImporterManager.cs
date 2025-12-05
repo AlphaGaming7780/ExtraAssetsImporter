@@ -350,6 +350,9 @@ namespace ExtraAssetsImporter.AssetImporter
         public static void ExportImportersTemplate()
         {
             string path = Path.Combine(EAI.pathModsData, k_TemplateFolderName);
+
+            Directory.Delete(path, true);
+
             Directory.CreateDirectory(path);
             foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
             {

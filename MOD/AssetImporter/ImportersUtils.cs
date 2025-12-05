@@ -28,6 +28,11 @@ namespace ExtraAssetsImporter.AssetImporter
         //    return Path.Combine(data.ImportSettings.outputFolderOffset, data.AssetDataPath);
         //}
 
+        //public static string FormatImageAssetUri(ImageAsset imageAsset)
+        //{
+        //    return $"assetdb://Global/{imageAsset.identifier}"
+        //}
+
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
 
@@ -252,7 +257,7 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 ImageAsset imageAsset = ImportImageFromPath(iconPath, data);
                 if (imageAsset != null)
-                    iconString = imageAsset.uri;
+                    iconString = imageAsset.identifier;
             }
 
             UIObject prefabUI = prefab.AddComponent<UIObject>();

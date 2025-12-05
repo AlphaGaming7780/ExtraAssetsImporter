@@ -113,35 +113,35 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 areaPrefabJson.Components.Add(component.ComponentType.FullName, component.GetDefaultJson());
             }
 
-            File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(areaPrefabJson, EncodeOptions.None));
+            //File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(areaPrefabJson, EncodeOptions.None));
 
-            Material material = GetDefaultSurfaceMaterial();
-            MaterialJson materialJson = new MaterialJson
-            {
-                ShaderName = k_DefaultShaderName,
-                Float = new Dictionary<string, float>(),
-                Vector = new Dictionary<string, Vector4>()
-            };
+            //Material material = GetDefaultSurfaceMaterial();
+            //MaterialJson materialJson = new MaterialJson
+            //{
+            //    ShaderName = k_DefaultShaderName,
+            //    Float = new Dictionary<string, float>(),
+            //    Vector = new Dictionary<string, Vector4>()
+            //};
 
-            foreach (string key in material.GetPropertyNames(MaterialPropertyType.Float))
-            {
-                if(materialJson.Float.ContainsKey(key))
-                    materialJson.Float[key] = material.GetFloat(key);
-                else
-                    materialJson.Float.Add(key, material.GetFloat(key));
-            }
+            //foreach (string key in material.GetPropertyNames(MaterialPropertyType.Float))
+            //{
+            //    if(materialJson.Float.ContainsKey(key))
+            //        materialJson.Float[key] = material.GetFloat(key);
+            //    else
+            //        materialJson.Float.Add(key, material.GetFloat(key));
+            //}
 
-            foreach (string key in material.GetPropertyNames(MaterialPropertyType.Vector))
-            {
-                if(materialJson.Vector.ContainsKey(key))
-                    materialJson.Vector[key] = material.GetVector(key);
-                else
-                    materialJson.Vector.Add(key, material.GetVector(key));
-            }
+            //foreach (string key in material.GetPropertyNames(MaterialPropertyType.Vector))
+            //{
+            //    if(materialJson.Vector.ContainsKey(key))
+            //        materialJson.Vector[key] = material.GetVector(key);
+            //    else
+            //        materialJson.Vector.Add(key, material.GetVector(key));
+            //}
 
-            UnityEngine.Object.Destroy(material);
+            //UnityEngine.Object.Destroy(material);
 
-            File.WriteAllText(Path.Combine(path, SurfaceAssetImporterUtils.MaterialJsonFileName), Encoder.Encode(materialJson, EncodeOptions.None));
+            //File.WriteAllText(Path.Combine(path, SurfaceAssetImporterUtils.MaterialJsonFileName), Encoder.Encode(materialJson, EncodeOptions.None));
 
         }
     }

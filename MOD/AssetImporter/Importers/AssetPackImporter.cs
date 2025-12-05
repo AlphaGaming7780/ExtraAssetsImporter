@@ -67,17 +67,20 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
 
-            string iconPath = Path.Combine(Path.GetDirectoryName(folder), $"{modName}.svg"); // Doesn't work with SVG, fuck.
+            string svgIconPath = Path.Combine(Path.GetDirectoryName(folder), $"{modName}.svg"); // Doesn't work with SVG, fuck.
+            string pngIconPath = Path.Combine(Path.GetDirectoryName(folder), $"{modName}.png"); // Doesn't work with SVG, fuck.
 
             if (importSettings.isAssetPack)
             {
-                ImageAsset imageAsset = ImportersUtils.ImportImageFromPath(iconPath, assetDataPath, importSettings, fullAssetName);
+                ImageAsset imageAsset = ImportersUtils.ImportImageFromPath(pngIconPath, assetDataPath, importSettings, fullAssetName);
 
-                assetPackUI.m_Icon = imageAsset != null ? imageAsset.uri : Icons.GetIcon(assetPackPrefab);
+                if (imageAsset == null) EAI.Logger.Warn("Image asset is null.");
+
+                assetPackUI.m_Icon = imageAsset != null ? imageAsset.identifier : Icons.GetIcon(assetPackPrefab);
             }
             else
             {
-                assetPackUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
+                assetPackUI.m_Icon = File.Exists(svgIconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
             }
 
             AssetDataPath prefabAssetPath;
