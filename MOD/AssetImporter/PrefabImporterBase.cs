@@ -204,17 +204,23 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddPrefab(prefab));
 
-                        //Fixe for surfaces that might not have a folder in the database if they share all their textures with other surfaces.
-                        if (!Directory.Exists(fullAssetDataPath) && this is SurfacesImporterNew)
-                        {
-                            // By creating the directory, this allow the code to calculate the hash.
-                            Directory.CreateDirectory(fullAssetDataPath);
-                        }
+                        ////Fixe for surfaces that might not have a folder in the database if they share all their textures with other surfaces.
+                        //if (!Directory.Exists(fullAssetDataPath) && this is SurfacesImporterNew)
+                        //{
+                        //    // By creating the directory, this allow the code to calculate the hash.
+                        //    Directory.CreateDirectory(fullAssetDataPath);
+                        //}
 
                         if ( needToUpdateAsset )
                         {
                             int buildAssetFolderHash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
                             eaiAsset.BuildAssetHash = buildAssetFolderHash;
+                        }
+
+                        if(eaiAsset.AssetPath != assetDataPath)
+                        {
+                            eaiAsset.AssetPath = assetDataPath;
+                            EAI.Logger.Warn($"EAI asset {eaiAsset.AssetID} path was incorrect, updated to {assetDataPath}");
                         }
 
                         importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);

@@ -12,7 +12,7 @@ namespace ExtraAssetsImporter.DataBase
 {
     internal static class EAIDataBaseManager
     {
-        public const int DataBaseVersion = 2;
+        public const int DataBaseVersion = 3;
         internal static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
         public static EAIDatabase eaiDataBase;
         public static AssetDatabase<EAIAssetDataBaseDescriptor> EAIAssetDataBase => AssetDatabase<EAIAssetDataBaseDescriptor>.instance;
@@ -108,6 +108,11 @@ namespace ExtraAssetsImporter.DataBase
 
         internal static int GetAssetHash(string assetFolder)
         {
+            if(!Directory.Exists(assetFolder))
+            {
+                return 0; 
+            }
+
             DirectoryInfo directoryInfo = new(assetFolder);
             int hash = 0;
             foreach (FileInfo file in directoryInfo.GetFiles())
@@ -205,106 +210,122 @@ namespace ExtraAssetsImporter.DataBase
         private readonly List<EAIAsset> _ValidateAssetsDataBase = new List<EAIAsset>();
         internal string _DatabasePath = null;
 
+        private readonly object _lock = new object();
+
 
         internal void SaveValidateDataBase(ImporterSettings importerSettings)
         {
-            if (!EAI.m_Setting.DeleteNotLoadedAssets)
+            lock (_lock)
             {
-                _ValidateAssetsDataBase.AddRange(AssetsDataBase);
-                AssetsDataBase.Clear();
-            } else
-            {
-                ClearNotLoadedAssetsFromFiles(importerSettings);
-            }
+                if (!EAI.m_Setting.DeleteNotLoadedAssets)
+                {
+                    _ValidateAssetsDataBase.AddRange(AssetsDataBase);
+                    AssetsDataBase.Clear();
+                }
+                else
+                {
+                    ClearNotLoadedAssetsFromFiles(importerSettings);
+                }
 
-            AssetsDataBase = _ValidateAssetsDataBase;
-            SaveDataBase();
+                AssetsDataBase = _ValidateAssetsDataBase;
+                SaveDataBase();
+            }
         }
 
         internal void SaveDataBase()
         {
-            DataBaseVersion = EAIDataBaseManager.DataBaseVersion;
-            EAI.Logger.Info($"Saving the database at {_DatabasePath}, saving {AssetsDataBase.Count} assets.");
-            string directoryPath = Path.GetDirectoryName(_DatabasePath);
-            if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
-            File.WriteAllText(_DatabasePath, Encoder.Encode(this, EncodeOptions.None));
+            lock (_lock)
+            {
+                DataBaseVersion = EAIDataBaseManager.DataBaseVersion;
+                EAI.Logger.Info($"Saving the database at {_DatabasePath}, saving {AssetsDataBase.Count} assets.");
+                string directoryPath = Path.GetDirectoryName(_DatabasePath);
+                if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
+                File.WriteAllText(_DatabasePath, Encoder.Encode(this, EncodeOptions.None));
+            }
         }
 
 
         private void ClearNotLoadedAssetsFromFiles(ImporterSettings importerSettings)
         {
-            if(EAI.m_Setting.DeleteNotLoadedAssets == false)
+            lock (_lock)
             {
-                EAI.Logger.Info("Skipping clearing not loaded assets from files because the setting is disabled.");
-                return;
-            }
-            List<EAIAsset> tempDataBase = new(AssetsDataBase);
-            EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDataBase.Count}");
-            foreach (EAIAsset asset in tempDataBase)
-            {
-                string path = Path.Combine(importerSettings.dataBase.rootPath, asset.AssetPath);
-                if (Directory.Exists(path))
+                if (EAI.m_Setting.DeleteNotLoadedAssets == false)
                 {
-                    if (!AssetsDataBase.Remove(asset))
-                    {
-                        EAI.Logger.Warn($"Failed to remove a none loaded asset at path {path} from the data base.");
-                        continue;
-                    }
-
-                    // Making sure that if a prefab is their and loaded in the prefab system, it is removed from it.
-                    SearchFilter<PrefabAsset> searchFilter = SearchFilter<PrefabAsset>.ByCondition(a => {
-                        string pathA = a.subPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-                        string pathB = Path.DirectorySeparatorChar + asset.AssetPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-                        return pathA.Contains(pathB);
-                    });
-
-                    IEnumerable<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter);
-                    prefabAssets.Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter));
-
-                    foreach (PrefabAsset prefabAsset in prefabAssets)
-                    {
-                        EAI.Logger.Info($"Removing prefab asset {prefabAsset.name} at {prefabAsset.subPath} from prefab system and unloading it.");
-
-                        PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
-
-                        if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase existingPrefab))
-                        {
-                            if (EL.m_PrefabSystem.RemovePrefab(existingPrefab)) continue;
-                            EAI.Logger.Warn($"Failed to remove prefab {prefabAsset.name} from prefab system.");
-                        }
-                        else
-                        {
-                            EAI.Logger.Info($"Prefab {prefabAsset.name} was not in the prefab system.");
-                        }
-
-                        prefabAsset.Unload();
-                        prefabAsset.database.DeleteAsset(prefabAsset);
-                    }
-
-                    Directory.Delete(path, true);
+                    EAI.Logger.Info("Skipping clearing not loaded assets from files because the setting is disabled.");
+                    return;
                 }
-                else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
+                List<EAIAsset> tempDataBase = new(AssetsDataBase);
+                EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDataBase.Count}");
+                foreach (EAIAsset asset in tempDataBase)
+                {
+                    if (asset.AssetPath == null) continue;
+
+                    string path = Path.Combine(importerSettings.dataBase.rootPath, asset.AssetPath);
+                    if (Directory.Exists(path))
+                    {
+                        if (!AssetsDataBase.Remove(asset))
+                        {
+                            EAI.Logger.Warn($"Failed to remove a none loaded asset at path {path} from the data base.");
+                            continue;
+                        }
+
+                        // Making sure that if a prefab is their and loaded in the prefab system, it is removed from it.
+                        SearchFilter<PrefabAsset> searchFilter = SearchFilter<PrefabAsset>.ByCondition(a => {
+                            string pathA = a.subPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+                            string pathB = Path.DirectorySeparatorChar + asset.AssetPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+                            return pathA.Contains(pathB);
+                        });
+
+                        IEnumerable<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter);
+                        prefabAssets.Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter));
+
+                        foreach (PrefabAsset prefabAsset in prefabAssets)
+                        {
+                            EAI.Logger.Info($"Removing prefab asset {prefabAsset.name} at {prefabAsset.subPath} from prefab system and unloading it.");
+
+                            PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+
+                            if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase existingPrefab))
+                            {
+                                if (EL.m_PrefabSystem.RemovePrefab(existingPrefab)) continue;
+                                EAI.Logger.Warn($"Failed to remove prefab {prefabAsset.name} from prefab system.");
+                            }
+                            else
+                            {
+                                EAI.Logger.Info($"Prefab {prefabAsset.name} was not in the prefab system.");
+                            }
+
+                            prefabAsset.Unload();
+                            prefabAsset.database.DeleteAsset(prefabAsset);
+                        }
+
+                        Directory.Delete(path, true);
+                    }
+                    else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
+                }
+                EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDataBase.Count}.");
+                _ValidateAssetsDataBase.AddRange(AssetsDataBase);
+                AssetsDataBase.Clear();
             }
-            EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDataBase.Count}.");
-            _ValidateAssetsDataBase.AddRange(AssetsDataBase);
-            AssetsDataBase.Clear();
         }
 
         internal void AddOrValidateAsset(EAIAsset asset)
         {
-            if (AssetsDataBase.Contains(asset))
+            lock (_lock) 
             {
-                AssetsDataBase.RemoveAll((Asset2) => Asset2 == asset);
+                if (AssetsDataBase.Contains(asset))
+                {
+                    AssetsDataBase.RemoveAll((Asset2) => Asset2 == asset);
+                }
+
+                if (_ValidateAssetsDataBase.Contains(asset))
+                {
+                    EAI.Logger.Warn($"Validating an already validated asset {asset.AssetID}, removing the old one and adding the new one.");
+                    _ValidateAssetsDataBase.RemoveAll((asset2) => asset2 == asset);
+                }
+
+                _ValidateAssetsDataBase.Add(asset);
             }
-
-            if (_ValidateAssetsDataBase.Contains(asset))
-            {
-                EAI.Logger.Warn($"Validating an already validated asset {asset.AssetID}, removing the old one and adding the new one.");
-                _ValidateAssetsDataBase.RemoveAll((asset2) => asset2 == asset);
-            }
-
-            _ValidateAssetsDataBase.Add(asset);
-
         }
 
         internal EAIAsset GetEAIAsset(string AssetID)
