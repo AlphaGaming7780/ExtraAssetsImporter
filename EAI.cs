@@ -180,43 +180,7 @@ namespace ExtraAssetsImporter
 
 		internal static void Initialize()
 		{
-            EAIDataBaseManager.LoadDataBase();
-
-            EAI.Logger.Info("Start loading custom stuff.");
-
-            if(m_Setting.UseOldImporters)
-            {
-                if (m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
-                if (m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-                if (m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
-            }
-
-            // Load the custom assets with the new importers
-            if (m_Setting.UseNewImporters)
-            {
-                // Auto load custom assets into new importer if they have the correct folder names
-                // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
-                //AutoImportCustomAssets();
-                ImporterSettings importerSettings = ImporterSettings.GetDefault();
-
-                Task task = AssetsImporterManager.LoadCustomAssetsAsync(importerSettings);
-
-                task.ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
-                    {
-                        EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}");
-                    }
-
-                    AssetsImporterManager.BuildAllAssetPacks();
-
-                });
-
-
-            } else
-            {
-                EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
-            }
+            AssetsImporterManager.ImportCustomAssets();
         }
 
 

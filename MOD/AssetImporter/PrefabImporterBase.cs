@@ -102,9 +102,10 @@ namespace ExtraAssetsImporter.AssetImporter
                             eaiAsset.SourceAssetHash = sourceAssetFolderHash;
                         }
 
-                        if (eaiAsset.BuildAssetHash != EAIDataBaseManager.GetAssetHash(fullAssetDataPath))
+                        int hash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
+                        if (eaiAsset.BuildAssetHash != hash)
                         {
-                            EAI.Logger.Info($"The asset {fullAssetName} builded files has changed, updating it.");
+                            EAI.Logger.Info($"The asset {fullAssetName} builded files has changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
                             needToUpdateAsset = true;
                         }
 
@@ -195,28 +196,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if (importSettings.savePrefabs) prefabAsset.Save();
 
-                        //if(EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out var existingPrefab)) {
-                        //    //EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist.");
-                        //    EAI.Logger.Warn($"Prefab {importData.FullAssetName} already exist, removing the old one and adding the new one.");
-                        //    EL.m_PrefabSystem.AddOrUpdatePrefab(prefab);
-                        //    existingPrefab.asset.Dispose();
-                        //}
-
                         MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab));
-
-                        if ( needToUpdateAsset )
-                        {
-                            int buildAssetFolderHash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
-                            eaiAsset.BuildAssetHash = buildAssetFolderHash;
-                        }
-
-                        if(eaiAsset.AssetPath != assetDataPath)
-                        {
-                            eaiAsset.AssetPath = assetDataPath;
-                            EAI.Logger.Warn($"EAI asset {eaiAsset.AssetID} path was incorrect, updated to {assetDataPath}");
-                        }
-
-                        importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
 
                         Dictionary<string, string> localisation = new()
                         {
@@ -225,6 +205,16 @@ namespace ExtraAssetsImporter.AssetImporter
                         };
 
                         ImportersUtils.SetupLocalisationForPrefab(localisation, importSettings, assetDataPath, assetName);
+
+
+                        // End of importing, saving cache.
+                        if (needToUpdateAsset)
+                        {
+                            int buildAssetFolderHash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
+                            eaiAsset.BuildAssetHash = buildAssetFolderHash;
+                        }
+
+                        importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
 
                     }
                     catch (Exception e)

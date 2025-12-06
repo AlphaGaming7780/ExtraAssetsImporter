@@ -33,11 +33,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             decalPrefab.AddObjectMeshInfo(renderPrefab);
 
-            // Fixe for 1.3.3f1, have to remove that or intgrate it a bit better.
-            PlaceableObject placeableObject = decalPrefab.AddComponent<PlaceableObject>();
-            placeableObject.m_ConstructionCost = 0;
-            placeableObject.m_XPReward = 0;
-
             return decalPrefab;
         }
 

@@ -53,15 +53,15 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
 - ✔️French 100% : aricoseco, Edou24, Triton Supreme, Morgan Touverey Quilling (mtouverey)
-- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204, Kelvin Ong (kelvinspaces)
-- ⚠️Chinese Traditional 58% : Tiger Zhang (tiger42231), Source Design (source_design), Kelvin Ong (kelvinspaces), nd381
-- ⚠️German 65% : Konsi, Fuchs23
+- ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204, Kelvin Ong (kelvinspaces), Dennis Wang (baipin)
+- ✔️Chinese Traditional 100% : Tiger Zhang (tiger42231), Source Design (source_design), Kelvin Ong (kelvinspaces), nd381, Dennis Wang (baipin)
+- ⚠️German 64% : Konsi, Fuchs23
 - ⚠️Italian 10% : Stefano (Furios)
 - ⚠️Japanese 47% : nd381
-- ⚠️Korean 65% : Hinanchovo
+- ⚠️Korean 64% : Hinanchovo
 - ✔️Polish 100% : Lisek, karmel68
-- ✔️Portuguese 100% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
-- ⚠️Portuguese, Brazilian 50% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz)
+- ⚠️Portuguese 98% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ⚠️Portuguese, Brazilian 98% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz), Matheus Bernardes da Rocha Reis (matheusbreis10)
 - ⚠️Russian 20% : Mihail (kaktyc), Lek0ms, MrSandcraft
 - ✔️Spanish 100% : elGendo87
 	</LongDescription>
@@ -74,17 +74,27 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.6.6" />
+	<ModVersion Value="1.7.0" />
 	<!--Recommended version of the base game to use the mod-->
-	<GameVersion Value="1.4.*" />
+	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="75724" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
 	<ChangeLog>
-### Improvements:
-- Categories folder can now be disabled by putting a '.' at the start of the folder name.
-- Errors handling improvements.
+### Improvements (New Importer only)
+- Added support to convert EAI asset packs into editor-compatible standalone asset packs (publishable on PDX Mods). 
+- Improved asset pack handling with better folder, database, and texture/material management.
+- Importers now use async logic for more reliable and smoother imports.
+- UI objects and icons are now handled more consistently.
+
+⚠️ Standalone editor asset packs currently do not support ExtraAssetMenu.
+
+### Fixes
+- Fixes for v1.5.2f1 game update
+- Fixed gray boxes issues in imported assets.
+- Improved error handling, logging, and database stability.
+- Updated database version for better compatibility.
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />

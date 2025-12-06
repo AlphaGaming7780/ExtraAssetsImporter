@@ -26,7 +26,7 @@ namespace ExtraAssetsImporter.AssetImporter
         private static readonly Dictionary<Type, ImporterBase> s_PreImporters = new();
         private static readonly Dictionary<Type, ImporterBase> s_Importers = new();
         private static readonly Dictionary<Type, ComponentImporter> s_ComponentImporters = new();
-        private static readonly List<string> s_AddAssetFolder = new();
+        private static readonly List<string> s_AssetFolder = new();
 
         public static IReadOnlyDictionary<Type, ImporterBase> PreImporters => s_PreImporters;
         public static IReadOnlyDictionary<Type, ImporterBase> Importers => s_Importers;
@@ -36,9 +36,8 @@ namespace ExtraAssetsImporter.AssetImporter
         public const string k_CompiledAssetPacksFolderName = "_CompiledAssetPacks";
         public const string k_TemplateFolderName = "_DefaultJson";
 
-#if DEBUG
-        private static bool s_firstTimeLoad = false;
-#endif
+        //private static bool s_firstTimeLoad = true;
+        //private static bool s_IsImporting = false;
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
@@ -49,10 +48,10 @@ namespace ExtraAssetsImporter.AssetImporter
             if(importer.PreImporter) s_PreImporters.Add(typeof(T), importer);
             else s_Importers.Add(typeof(T), importer);
 
-            foreach(string path in s_AddAssetFolder)
-            {
-                importer.AddCustomAssetsFolder(path);
-            }
+            //foreach(string path in s_AddAssetFolder)
+            //{
+            //    importer.AddCustomAssetsFolder(path);
+            //}
 
             return true;
         }
@@ -68,16 +67,16 @@ namespace ExtraAssetsImporter.AssetImporter
         public static bool AddAssetFolder(string path)
         {
             path = PathUtils.Normalize(path);
-            if (s_AddAssetFolder.Contains(path)) return false;
+            if (s_AssetFolder.Contains(path)) return false;
             // Ignore path that start with "."
             if (Path.GetDirectoryName(path).StartsWith(".")) return false;
 
-            s_AddAssetFolder.Add(path);
+            s_AssetFolder.Add(path);
             
-            foreach( ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values) )
-            {
-                importer.AddCustomAssetsFolder(path);
-            }
+            //foreach( ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values) )
+            //{
+            //    importer.AddCustomAssetsFolder(path);
+            //}
 
             return true;
         }
@@ -130,13 +129,71 @@ namespace ExtraAssetsImporter.AssetImporter
             }
         }
 
-        public static void BuildAllAssetPacks()
+        public static void ImportCustomAssets()
+        {
+
+            // adding all request to the importers
+            foreach (string path in s_AssetFolder)
+            {
+                foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
+                {
+                    importer.AddCustomAssetsFolder(path);
+                }
+            }
+
+            s_AssetFolder.Clear();
+
+            EAIDataBaseManager.LoadDataBase();
+
+            EAI.Logger.Info("Start loading custom stuff.");
+
+            if (EAI.m_Setting.UseOldImporters)
+            {
+                if (EAI.m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+                if (EAI.m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+                if (EAI.m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+            }
+
+            // Load the custom assets with the new importers
+            if (EAI.m_Setting.UseNewImporters)
+            {
+                // Auto load custom assets into new importer if they have the correct folder names
+                // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
+                //AutoImportCustomAssets();
+                ImporterSettings importerSettings = ImporterSettings.GetDefault();
+
+                Task task = AssetsImporterManager.LoadCustomAssetsAsync(importerSettings);
+
+                task.ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}");
+                    }
+
+                    AssetsImporterManager.BuildAllAssetPacks().ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                        {
+                            EAI.Logger.Error($"Error while loading assets pack with new importers: {t.Exception}");
+                        }
+
+                    });
+                });
+            }
+            else
+            {
+                EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
+            }
+        }
+
+        public static Task BuildAllAssetPacks()
         {
             List<string> assetPacksToBuild = new List<string>();
 
             string path = Path.Combine(EAI.pathModsData, k_AssetPacksFolderName);
 
-            if (!Directory.Exists(path)) return;
+            if (!Directory.Exists(path)) return null;
 
             foreach (DirectoryInfo directoryInfo in new DirectoryInfo(path).GetDirectories())
             {
@@ -144,9 +201,9 @@ namespace ExtraAssetsImporter.AssetImporter
                 assetPacksToBuild.Add(directoryInfo.Name);
             }
 
-            if(assetPacksToBuild.Count <= 0) return;
+            if(assetPacksToBuild.Count <= 0) return null;
 
-            BuildAssetPack(assetPacksToBuild);
+            return BuildAssetPack(assetPacksToBuild);
         }
 
         public static Task BuildAssetPack(string assetPackName)
@@ -196,9 +253,9 @@ namespace ExtraAssetsImporter.AssetImporter
             //LoadCustomAssets(importerSettings);
         }
 
-        public static void BuildAssetPack(IEnumerable<string> assetPacksName)
+        public static Task BuildAssetPack(IEnumerable<string> assetPacksName)
         {
-            if (!EAI.m_Setting.UseNewImporters) return;
+            if (!EAI.m_Setting.UseNewImporters) return null;
 
             Task task = null;
 
@@ -216,6 +273,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     task = BuildAssetPack(assetPackName);
                 }
             }
+            return task;
         }
 
 #if DEBUG
