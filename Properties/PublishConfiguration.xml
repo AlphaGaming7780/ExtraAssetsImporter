@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.7.0" />
+	<ModVersion Value="1.7.1" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -82,19 +82,8 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
 	<ChangeLog>
-### Improvements (New Importer only)
-- Added support to convert EAI asset packs into editor-compatible standalone asset packs (publishable on PDX Mods). 
-- Improved asset pack handling with better folder, database, and texture/material management.
-- Importers now use async logic for more reliable and smoother imports.
-- UI objects and icons are now handled more consistently.
-
-⚠️ Standalone editor asset packs currently do not support ExtraAssetMenu.
-
 ### Fixes
-- Fixes for v1.5.2f1 game update
-- Fixed gray boxes issues in imported assets.
-- Improved error handling, logging, and database stability.
-- Updated database version for better compatibility.
+- Fixes multiple tiny bugs.
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
