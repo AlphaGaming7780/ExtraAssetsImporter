@@ -171,14 +171,7 @@ namespace ExtraAssetsImporter.AssetImporter
                         EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}");
                     }
 
-                    AssetsImporterManager.BuildAllAssetPacks().ContinueWith(t =>
-                    {
-                        if (t.IsFaulted)
-                        {
-                            EAI.Logger.Error($"Error while loading assets pack with new importers: {t.Exception}");
-                        }
-
-                    });
+                    AssetsImporterManager.BuildAllAssetPacks();
                 });
             }
             else
