@@ -5,6 +5,7 @@ using ExtraAssetsImporter.ClassExtension;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -26,6 +27,8 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public const string MaskMapName = "_MaskMap.png";
 
         private static readonly List<string> s_TexturePaths = new List<string>();
+
+        private static object _lock = new object();
         public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
@@ -118,10 +121,12 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return ImportTexture_Impl(importSettings, data, path, textureDataPath, GetFullAssetTextureName(data, textureName));
         }
 
+        
+
         internal static TextureAsset ImportTexture_Impl(ImportSettings importSettings, PrefabImportData data, string textureFilePath, AssetDataPath textureDataPath, string fullAssetTextureName)
         {
 
-            while (s_TexturePaths.Contains(textureFilePath))
+            while (IsTextureBeingImported(textureFilePath))
             {
                 EAI.Logger.Info($"{data.FullAssetName} is waiting for {textureFilePath}.");
                 Thread.Sleep(500);
@@ -129,8 +134,14 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
             if (!data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset))
             {
+                bool value = false;
+                lock (_lock)
+                {   
+                    value = s_TexturePaths.Contains(textureFilePath);
+                    if(!value) s_TexturePaths.Add(textureFilePath);
+                }
 
-                s_TexturePaths.Add(textureFilePath);
+                if (value) return ImportTexture_Impl(importSettings, data, textureFilePath, textureDataPath, fullAssetTextureName); // Go back waiting for your turn.
 
                 var texture = defaultTextureImporter.Import(importSettings, textureFilePath);
 
@@ -139,11 +150,21 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
                 textureAsset.Unload();
                 texture.Dispose();
 
-                s_TexturePaths.Remove(textureFilePath);
-
+                lock (_lock)
+                {
+                    s_TexturePaths.Remove(textureFilePath);
+                }
             }
 
             return textureAsset;
+        }
+
+        private static bool IsTextureBeingImported(string path)
+        {
+            lock (_lock)
+            {
+                return s_TexturePaths.Contains(path);
+            }
         }
 
         public static string GetFullAssetTextureName(PrefabImportData data, string textureName)

@@ -102,7 +102,7 @@ namespace ExtraAssetsImporter.AssetImporter
                             eaiAsset.SourceAssetHash = sourceAssetFolderHash;
                         }
 
-                        if (!Directory.Exists(fullAssetDataPath) || eaiAsset.BuildAssetHash != EAIDataBaseManager.GetAssetHash(fullAssetDataPath))
+                        if (eaiAsset.BuildAssetHash != EAIDataBaseManager.GetAssetHash(fullAssetDataPath))
                         {
                             EAI.Logger.Info($"The asset {fullAssetName} builded files has changed, updating it.");
                             needToUpdateAsset = true;
@@ -251,18 +251,18 @@ namespace ExtraAssetsImporter.AssetImporter
         protected virtual void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)
         {
 
-            if (EAI.m_Setting.NewImportersCompatibilityDropDown == EAINewImportersCompatibility.None) return;
+            EAINewImportersCompatibility compatibility = EAI.m_Setting.NewImportersCompatibilityDropDown;
+
+            if (compatibility == EAINewImportersCompatibility.None) return;
 
             ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponent<ObsoleteIdentifiers>();
 
             obsoleteIdentifiers.m_PrefabIdentifiers ??= new PrefabIdentifierInfo[0];
 
-            EAI.Logger.Info("Doing version compatibility for prefab " + data.FullAssetName);
-
             string name;
             string hash = null;
 
-            switch (EAI.m_Setting.NewImportersCompatibilityDropDown)
+            switch (compatibility)
             {
                 case EAINewImportersCompatibility.LocalAsset:
                     name = $"ExtraAssetsImporter {data.CatName} {data.AssetName} {this.AssetEndName}";
@@ -285,6 +285,17 @@ namespace ExtraAssetsImporter.AssetImporter
             };
 
             obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo).ToArray();
+
+            if(!data.ImportSettings.isAssetPack || compatibility == EAINewImportersCompatibility.PreEditor) return;
+
+            PrefabIdentifierInfo preEditor = new()
+            {
+                m_Name = data.FullAssetName,
+                m_Hash = null,
+                m_Type = prefabBase.GetType().Name
+            };
+
+            obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(preEditor).ToArray();
 
         }
     }

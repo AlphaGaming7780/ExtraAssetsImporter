@@ -77,14 +77,14 @@ namespace ExtraAssetsImporter
             Decals = true;
             Surfaces = true;
             NetLanes = true;
-            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
-            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
+            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.PreEditor;
+            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.PreEditor;
         }
 
         internal void ResetCompatibility()
         {
-            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
-            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
+            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.PreEditor;
+            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.PreEditor;
             Apply();
         }
     }

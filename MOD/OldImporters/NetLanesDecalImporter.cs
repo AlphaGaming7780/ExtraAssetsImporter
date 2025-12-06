@@ -331,7 +331,7 @@ namespace ExtraAssetsImporter.OldImporters
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
                     m_Name = $"ExtraAssetsImporter {catName} {netLanesName} NetLane",
-                    m_Type = "StaticObjectPrefab"
+                    m_Type = "NetLaneGeometryPrefab"
                 };
                 jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
@@ -340,7 +340,7 @@ namespace ExtraAssetsImporter.OldImporters
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
                     m_Name = $"ExtraLandscapingTools_mods_{catName}_{netLanesName}",
-                    m_Type = "StaticObjectPrefab"
+                    m_Type = "NetLaneGeometryPrefab"
                 };
                 jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
@@ -349,7 +349,7 @@ namespace ExtraAssetsImporter.OldImporters
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
                     m_Name = fullNetLaneName,
-                    m_Type = "StaticObjectPrefab"
+                    m_Type = "NetLaneGeometryPrefab"
                 };
                 jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
