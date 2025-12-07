@@ -31,13 +31,13 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 netLanePrefabJson.Process(netLanesPrefab);
             }
 
-            RenderPrefab renderPrefab = (RenderPrefab)ImportersUtils.GetRenderPrefab(data);
+            RenderPrefab renderPrefab = RenderPrefabUtils.GetRenderPrefab(data);
             if (renderPrefab == null)
             {
                 SurfaceAsset surfaceAsset = DecalsImporterNew.CreateSurface(data, k_DefaultMaterialName);
-                Mesh[] meshes = DecalsImporterNew.CreateMeshes(surfaceAsset);
+                GeometryAsset geometryAsset = GeometryImporterUtils.CreateBoxGeometryAsset(data, surfaceAsset);
 
-                renderPrefab = ImportersUtils.CreateRenderPrefab(data, surfaceAsset, meshes, DecalsImporterNew.SetupDecalRenderPrefab);
+                renderPrefab = RenderPrefabUtils.CreateRenderPrefab(data, k_DefaultMaterialName, DecalsImporterNew.SetupDecalRenderPrefab);
             }
 
             netLanesPrefab.AddNetLaneMeshInfo(renderPrefab);

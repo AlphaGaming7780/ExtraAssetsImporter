@@ -2,6 +2,7 @@
 using Colossal.IO.AssetDatabase;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
+using PDX.SDK.Contracts.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,16 +30,16 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         private static readonly List<string> s_TexturePaths = new List<string>();
 
         private static object _lock = new object();
-        public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data)
+        public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data, int lodLevel = -1)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
-            return ImportTexture_BaseColorMap(data, importSettings);
+            return ImportTexture_BaseColorMap(data, importSettings, lodLevel);
         }
 
-        public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data, ImportSettings importSettings)
+        public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data, ImportSettings importSettings, int lodLevel = -1)
         {
             importSettings.wrapMode = TextureWrapMode.Repeat;
-            return ImportTexture(data, BaseColorMapName, importSettings);
+            return lodLevel < 0 ? ImportTexture(data, BaseColorMapName, importSettings) : ImportTextureLOD(data, BaseColorMapName, importSettings, lodLevel);
         }
 
         public static Task<TextureAsset> AsyncImportTexture_BaseColorMap(PrefabImportData data)
@@ -51,18 +52,18 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return Task.Run<TextureAsset>(() => ImportTexture_BaseColorMap(data, importSettings));
         }
 
-        public static TextureAsset ImportTexture_NormalMap(PrefabImportData data)
+        public static TextureAsset ImportTexture_NormalMap(PrefabImportData data, int lodLevel = -1)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
-            return ImportTexture_NormalMap(data, importSettings);
+            return ImportTexture_NormalMap(data, importSettings, lodLevel);
         }
 
-        public static TextureAsset ImportTexture_NormalMap(PrefabImportData data, ImportSettings importSettings)
+        public static TextureAsset ImportTexture_NormalMap(PrefabImportData data, ImportSettings importSettings, int lodLevel = -1)
         {
             importSettings.normalMap = true;
             importSettings.alphaIsTransparency = false;
             importSettings.wrapMode = TextureWrapMode.Repeat;
-            return ImportTexture(data, NormalMapName, importSettings);
+            return lodLevel <  0 ? ImportTexture(data, NormalMapName, importSettings) : ImportTextureLOD(data, NormalMapName, importSettings, lodLevel);
         }
 
         public static Task<TextureAsset> AsyncImportTexture_NormalMap(PrefabImportData data)
@@ -75,18 +76,18 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return Task.Run<TextureAsset>(() => ImportTexture_NormalMap(data, importSettings));
         }
 
-        public static TextureAsset ImportTexture_MaskMap(PrefabImportData data)
+        public static TextureAsset ImportTexture_MaskMap(PrefabImportData data, int lodLevel = -1)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
-            return ImportTexture_MaskMap(data, importSettings);
+            return ImportTexture_MaskMap(data, importSettings, lodLevel);
         }
 
-        public static TextureAsset ImportTexture_MaskMap(PrefabImportData data, ImportSettings importSettings)
+        public static TextureAsset ImportTexture_MaskMap(PrefabImportData data, ImportSettings importSettings, int lodLevel = -1)
         {
             importSettings.wrapMode = TextureWrapMode.Repeat;
             importSettings.alphaIsTransparency = false;
             importSettings.linearTexture = true;
-            return ImportTexture(data, MaskMapName, importSettings);
+            return lodLevel < 0 ? ImportTexture(data, MaskMapName, importSettings) : ImportTextureLOD(data, MaskMapName, importSettings, lodLevel);
         }
 
         public static Task<TextureAsset> AsyncImportTexture_MaskMap(PrefabImportData data)
@@ -97,6 +98,11 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static Task<TextureAsset> AsyncImportTexture_MaskMap(PrefabImportData data, ImportSettings importSettings)
         {
             return Task.Run<TextureAsset>(() => ImportTexture_MaskMap(data, importSettings));
+        }
+
+        public static TextureAsset ImportTextureLOD(PrefabImportData data, string textureFileName, ImportSettings importSettings, int lodLevel)
+        {
+            return ImportTexture(data, $"_LOD{lodLevel}{textureFileName}", importSettings);
         }
 
         public static TextureAsset ImportTexture(PrefabImportData data, string textureFileName, ImportSettings importSettings)

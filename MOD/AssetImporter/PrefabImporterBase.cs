@@ -1,4 +1,5 @@
-﻿using Colossal.Core;
+﻿using Colossal.AssetPipeline.Collectors;
+using Colossal.Core;
 using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
@@ -37,6 +38,9 @@ namespace ExtraAssetsImporter.AssetImporter
 
         protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
         {
+
+            string modFolder = Directory.GetParent(modName).FullName;
+
             foreach (string catFolder in Directory.GetDirectories(importerFolder))
             {
                 string catName = new DirectoryInfo(catFolder).Name;
@@ -126,6 +130,8 @@ namespace ExtraAssetsImporter.AssetImporter
                     {
                         Directory.Delete(fullAssetDataPath, true);
                     }
+
+                    //SourceAssetCollector assetsCollector = new SourceAssetCollector(modFolder, Path.GetRelativePath(modFolder, assetFolder));
 
                     PrefabImportData importData = new(
                         importSettings,
@@ -305,6 +311,7 @@ namespace ExtraAssetsImporter.AssetImporter
             this.AssetDataPath = assetDataPath;
             this.PrefabJson = prefabJson;
             this.AssetCat = assetCat;
+            //this.AssetsCollector = assetsCollector;
         }
         public ImporterSettings ImportSettings { get; private set; }
         public EAIAsset EAIAsset { get; private set; }
@@ -317,6 +324,7 @@ namespace ExtraAssetsImporter.AssetImporter
         public string AssetDataPath { get; private set; }
         public Variant PrefabJson { get; private set; }
         public UIAssetParentCategoryPrefab AssetCat { get; private set; }
+        //public SourceAssetCollector AssetsCollector { get; private set; }
 
         //public Mesh[] meshes;
         //public Surface surface;

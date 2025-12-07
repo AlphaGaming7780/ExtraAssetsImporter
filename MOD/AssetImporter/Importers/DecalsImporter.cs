@@ -1,4 +1,7 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal.AssetPipeline;
+using Colossal.AssetPipeline.Importers;
+using Colossal.AssetPipeline.Native;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
@@ -6,8 +9,12 @@ using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using Game.Prefabs;
 using Game.Rendering;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Unity.Collections;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter.Importers
@@ -22,13 +29,14 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
 
-            RenderPrefabBase renderPrefab = ImportersUtils.GetRenderPrefab(data);
+            RenderPrefabBase renderPrefab = RenderPrefabUtils.GetRenderPrefab(data);
             if (renderPrefab == null)
             {
-                SurfaceAsset surface = CreateSurface(data);
-                Mesh[] meshes = CreateMeshes(surface);
+                //SurfaceAsset surface = CreateSurface(data);
 
-                renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, SetupDecalRenderPrefab);
+                //GeometryAsset geometryAsset = GeometryImporterUtils.CreateBoxGeometryAsset(data, surface);
+
+                renderPrefab = RenderPrefabUtils.CreateRenderPrefab(data, k_DefaultMaterialName, SetupDecalRenderPrefab);
             }
 
             decalPrefab.AddObjectMeshInfo(renderPrefab);
@@ -36,32 +44,30 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return decalPrefab;
         }
 
-        public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, SurfaceAsset surface)
+        public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, IEnumerable<SurfaceAsset> surfaceAssets)
         {
+            SurfaceAsset surface = surfaceAssets.ElementAt(0);
             Vector4 TextureArea = surface.vectors.ContainsKey("colossal_TextureArea") ? surface.vectors["colossal_TextureArea"] : new Vector4(0, 0, 1, 1);
             DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
             decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
-            decalProperties.m_LayerMask = (DecalLayers)surface.floats["colossal_DecalLayerMask"];
+            decalProperties.m_LayerMask = (DecalLayers) (surface.HasProperty("colossal_DecalLayerMask") ? surface.floats["colossal_DecalLayerMask"] : 1);
             decalProperties.m_RendererPriority = (int)(surface.HasProperty("_DrawOrder") ? surface.floats["_DrawOrder"] : 0);
             decalProperties.m_EnableInfoviewColor = false;
-        } 
-
-
-        public static Mesh[] CreateMeshes(SurfaceAsset surface)
-        {
-            if(!surface.vectors.ContainsKey("colossal_MeshSize"))
-            {
-                surface.AddProperty("colossal_MeshSize", new Vector4(1f, 1f, 1f, 0f));
-            }
-            Vector4 MeshSize = surface.vectors["colossal_MeshSize"];
-
-            Task<Mesh> task = ImportersUtils.CreateBoxMeshAsyncOnMainThread(MeshSize);
-
-            task.Wait();
-
-            Mesh mesh = task.Result;
-            return new[] { mesh };
         }
+
+
+
+
+        //public ModelImporter.Model ConvertUnityMeshToModel(Mesh mesh) {
+
+        //    int[] i = mesh.GetIndices(0);
+
+        //    NativeArray<int> indices = new NativeArray<int>(i);
+
+        //    mesh.te
+
+        //    return new ModelImporter.Model(mesh.name, Matrix4x4.zero, mesh.vertexCount, i, )
+        //}
 
         public static SurfaceAsset CreateSurface(PrefabImportData data, string materialName = k_DefaultMaterialName)
         {

@@ -28,7 +28,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
         public static Task<SurfaceAsset> AsyncCreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
         {
-            return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures));
+            return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures: importTextures));
         }
 
         public static Task<SurfaceAsset> AsyncCreateMaterial(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
@@ -36,24 +36,24 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return Task.Run(() => CreateSurface(data, materialJson, defaultMaterialName, importTextures));
         }
 
-        public static SurfaceAsset CreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
+        public static SurfaceAsset CreateSurface(PrefabImportData data, string defaultMaterialName, int lodLevel = -1, bool importTextures = true)
         {
             MaterialJson materialJson = LoadMaterialJson(data);
             return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }
 
-        public static SurfaceAsset CreateSurface(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true, bool useVT = false)
+        public static SurfaceAsset CreateSurface(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true, int lodLevel = -1, bool useVT = false)
         {
             string materialName = materialJson != null ? materialJson.MaterialName ?? defaultMaterialName : defaultMaterialName;
 
-            Surface surface = new($"{data.AssetName}_Surface", materialName);
+            Surface surface = new(GetSurfaceAssetFileName(data, lodLevel), materialName);
             if (materialJson != null)
             {
                 foreach (string key in materialJson.Float.Keys) { surface.AddProperty(key, materialJson.Float[key]); }
                 foreach (string key in materialJson.Vector.Keys) { surface.AddProperty(key, materialJson.Vector[key]); }
             }
 
-            AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(data.AssetDataPath, $"{data.AssetName}_SurfaceAsset", EscapeStrategy.None);
+            AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(data.AssetDataPath, surface.name, EscapeStrategy.None);
 
             SurfaceAsset surfaceAsset = new()
             {
@@ -68,13 +68,13 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
                 //TexturesImporterUtils.ImportTextures(data, surface);
                 EAI.Logger.Info($"Importing textures for surface asset {surfaceAssetDataPath}");
 
-                var baseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
+                var baseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data, lodLevel);
                 if (baseColorMap != null) surfaceAsset.UpdateTexture(BaseColorMap, baseColorMap);
 
-                var normalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data);
+                var normalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data, lodLevel);
                 if (normalMap != null) surfaceAsset.UpdateTexture(NormalMap, normalMap);
 
-                var maskMap = TextureAssetImporterUtils.ImportTexture_MaskMap(data);
+                var maskMap = TextureAssetImporterUtils.ImportTexture_MaskMap(data, lodLevel);
                 if (maskMap != null) surfaceAsset.UpdateTexture(MaskMap, maskMap);
             }
 
@@ -103,6 +103,16 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             surface.Dispose();
 
             return surfaceAsset;
+        }
+
+        public static string GetSurfaceAssetFileName(PrefabImportData data, int lodLevel = -1)
+        {
+            if(lodLevel < 0)
+            {
+                return $"{data.AssetName}_Surface";
+            }
+
+            return $"{data.AssetName}_LOD{lodLevel}_Surface";
         }
 
         public static void ExportTemplateMaterialJson(string materialName, string path)
