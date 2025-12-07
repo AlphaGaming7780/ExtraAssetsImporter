@@ -85,13 +85,17 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             List<LOD> lods = new List<LOD>();
 
+            SurfaceAsset surfaceAsset = null;
             for (int i = 0; i < 3; i++)
             {
                 Geometry geometry = GeometryImporterUtils.ImportLOD(data, i);
 
                 if (geometry == null) break;
 
-                SurfaceAsset surfaceAsset = SurfaceAssetImporterUtils.CreateSurface(data, defaultMaterialName, i);
+                if (TextureAssetImporterUtils.TexturesExist(data, i))
+                {
+                    surfaceAsset = SurfaceAssetImporterUtils.CreateSurface(data, defaultMaterialName, i);
+                }
 
                 LOD lod = new(geometry, new[] { surfaceAsset }, i);
                 lods.Add(lod);
@@ -125,7 +129,9 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
                 Geometry geometry = lod.geometry;
 
-                GeometryImporterUtils.SetupRenderPrefab(ref renderPrefab, ref geometry, data, lod.level);
+                if (geometry is null) EAI.Logger.Error("Geometry is null, it shouldn't be null");
+
+                GeometryImporterUtils.SetupRenderPrefab(renderPrefab, geometry, data, lod.level);
                 renderPrefab.surfaceAssets = lod.surfaces;
 
                 setupRenderPrefab(data, renderPrefab, lod.surfaces);

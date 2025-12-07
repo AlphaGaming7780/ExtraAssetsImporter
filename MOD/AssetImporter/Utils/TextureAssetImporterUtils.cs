@@ -30,6 +30,12 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         private static readonly List<string> s_TexturePaths = new List<string>();
 
         private static object _lock = new object();
+
+        public static bool TexturesExist(PrefabImportData data, int lodLevel = -1)
+        {
+            return TextureFileExist(data, BaseColorMapName, lodLevel) || TextureFileExist(data, NormalMapName, lodLevel) || TextureFileExist(data, MaskMapName, lodLevel);
+        }
+
         public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data, int lodLevel = -1)
         {
             ImportSettings importSettings = ImportSettings.GetDefault();
@@ -39,7 +45,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data, ImportSettings importSettings, int lodLevel = -1)
         {
             importSettings.wrapMode = TextureWrapMode.Repeat;
-            return lodLevel < 0 ? ImportTexture(data, BaseColorMapName, importSettings) : ImportTextureLOD(data, BaseColorMapName, importSettings, lodLevel);
+            return ImportTexture(data, BaseColorMapName, importSettings, lodLevel);
         }
 
         public static Task<TextureAsset> AsyncImportTexture_BaseColorMap(PrefabImportData data)
@@ -63,7 +69,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             importSettings.normalMap = true;
             importSettings.alphaIsTransparency = false;
             importSettings.wrapMode = TextureWrapMode.Repeat;
-            return lodLevel <  0 ? ImportTexture(data, NormalMapName, importSettings) : ImportTextureLOD(data, NormalMapName, importSettings, lodLevel);
+            return ImportTexture(data, NormalMapName, importSettings, lodLevel);
         }
 
         public static Task<TextureAsset> AsyncImportTexture_NormalMap(PrefabImportData data)
@@ -87,7 +93,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             importSettings.wrapMode = TextureWrapMode.Repeat;
             importSettings.alphaIsTransparency = false;
             importSettings.linearTexture = true;
-            return lodLevel < 0 ? ImportTexture(data, MaskMapName, importSettings) : ImportTextureLOD(data, MaskMapName, importSettings, lodLevel);
+            return ImportTexture(data, MaskMapName, importSettings, lodLevel);
         }
 
         public static Task<TextureAsset> AsyncImportTexture_MaskMap(PrefabImportData data)
@@ -100,14 +106,9 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return Task.Run<TextureAsset>(() => ImportTexture_MaskMap(data, importSettings));
         }
 
-        public static TextureAsset ImportTextureLOD(PrefabImportData data, string textureFileName, ImportSettings importSettings, int lodLevel)
+        public static TextureAsset ImportTexture(PrefabImportData data, string textureFileName, ImportSettings importSettings, int lodLevel = -1)
         {
-            return ImportTexture(data, $"_LOD{lodLevel}{textureFileName}", importSettings);
-        }
-
-        public static TextureAsset ImportTexture(PrefabImportData data, string textureFileName, ImportSettings importSettings)
-        {
-            string path = Path.Combine(data.FolderPath, textureFileName);
+            string path = Path.Combine(data.FolderPath, GetTextureName(textureFileName, lodLevel));
             string textureName = Path.GetFileNameWithoutExtension(path);
 
             if (!File.Exists(path))
@@ -115,7 +116,14 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
                 string jsonPath = Path.Combine(data.FolderPath, $"{textureName}.json");
 
                 if (!File.Exists(jsonPath))
+                {
+                    //if (lodLevel > -1) 
+                    //    return ImportTexture(data, textureFileName, importSettings, lodLevel--); //Try again with a lod lever lower, bad idea
+
                     return null;
+                }
+
+
 
                 // Read and process Texture referencing between multiple assets
 
@@ -171,6 +179,17 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             {
                 return s_TexturePaths.Contains(path);
             }
+        }
+
+        private static string GetTextureName(string textureFileName, int lodLevel)
+        {
+            return lodLevel < 1 ? textureFileName : $"LOD{lodLevel}{textureFileName}";
+        }
+
+        private static bool TextureFileExist(PrefabImportData data, string textureFileName, int lodLevel = -1)
+        {
+            string path = Path.Combine(data.FolderPath, GetTextureName(textureFileName, lodLevel));
+            return File.Exists(path);
         }
 
         public static string GetFullAssetTextureName(PrefabImportData data, string textureName)

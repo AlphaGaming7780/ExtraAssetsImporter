@@ -33,7 +33,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
         private static object _lock = new object();
 
-        public static void SetupRenderPrefab(ref RenderPrefab renderPrefab, ref Geometry geometry, PrefabImportData data, int lodLevel)
+        public static void SetupRenderPrefab( RenderPrefab renderPrefab, Geometry geometry, PrefabImportData data, int lodLevel)
         {
             string geometryName = $"_LOD{lodLevel}";
             AssetDataPath geometryDataPath = AssetDataPath.Create(data.AssetDataPath, GetGeometryFullFileName(data, geometryName), true, EscapeStrategy.None);
@@ -165,10 +165,25 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
             Report.FileReport report = new(new ReportFile(asset));
 
-            if (!fbxImporter.Import<Geometry>(importSettings, geometryFilePath, report, out Geometry geometry))
+            if (!fbxImporter.Import<ModelImporter.ModelList>(importSettings, geometryFilePath, report, out var modelList))
             {
                 EAI.Logger.Error($"Error occured during importation of FBX: {report}");
             }
+
+            if(report.hasErrors)
+            {
+                EAI.Logger.Error($"Error occured during importation of FBX: {report}");
+            }
+
+
+            if (report.hasWarnings)
+            {
+                EAI.Logger.Warn($"{report}");
+            }
+
+            if (modelList.models is null) EAI.Logger.Error("Modellist is null.");
+
+            Geometry geometry = new Geometry(modelList.models);
 
             return geometry;
         }

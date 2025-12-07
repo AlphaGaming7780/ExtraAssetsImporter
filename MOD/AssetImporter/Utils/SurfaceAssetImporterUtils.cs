@@ -39,7 +39,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public static SurfaceAsset CreateSurface(PrefabImportData data, string defaultMaterialName, int lodLevel = -1, bool importTextures = true)
         {
             MaterialJson materialJson = LoadMaterialJson(data);
-            return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
+            return CreateSurface(data, materialJson, defaultMaterialName, importTextures, lodLevel);
         }
 
         public static SurfaceAsset CreateSurface(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true, int lodLevel = -1, bool useVT = false)
@@ -55,13 +55,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
             AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(data.AssetDataPath, surface.name, EscapeStrategy.None);
 
-            SurfaceAsset surfaceAsset = new()
-            {
-                id = new Identifier(Guid.NewGuid()),
-                database = data.ImportSettings.dataBase
-            };
-            surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
-            surfaceAsset.SetData(surface);
+            SurfaceAsset surfaceAsset = data.ImportSettings.dataBase.AddAsset<SurfaceAsset, Surface>(surfaceAssetDataPath, surface);
 
             if (importTextures)
             {
