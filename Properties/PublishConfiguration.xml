@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.7.2" />
+	<ModVersion Value="1.7.3" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -83,7 +83,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--<ChangeLog Value="" />-->
 	<ChangeLog>
 ### Fixes
-- Fix one tiny, harmless bug.
+- Fix an issue where data from the Material.json wouldn't be properly ported to the new format for Surfaces.
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />

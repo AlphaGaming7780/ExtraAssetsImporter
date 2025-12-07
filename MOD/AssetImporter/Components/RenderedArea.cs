@@ -1,4 +1,5 @@
 ﻿using Colossal.Json;
+using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using ExtraAssetsImporter.AssetImporter.Utils;
@@ -48,26 +49,9 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             renderedArea.m_Smoothness = json.m_Smoothness;
             renderedArea.m_UVScale = json.m_UVScale;
 
-            MaterialJson materialJson = SurfaceAssetImporterUtils.LoadMaterialJson(data);
+            // Do it again, because the value might have been set back to default one.
+            SurfacesImporterNew.ProcessMaterialJSON(prefab, data);
 
-            if (materialJson != null)
-            {
-                renderedArea.m_RendererPriority =   (int)materialJson.TryGetValue("_DrawOrder",         renderedArea.m_RendererPriority);
-                renderedArea.m_BaseColor =          materialJson.TryGetValue("_BaseColor",              renderedArea.m_BaseColor);
-                renderedArea.m_DecalLayerMask =     (DecalLayers)materialJson.TryGetValue("colossal_DecalLayerMask", (float)renderedArea.m_DecalLayerMask);
-
-                renderedArea.m_Metallic =           materialJson.TryGetValue("_Metallic",           renderedArea.m_Metallic);
-                renderedArea.m_Smoothness =         materialJson.TryGetValue("_Smoothness",         renderedArea.m_Smoothness);
-                renderedArea.m_NormalOpacity =      materialJson.TryGetValue("_NormalOpacity",      renderedArea.m_NormalOpacity);
-                renderedArea.m_MetallicOpacity =    materialJson.TryGetValue("_MetallicOpacity",    renderedArea.m_MetallicOpacity);
-                renderedArea.m_NormalAlphaSource =  materialJson.TryGetValue("_NormalAlphaSource",  renderedArea.m_NormalAlphaSource);
-                renderedArea.m_MetallicAlphaSource= materialJson.TryGetValue("_MetallicAlphaSource", renderedArea.m_MetallicAlphaSource);
-                renderedArea.m_UVScale =            materialJson.TryGetValue("colossal_UVScale",    renderedArea.m_UVScale);
-                renderedArea.m_EdgeNormal =         materialJson.TryGetValue("colossal_EdgeNormal", renderedArea.m_EdgeNormal);
-                renderedArea.m_EdgeFadeRange =      materialJson.TryGetValue("colossal_EdgeFadeRange", renderedArea.m_EdgeFadeRange);
-                renderedArea.m_EdgeNormalRange =    materialJson.TryGetValue("colossal_EdgeNormalRange", renderedArea.m_EdgeNormalRange);
-                renderedArea.m_EdgeNoise =          materialJson.TryGetValue("colossal_EdgeNoise",  renderedArea.m_EdgeNoise);
-            }
         }
 
         private int GetRendererPriorityByCat(string cat)
