@@ -270,27 +270,27 @@ namespace ExtraAssetsImporter.AssetImporter
         }
 
 #if DEBUG
-        public static Task ReloadAllAsset()
-        {
-            if(!EAI.m_Setting.UseNewImporters)
-            {
-                return null;
-            }
+        //public static Task ReloadAllAsset()
+        //{
+        //    if(!EAI.m_Setting.UseNewImporters)
+        //    {
+        //        return null;
+        //    }
 
-            EAIDataBaseManager.LoadDataBase();
+        //    EAIDataBaseManager.LoadDataBase();
 
             
-            foreach(string path in s_AddAssetFolder)
-            {
-                foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
-                {
-                    importer.AddCustomAssetsFolder(path);
-                }
-            }
+        //    foreach(string path in s_AddAssetFolder)
+        //    {
+        //        foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
+        //        {
+        //            importer.AddCustomAssetsFolder(path);
+        //        }
+        //    }
 
-            return LoadCustomAssetsAsync(ImporterSettings.GetDefault());
+        //    return LoadCustomAssetsAsync(ImporterSettings.GetDefault());
 
-        }
+        //}
 #endif
         public static Task LoadCustomAssetsAsync(ImporterSettings importerSettings)
         {

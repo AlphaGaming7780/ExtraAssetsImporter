@@ -1,12 +1,17 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
+using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter;
 using ExtraLib;
+using ExtraLib.ClassExtension;
 using Game.Prefabs;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using Unity.Mathematics;
 
 namespace ExtraAssetsImporter.DataBase
 {
@@ -45,6 +50,26 @@ namespace ExtraAssetsImporter.DataBase
             CheckIfDataBaseNeedToBeRelocated();
 
             AssetDatabase.global.RegisterDatabase(EAIAssetDataBase).Wait();
+            CancellationToken cancellationToken = new();
+            ProgressTracker progressTracker = new("EAI_PopulateDataBase", true);
+            
+            var notif = EL.m_NotificationUISystem.AddOrUpdateNotification("EAI.PopulatingDataBase", "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
+            Action<ProgressTracker> action = (tracker) =>
+            {
+                notif.progress = (int)math.round(tracker.progress * 100);
+                if (tracker.progress == 1f)
+                {
+                    notif.text = "Extra Assets Importer Asset Database populated.";
+                    notif.progressState = ProgressState.Complete;
+                    notif.progress = 100;
+                }
+                notif.Update();
+            };
+
+            TaskProgress taskProgress = new(action);
+            EAIAssetDataBase.PopulateFromDataSource(false, cancellationToken, taskProgress).Wait();
+
+            EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
 
             EAI.Logger.Info($"DataBase Location : {EAIAssetDataBase.rootPath}.");
         }
@@ -205,7 +230,7 @@ namespace ExtraAssetsImporter.DataBase
         public EAIDatabase() {}
 
         public int DataBaseVersion = EAIDataBaseManager.DataBaseVersion;
-        public string ActualDataBasePath = Path.Combine(EAI.pathModsData, "Database");
+        public string ActualDataBasePath = Path.Combine(EAI.pathModsData, ".Database");
         public List<EAIAsset> AssetsDataBase = new List<EAIAsset>();
         private readonly List<EAIAsset> _ValidateAssetsDataBase = new List<EAIAsset>();
         internal string _DatabasePath = null;
@@ -271,6 +296,7 @@ namespace ExtraAssetsImporter.DataBase
 
                         // Making sure that if a prefab is their and loaded in the prefab system, it is removed from it.
                         SearchFilter<PrefabAsset> searchFilter = SearchFilter<PrefabAsset>.ByCondition(a => {
+                            if(a is null || a.subPath is null) return true;
                             string pathA = a.subPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
                             string pathB = Path.DirectorySeparatorChar + asset.AssetPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
                             return pathA.Contains(pathB);

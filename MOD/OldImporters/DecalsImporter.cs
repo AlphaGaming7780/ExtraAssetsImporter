@@ -565,7 +565,7 @@ namespace ExtraAssetsImporter.OldImporters
             try
             {
                 if (EAIDataBaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) &&
-                    EAIDataBaseManager.EAIAssetDataBase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true), 
+                    EAIDataBaseManager.EAIAssetDataBase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true, EscapeStrategy.None), 
                     out renderPrefab))
                 {
                     EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");
