@@ -271,9 +271,29 @@ namespace ExtraAssetsImporter.DataBase
 
                         // Making sure that if a prefab is their and loaded in the prefab system, it is removed from it.
                         SearchFilter<PrefabAsset> searchFilter = SearchFilter<PrefabAsset>.ByCondition(a => {
-                            string pathA = a.subPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-                            string pathB = Path.DirectorySeparatorChar + asset.AssetPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-                            return pathA.Contains(pathB);
+
+                            try
+                            {
+                                if (a is null)
+                                {
+                                    EAI.Logger.Warn($"Found a null prefab asset when trying to remove unused assets from database.");
+                                    return false;
+                                }
+
+                                if (a.subPath is null)
+                                {
+                                    EAI.Logger.Warn($"Found a prefab asset with a null subpath when trying to remove unused assets from database.{a}");
+                                    return false;
+                                }
+                                string pathA = a.subPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+                                string pathB = Path.DirectorySeparatorChar + asset.AssetPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+                                return pathA.Contains(pathB) && !ActualDataBasePath.Contains(pathA);
+                            }
+                            catch (Exception ex)
+                            {
+                                EAI.Logger.Warn($"Exception when trying to compare prefab asset paths when removing unused assets from database. Exception : {ex.ToString()}");
+                                return false;
+                            }
                         });
 
                         IEnumerable<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter);

@@ -1,4 +1,5 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal.AssetPipeline;
+using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Logging;
 using Colossal.PSI.Environment;
