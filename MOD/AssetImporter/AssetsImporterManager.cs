@@ -1,4 +1,4 @@
-﻿using Colossal.Core;
+﻿using Colossal.AssetPipeline;
 using Colossal.IO;
 using Colossal.IO.AssetDatabase;
 using Colossal.Json;
@@ -18,6 +18,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
+using MainThreadDispatcher = Colossal.Core.MainThreadDispatcher;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -419,6 +420,10 @@ namespace ExtraAssetsImporter.AssetImporter
             };
             File.WriteAllText(Path.Combine(path, "TextureSharing.json"), Encoder.Encode(textureJson, EncodeOptions.None));
 
+#if DEBUG
+            Settings settings = Settings.GetDefault("TEST_SETTING");
+            File.WriteAllText(Path.Combine(path, "settings.json"), Encoder.Encode(settings, EncodeOptions.IgnoreSetters));
+#endif
         }
 
         public static List<Type> FindAllDerivedTypes(Type baseType)
