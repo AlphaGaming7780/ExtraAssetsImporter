@@ -1,6 +1,7 @@
 ﻿using Colossal.AssetPipeline;
 using Colossal.IO;
 using Colossal.IO.AssetDatabase;
+using Colossal.IO.AssetDatabase.Internal;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
@@ -10,6 +11,7 @@ using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
 using Game.Prefabs;
+using Game.Tutorials;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -144,7 +146,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             s_AssetFolder.Clear();
 
-            EAIDataBaseManager.LoadDataBase();
+            EAIDataBaseManager.LoadDataBase().Wait();
 
             EAI.Logger.Info("Start loading custom stuff.");
 
@@ -420,10 +422,44 @@ namespace ExtraAssetsImporter.AssetImporter
             };
             File.WriteAllText(Path.Combine(path, "TextureSharing.json"), Encoder.Encode(textureJson, EncodeOptions.None));
 
-#if DEBUG
+//#if DEBUG
             Settings settings = Settings.GetDefault("TEST_SETTING");
-            File.WriteAllText(Path.Combine(path, "settings.json"), Encoder.Encode(settings, EncodeOptions.IgnoreSetters));
-#endif
+            File.WriteAllText(Path.Combine(path, "settings.json"), Encoder.Encode(settings, EncodeOptions.None));
+
+            string matPath = Path.Combine(path, $"MaterialProperties");
+            Directory.CreateDirectory(matPath);
+
+
+            static object GetMaterialValue(Material material,  string key, UnityEngine.MaterialPropertyType type)
+            {
+                return type switch
+                {
+                    UnityEngine.MaterialPropertyType.Vector => material.GetVector(key),
+                    UnityEngine.MaterialPropertyType.Float => material.GetFloat(key),
+                    UnityEngine.MaterialPropertyType.Int => material.GetInt(key),
+                    _ => null,
+                };
+            }
+
+            foreach (MaterialLibrary.MaterialDescription material in AssetDatabase.global.resources.materialLibrary.m_Materials)
+            {
+                EAI.Logger.Info(material.m_Material.name);
+
+                EAI.Logger.Info($"{material.m_Material.name} | Shader name : {material.m_Material.shader.name}");
+
+                Dictionary<UnityEngine.MaterialPropertyType, Dictionary<string, object>> properties = new();
+
+                foreach (UnityEngine.MaterialPropertyType type
+                         in Enum.GetValues(typeof(UnityEngine.MaterialPropertyType)))
+                {
+                    properties.Add(type, new Dictionary<string, object>());
+                    foreach (string s in material.m_Material.GetPropertyNames(type))
+                        properties[type].Add(s, GetMaterialValue(material.m_Material, s, type));
+                }
+                File.WriteAllText(Path.Combine(matPath, $"{material.m_Material.name}.json"), Encoder.Encode(properties, EncodeOptions.None));
+
+            }
+//#endif
         }
 
         public static List<Type> FindAllDerivedTypes(Type baseType)

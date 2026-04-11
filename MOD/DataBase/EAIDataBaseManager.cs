@@ -3,6 +3,7 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraLib;
 using ExtraLib.ClassExtension;
 using Game.Prefabs;
@@ -11,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Unity.Mathematics;
 
 namespace ExtraAssetsImporter.DataBase
@@ -22,7 +24,7 @@ namespace ExtraAssetsImporter.DataBase
         public static EAIDatabase eaiDataBase;
         public static AssetDatabase<EAIAssetDataBaseDescriptor> EAIAssetDataBase => AssetDatabase<EAIAssetDataBaseDescriptor>.instance;
 
-        internal static void LoadDataBase()
+        internal static Task LoadDataBase()
         {
             if(!File.Exists(pathToAssetsDatabase))
             {
@@ -49,29 +51,57 @@ namespace ExtraAssetsImporter.DataBase
 
             CheckIfDataBaseNeedToBeRelocated();
 
-            AssetDatabase.global.RegisterDatabase(EAIAssetDataBase).Wait();
             CancellationToken cancellationToken = new();
             ProgressTracker progressTracker = new("EAI_PopulateDataBase", true);
-            
+
             var notif = EL.m_NotificationUISystem.AddOrUpdateNotification("EAI.PopulatingDataBase", "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
-            Action<ProgressTracker> action = (tracker) =>
+            void action(ProgressTracker tracker)
             {
                 notif.progress = (int)math.round(tracker.progress * 100);
-                if (tracker.progress == 1f)
+                notif.Update();
+            }
+            TaskProgress taskProgress = new(action);
+
+            Task task = AssetDatabase.global.RegisterDatabase(EAIAssetDataBase).ContinueWith((t) =>
+            {
+                if (t.IsFaulted)
                 {
+                    EAI.Logger.Error($"Failed to register the Extra Assets Importer Asset Database : {t.Exception}");
+                    notif.text = "Failed to register the Extra Assets Importer Asset Database.";
+                    notif.progressState = ProgressState.Failed;
+                    notif.Update();
+                    EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                }
+
+                else
+                {
+                    Task task2 = EAIAssetDataBase.PopulateFromDataSource(false, cancellationToken, taskProgress);
+
+                    task2.Wait();
+
+                    if(task2.IsFaulted)
+                    {
+                        EAI.Logger.Error($"Failed to populate the Extra Assets Importer Asset Database : {task2.Exception}");
+                        notif.text = "Failed to populate the Extra Assets Importer Asset Database.";
+                        notif.progressState = ProgressState.Failed;
+                        notif.Update();
+                        EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                        return;
+                    }
+
                     notif.text = "Extra Assets Importer Asset Database populated.";
                     notif.progressState = ProgressState.Complete;
                     notif.progress = 100;
+                    notif.Update();
+                    EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                    return;
                 }
-                notif.Update();
-            };
 
-            TaskProgress taskProgress = new(action);
-            EAIAssetDataBase.PopulateFromDataSource(false, cancellationToken, taskProgress).Wait();
-
-            EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+            });
 
             EAI.Logger.Info($"DataBase Location : {EAIAssetDataBase.rootPath}.");
+
+            return task;
         }
 
         internal static EAIDatabase LoadDataBase(string path, string databasePath = null)
@@ -403,16 +433,18 @@ namespace ExtraAssetsImporter.DataBase
     {
         public static EAIAsset Null => default;
         public string AssetID { get; set; }
+        public string PrefabID { get; set; }
         public int SourceAssetHash { get; set; }
         public int BuildAssetHash { get; set; }
         public string AssetPath { get; set; }
 
-        public EAIAsset(string assetID, int assetHash, string assetPath)
+        public EAIAsset(string assetID, int assetHash, string assetPath, string prefabID = null)
         {
             AssetID = assetID;
             SourceAssetHash = assetHash;
             AssetPath = assetPath;
             BuildAssetHash = 0;
+            PrefabID = prefabID;
         }
 
         public static bool operator ==(EAIAsset lhs, EAIAsset rhs)

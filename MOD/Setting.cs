@@ -27,7 +27,7 @@ namespace ExtraAssetsImporter
         public bool DisableCondition_UseNewImporters => UseNewImporters;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
-        public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.PreEditor;
+        public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.None;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool ExportDefaultJson { set { AssetsImporterManager.ExportImportersTemplate(); } }
@@ -49,7 +49,7 @@ namespace ExtraAssetsImporter
         public bool NetLanes { get; set; } = true;
 
         [SettingsUISection(kMainSection, kOldImportersGroup)]
-        public EAIOldImportersCompatibility OldImportersCompatibilityDropDown { get; set; } = EAIOldImportersCompatibility.PreEditor;
+        public EAIOldImportersCompatibility OldImportersCompatibilityDropDown { get; set; } = EAIOldImportersCompatibility.None;
 
         [SettingsUISection(kDataBaseSection, "")]
         [SettingsUIDirectoryPicker]
@@ -77,14 +77,14 @@ namespace ExtraAssetsImporter
             Decals = true;
             Surfaces = true;
             NetLanes = true;
-            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.PreEditor;
-            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.PreEditor;
+            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
+            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
         }
 
         internal void ResetCompatibility()
         {
-            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.PreEditor;
-            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.PreEditor;
+            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
+            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
             Apply();
         }
     }
