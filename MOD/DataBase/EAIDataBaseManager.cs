@@ -20,7 +20,9 @@ namespace ExtraAssetsImporter.DataBase
     internal static class EAIDataBaseManager
     {
         public const int DataBaseVersion = 3;
+        internal const string databaseFolderName = ".Database";
         internal static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
+        internal static readonly string defaultDatabasePath = Path.GetFullPath(Path.Combine(EAI.pathModsData, databaseFolderName));
         public static EAIDatabase eaiDataBase;
         public static AssetDatabase<EAIAssetDataBaseDescriptor> EAIAssetDataBase => AssetDatabase<EAIAssetDataBaseDescriptor>.instance;
 
@@ -51,63 +53,13 @@ namespace ExtraAssetsImporter.DataBase
 
             CheckIfDataBaseNeedToBeRelocated();
 
-            CancellationToken cancellationToken = new();
-            ProgressTracker progressTracker = new("EAI_PopulateDataBase", true);
-
-            var notif = EL.m_NotificationUISystem.AddOrUpdateNotification("EAI.PopulatingDataBase", "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
-            void action(ProgressTracker tracker)
-            {
-                notif.progress = (int)math.round(tracker.progress * 100);
-                notif.Update();
-            }
-            TaskProgress taskProgress = new(action);
-
-            Task task = AssetDatabase.global.RegisterDatabase(EAIAssetDataBase).ContinueWith((t) =>
-            {
-                if (t.IsFaulted)
-                {
-                    EAI.Logger.Error($"Failed to register the Extra Assets Importer Asset Database : {t.Exception}");
-                    notif.text = "Failed to register the Extra Assets Importer Asset Database.";
-                    notif.progressState = ProgressState.Failed;
-                    notif.Update();
-                    EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
-                }
-
-                else
-                {
-                    Task task2 = EAIAssetDataBase.PopulateFromDataSource(false, cancellationToken, taskProgress);
-
-                    task2.Wait();
-
-                    if(task2.IsFaulted)
-                    {
-                        EAI.Logger.Error($"Failed to populate the Extra Assets Importer Asset Database : {task2.Exception}");
-                        notif.text = "Failed to populate the Extra Assets Importer Asset Database.";
-                        notif.progressState = ProgressState.Failed;
-                        notif.Update();
-                        EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
-                        return;
-                    }
-
-                    notif.text = "Extra Assets Importer Asset Database populated.";
-                    notif.progressState = ProgressState.Complete;
-                    notif.progress = 100;
-                    notif.Update();
-                    EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
-                    return;
-                }
-
-            });
-
-            EAI.Logger.Info($"DataBase Location : {EAIAssetDataBase.rootPath}.");
-
-            return task;
+            return RegisterEaiAssetDatabase();
         }
 
         internal static EAIDatabase LoadDataBase(string path, string databasePath = null)
         {
 
-            EAIDatabase database = null;
+            EAIDatabase database;
 
             if (!File.Exists(path))
             {
@@ -146,6 +98,61 @@ namespace ExtraAssetsImporter.DataBase
         {
 
             eaiDataBase.ClearDatabase();
+        }
+
+        internal static Task RegisterEaiAssetDatabase()
+        {
+            CancellationToken cancellationToken = new();
+            ProgressTracker progressTracker = new("EAI_PopulateDataBase", true);
+
+            var notif = EL.m_NotificationUISystem.AddOrUpdateNotification("EAI.PopulatingDataBase", "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
+            void action(ProgressTracker tracker)
+            {
+                notif.progress = (int)math.round(tracker.progress * 100);
+                notif.Update();
+            }
+            TaskProgress taskProgress = new(action);
+
+            Task task = AssetDatabase.global.RegisterDatabase(EAIAssetDataBase).ContinueWith((t) =>
+            {
+                if (t.IsFaulted)
+                {
+                    EAI.Logger.Error($"Failed to register the Extra Assets Importer Asset Database : {t.Exception}");
+                    notif.text = "Failed to register the Extra Assets Importer Asset Database.";
+                    notif.progressState = ProgressState.Failed;
+                    notif.Update();
+                    EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                }
+
+                else
+                {
+                    Task task2 = EAIAssetDataBase.PopulateFromDataSource(false, cancellationToken, taskProgress);
+
+                    task2.Wait();
+
+                    if (task2.IsFaulted)
+                    {
+                        EAI.Logger.Error($"Failed to populate the Extra Assets Importer Asset Database : {task2.Exception}");
+                        notif.text = "Failed to populate the Extra Assets Importer Asset Database.";
+                        notif.progressState = ProgressState.Failed;
+                        notif.Update();
+                        EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                        return;
+                    }
+
+                    notif.text = "Extra Assets Importer Asset Database populated.";
+                    notif.progressState = ProgressState.Complete;
+                    notif.progress = 100;
+                    notif.Update();
+                    EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                    return;
+                }
+
+            });
+
+            EAI.Logger.Info($"DataBase Location : {EAIAssetDataBase.rootPath}.");
+
+            return task;
         }
 
         internal static void AddOrValidateAsset(EAIAsset asset)
@@ -198,29 +205,33 @@ namespace ExtraAssetsImporter.DataBase
         {
             if (eaiDataBase == null) LoadDataBase();
 
-            string newPath = EAI.m_Setting.SavedDatabasePath ?? eaiDataBase.ActualDataBasePath;
+            if(string.IsNullOrEmpty(EAI.m_Setting.SavedDatabasePath) || EAI.m_Setting.SavedDatabasePath == eaiDataBase.ActualDataBasePath) return;
 
-            if (EAI.m_Setting.SavedDatabasePath == null)
+            if(!Directory.Exists(EAI.m_Setting.SavedDatabasePath))
             {
-                EAI.m_Setting.SavedDatabasePath = newPath;
-                EAI.m_Setting.Apply();
+                EAI.Logger.Error($"The selected directory for database relocation doesn't exist: {EAI.m_Setting.SavedDatabasePath}");
+                return;
             }
+
+            string newPath = Path.Combine(EAI.m_Setting.SavedDatabasePath, databaseFolderName);
 
             if (newPath != eaiDataBase.ActualDataBasePath)
             {
-                if (!RelocateAssetDataBase(newPath))
-                {
-                    EAI.m_Setting.SavedDatabasePath = eaiDataBase.ActualDataBasePath;
-                    EAI.m_Setting.Apply();
-                }
+                RelocateAssetDataBase(newPath);
+                EAI.m_Setting.SavedDatabasePath = eaiDataBase.ActualDataBasePath;
+                EAI.m_Setting.Apply();
             }
         }
 
         public static bool RelocateAssetDataBase(string newDirectory)
         {
-            if (!Directory.Exists(newDirectory)) return false;
-
             if (newDirectory == eaiDataBase.ActualDataBasePath) return false;
+
+            if (Directory.Exists(newDirectory))
+            {
+                EAI.Logger.Error($"Failed to relocate database, the directory already exist: {newDirectory}");
+                return false;
+            }
 
             if (!Directory.Exists(eaiDataBase.ActualDataBasePath))
             {
@@ -230,25 +241,25 @@ namespace ExtraAssetsImporter.DataBase
             }
 
             //RemoveAllPrefab();
-            //AssetDatabase.global.UnregisterDatabase(assetDataBaseEAI).Wait();
-            //assetDataBaseEAI.Dispose();
+            AssetDatabase.global.UnregisterDatabase(EAIAssetDataBase).Wait();
+            EAIAssetDataBase.Dispose();
 
             try
             {
-                Directory.Delete(newDirectory, false);
                 Directory.Move(eaiDataBase.ActualDataBasePath, newDirectory);
                 eaiDataBase.ActualDataBasePath = newDirectory;
                 SaveDataBase();
             }
             catch (Exception ex)
             {
-                EAI.Logger.Warn($"Failed to relocate the asset database, this could be because you try to move the database in a non empty folder.\nActual path : {eaiDataBase.ActualDataBasePath},\nthe target new path : {newDirectory}. \nHere is the error {ex.ToString()}");
+                EAI.Logger.Warn(
+                    $"Failed to relocate database.\n" +
+                    $"From: {eaiDataBase.ActualDataBasePath}\n" +
+                    $"To: {newDirectory}\n" +
+                    $"Error: {ex}"
+                );
                 return false;
             }
-
-            //AssetDatabase.global.RegisterDatabase(assetDataBaseEAI).Wait();
-
-            //EAI.Initialize();
 
             return true;
         }
@@ -260,7 +271,7 @@ namespace ExtraAssetsImporter.DataBase
         public EAIDatabase() {}
 
         public int DataBaseVersion = EAIDataBaseManager.DataBaseVersion;
-        public string ActualDataBasePath = Path.Combine(EAI.pathModsData, ".Database");
+        public string ActualDataBasePath = EAIDataBaseManager.defaultDatabasePath;
         public List<EAIAsset> AssetsDataBase = new List<EAIAsset>();
         private readonly List<EAIAsset> _ValidateAssetsDataBase = new List<EAIAsset>();
         internal string _DatabasePath = null;

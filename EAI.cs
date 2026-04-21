@@ -106,7 +106,7 @@ namespace ExtraAssetsImporter
                 {
                     try
                     {
-                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? new EAIDatabase().ActualDataBasePath);
+                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? EAIDataBaseManager.defaultDatabasePath);
                     }
                     catch
                     {
@@ -118,8 +118,6 @@ namespace ExtraAssetsImporter
                 {
                     Directory.Delete(oldModsPath, false);
                 }
-
-
 
                 FileInfo fileInfo = new(asset.path);
 
