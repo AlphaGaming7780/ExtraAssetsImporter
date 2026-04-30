@@ -17,10 +17,10 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
             }
             else if (prefab.asset != null)
             {
-                int data = prefab.asset.GetMeta().platformID;
-                if (data > 0)
+                string platformID = prefab.asset.GetMeta().platformID;
+                if (!string.IsNullOrEmpty(platformID))
                 {
-                    hash.Calculate(in data);
+                    hash.Calculate(platformID);
                 }
                 else
                 {
