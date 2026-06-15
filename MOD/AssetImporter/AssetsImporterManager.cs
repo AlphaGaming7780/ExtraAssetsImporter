@@ -11,6 +11,7 @@ using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
 using Game.Prefabs;
+using Game.SceneFlow;
 using Game.Tutorials;
 using System;
 using System.Collections;
@@ -152,9 +153,9 @@ namespace ExtraAssetsImporter.AssetImporter
 
             if (EAI.m_Setting.UseOldImporters)
             {
-                if (EAI.m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
-                if (EAI.m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-                if (EAI.m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+                if (EAI.m_Setting.Decals) GameManager.instance.StartCoroutine(DecalsImporter.CreateCustomDecals());
+                if (EAI.m_Setting.Surfaces) GameManager.instance.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+                if (EAI.m_Setting.NetLanes) GameManager.instance.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
             }
 
             // Load the custom assets with the new importers
@@ -179,7 +180,7 @@ namespace ExtraAssetsImporter.AssetImporter
             }
             else
             {
-                EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
+                GameManager.instance.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
             }
         }
 
