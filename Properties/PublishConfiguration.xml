@@ -52,15 +52,15 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 
 # Translation
 ⚠️ This mod uses crowdin so there maybe inconsistencies with translations due to translations from different translators ⚠️
-- ✔️French 100% : aricoseco, Edou24, Triton Supreme, Morgan Touverey Quilling (mtouverey)
+- ✔️French 100% : aricoseco, Edou24, Triton Supreme, Morgan · Toverux (toverux)
 - ✔️Chinese Simplified 100% : RilkeXS(无手文) (RilkeXS), baka-gourd, 一叶杳舟 (Yao_Zhou), boan51204, Kelvin Ong (kelvinspaces), Dennis Wang (baipin)
 - ✔️Chinese Traditional 100% : Tiger Zhang (tiger42231), Source Design (source_design), Kelvin Ong (kelvinspaces), nd381, Dennis Wang (baipin)
 - ⚠️German 64% : Konsi, Fuchs23
 - ⚠️Italian 10% : Stefano (Furios)
 - ⚠️Japanese 47% : nd381
-- ⚠️Korean 64% : Hinanchovo
+- ✔️Korean 100% : Hinanchovo, lion mitchell (acelion19)
 - ✔️Polish 100% : Lisek, karmel68
-- ⚠️Portuguese 98% -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
+- ✔️Portuguese 100% : Tiago Correia (ti4go) -> [European Portuguese Localization mod](https://mods.paradoxplaza.com/mods/92599/Windows)
 - ⚠️Portuguese, Brazilian 98% : TiZedoGrelo, Miguel Pereira Campos (mpcamposz), davi (dvzz), Matheus Bernardes da Rocha Reis (matheusbreis10)
 - ⚠️Russian 20% : Mihail (kaktyc), Lek0ms, MrSandcraft
 - ✔️Spanish 100% : elGendo87
@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.7.3" />
+	<ModVersion Value="1.7.4" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -82,8 +82,18 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
 	<ChangeLog>
-### Fixes
-- Fix an issue where data from the Material.json wouldn't be properly ported to the new format for Surfaces.
+### Support
+- Support for ExtraLib 1.4.8
+
+### Improvements
+- Improved database handling and relocation logic
+- Improved asset management and debug settings export
+- Support for prefab IDs and async database loading
+
+### Translation
+- Korean 100% thanks to lion mitchell (acelion19)
+- Portuguese 100% thanks to Tiago Correia (ti4go)
+- French: updated credits for Morgan · Toverux (toverux)
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
