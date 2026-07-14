@@ -13,8 +13,8 @@ This mod let you import custom surfaces, custom decals and custom NetLanes made 
 
 #### I'm recommending you to read this page on the website not in game, the game doesn't support all the formatting the web page does.
 
-# CUSTOM ASSETS AREN'T SUPPORTED BY THE GAME YET.
-The assets are safe and stable to use, and won't cause any crashes or bugs. Whilst we don't expect our asset mods to break on official asset support, all modding (and unofficial modding) will always have some risk associated with it. We will do our best to ensure the transition is as smooth as possible when editor is released. When editor is released I will depcreciate this mod (but keep active for a while) and republish the assets using official pipeline.
+# THESE ARE NOT OFFICIAL ASSETS, THEY ARE MADE BY MODDERS AND ARE NOT SUPPORTED BY PARADOX. USE AT YOUR OWN RISK.
+The assets are safe and stable to use, and won't cause any crashes or bugs. Whilst we don't expect our asset mods to break, all modding (and unofficial modding) will always have some risk associated with it.
 
 ### I'm recommending you to read this page on the website not in game, the game doesn't support all the formatting the web page does.
 
@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.7.4" />
+	<ModVersion Value="1.7.5" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -82,18 +82,8 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
 	<ChangeLog>
-### Support
-- Support for ExtraLib 1.4.8
-
-### Improvements
-- Improved database handling and relocation logic
-- Improved asset management and debug settings export
-- Support for prefab IDs and async database loading
-
-### Translation
-- Korean 100% thanks to lion mitchell (acelion19)
-- Portuguese 100% thanks to Tiago Correia (ti4go)
-- French: updated credits for Morgan · Toverux (toverux)
+### Fixes
+- Fixed an issue with the settings failing to load when the saved path was invalid.
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />

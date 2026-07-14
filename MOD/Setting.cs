@@ -61,7 +61,7 @@ namespace ExtraAssetsImporter
                     return "";
                 return EAIDataBaseManager.eaiDataBase.ActualDataBasePath;
             }
-            set { SavedDatabasePath = Path.GetFullPath(value); }
+            set { try { SavedDatabasePath = Path.GetFullPath(value); } catch { EAI.Logger.Warn($"Invalid database path: {value}"); } }
         }
         public string SavedDatabasePath = null;
 
