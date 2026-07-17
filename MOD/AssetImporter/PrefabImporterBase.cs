@@ -5,6 +5,7 @@ using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
 using ExtraLib.ClassExtension;
@@ -172,6 +173,9 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         prefab.name = importData.FullAssetName;
 
+                        // Should see this prefab has a pre-editor prefab.
+                        prefab.version = 0;
+
                         //CreateEditorAssetCategories(importData);
 
                         EditorAssetCategoryOverride categoryOverride = prefab.AddComponent<EditorAssetCategoryOverride>();
@@ -200,6 +204,9 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, Hash128.CreateGuid(importData.FullAssetName));
 
+                        eaiAsset.PrefabID = prefab.GetPrefabID().ToString();
+
+                        // NOTE : When serializing, the version is set pack to 1 by the OnSerialise methode in the prefabBase.
                         if (importSettings.savePrefabs) prefabAsset.Save();
 
                         MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab));
