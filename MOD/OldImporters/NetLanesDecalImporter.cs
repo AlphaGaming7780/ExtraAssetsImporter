@@ -172,12 +172,14 @@ namespace ExtraAssetsImporter.OldImporters
                                 }
                             }
 
-                            EAIDataBaseManager.AddOrValidateAsset(asset);
+                            PrefabBase prefab = CreateCustomNetLane(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, assetCat, renderPrefab);
 
-                            CreateCustomNetLane(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, assetCat, renderPrefab);
+                            asset.PrefabID = prefab.GetPrefabID().ToString();
 
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullNetLaneName}]")) csLocalisation.Add($"Assets.NAME[{fullNetLaneName}]", netLanesName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullNetLaneName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullNetLaneName}]", netLanesName);
+
+                            EAIDataBaseManager.AddOrValidateAsset(asset);
 
                         }
                         catch (Exception e)
@@ -186,6 +188,7 @@ namespace ExtraAssetsImporter.OldImporters
                             EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
                             string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
                             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+                            else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
                         }
                         ammoutOfNetLanesloaded++;
                         yield return null;
@@ -211,12 +214,13 @@ namespace ExtraAssetsImporter.OldImporters
             NetLanesLoading = false;
         }
 
-        private static void CreateCustomNetLane(string folderPath, string netLanesName, string catName, string modName, string fullNetLaneName, string assetDataPath, UIAssetParentCategoryPrefab assetCat, RenderPrefab renderPrefab)
+        private static PrefabBase CreateCustomNetLane(string folderPath, string netLanesName, string catName, string modName, string fullNetLaneName, string assetDataPath, UIAssetParentCategoryPrefab assetCat, RenderPrefab renderPrefab)
         {
             if (renderPrefab == null) throw new NullReferenceException("RenderPrefab is NULL.");
 
             NetLaneGeometryPrefab netLanesPrefab = (NetLaneGeometryPrefab)ScriptableObject.CreateInstance("NetLaneGeometryPrefab");
             netLanesPrefab.name = fullNetLaneName;
+            netLanesPrefab.version = 0;
 
             JsonNetLanes jsonNetLane = new();
 
@@ -322,6 +326,8 @@ namespace ExtraAssetsImporter.OldImporters
             EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
 
             EL.m_PrefabSystem.AddPrefab(netLanesPrefab);
+
+            return netLanesPrefab;
         }
 
         private static void VersionCompatiblity(JsonNetLanes jSONNetLanesMaterail, string catName, string netLanesName, string fullNetLaneName)

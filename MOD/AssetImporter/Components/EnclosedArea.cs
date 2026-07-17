@@ -20,8 +20,8 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             {
                 m_BorderLaneType = new PrefabIDJson()
                 {
-                    Name = "Border Lane Name",
-                    Type = "BorderLaneType, Can be NetLanePrefab NetLaneGeometryPrefab"
+                    m_Name = "Border Lane Name",
+                    m_Type = "BorderLaneType, Can be NetLanePrefab NetLaneGeometryPrefab"
                 },
                 m_CounterClockWise = false,
             };
@@ -41,7 +41,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 if(EL.m_PrefabSystem.TryGetPrefab(json.m_BorderLaneType, out PrefabBase prefab1) && prefab1 is NetLanePrefab localConnectionLane)
                     enclosedArea.m_BorderLaneType = localConnectionLane;
                 else
-                    EAI.Logger.Warn($"Failed to get the NetLanePrefab for m_BorderLaneType with the name of {json.m_BorderLaneType.Name} for the {data.FullAssetName} asset.");
+                    EAI.Logger.Warn($"Failed to get the NetLanePrefab for m_BorderLaneType with the name of {json.m_BorderLaneType.m_Name} for the {data.FullAssetName} asset.");
                 
             }
         }

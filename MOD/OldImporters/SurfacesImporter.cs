@@ -168,6 +168,7 @@ namespace ExtraAssetsImporter.OldImporters
             SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
             surfacePrefab.name = fullSurfaceName;
             surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
+            surfacePrefab.version = 0;
 
             SurfacePrefab surfacePrefabPlaceHolder = ScriptableObject.CreateInstance<SurfacePrefab>();
             surfacePrefabPlaceHolder.name = surfacePrefab.name + "_Placeholder";
