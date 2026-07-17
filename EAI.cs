@@ -1,5 +1,4 @@
-﻿using Colossal.AssetPipeline;
-using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Logging;
 using Colossal.PSI.Environment;
@@ -106,7 +105,7 @@ namespace ExtraAssetsImporter
                 {
                     try
                     {
-                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? EAIDataBaseManager.defaultDatabasePath);
+                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? new EAIDatabase().ActualDataBasePath);
                     }
                     catch
                     {
@@ -118,6 +117,8 @@ namespace ExtraAssetsImporter
                 {
                     Directory.Delete(oldModsPath, false);
                 }
+
+
 
                 FileInfo fileInfo = new(asset.path);
 
