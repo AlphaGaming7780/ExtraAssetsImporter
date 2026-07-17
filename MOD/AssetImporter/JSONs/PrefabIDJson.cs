@@ -1,52 +1,32 @@
-﻿using Colossal;
-using Colossal.Json;
-using Game.Prefabs;
+﻿using Game.Prefabs;
 
 namespace ExtraAssetsImporter.AssetImporter.JSONs
 {
     public class PrefabIDJson
     {
-        public PrefabIDJson(PrefabBase prefab, Hash128 overrideHash = default(Hash128))
+        public PrefabIDJson(PrefabBase prefab)
         {
-            m_Type = prefab.GetType().Name;
-            m_Name = prefab.name;
-            Hash128 hash = default(Hash128);
-            if (overrideHash.isValid)
-            {
-                hash = overrideHash;
-            }
-            else if (prefab.asset != null)
-            {
-                string platformID = prefab.asset.GetMeta().platformID;
-                if (!string.IsNullOrEmpty(platformID))
-                {
-                    hash.Calculate(platformID);
-                }
-                else
-                {
-                    hash = prefab.asset.id.guid;
-                }
-            }
-            m_Hash = hash.ToJSONString();
+            Type = prefab.GetType().Name;
+            Name = prefab.name;
         }
 
         public PrefabIDJson(string type, string name) 
         {
-            m_Type = type;
-            m_Name = name;
+            Type = type;
+            Name = name;
         }
 
         public PrefabIDJson()
         {
         }
 
-        public string m_Type;
-        public string m_Name;
-        public string m_Hash;
+        public string Type;
+
+        public string Name;
 
         public static implicit operator PrefabID(PrefabIDJson prefabIDJson)
         {
-            return new PrefabID(prefabIDJson.m_Type, prefabIDJson.m_Name, Hash128.Parse(prefabIDJson.m_Hash));
+            return new PrefabID(prefabIDJson.Type, prefabIDJson.Name);
         }
     }
 }

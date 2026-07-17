@@ -7,10 +7,10 @@
 		<LangVersion>9</LangVersion>
 		
 		<!--The folder where Game.dll is located. Set it only if the game is not installed in the default location, otherwise keep it empty-->
-		<!--<CustomManagedPath>C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>-->
-		<CustomManagedPath>E:\SteamLibrary\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>
+    <CustomManagedPath>C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>
+    <CustomManagedPath>E:\SteamLibrary\steamapps\common\Cities Skylines II\Cities2_Data\Managed</CustomManagedPath>
 
-		<AdditionalFilesDirectory>Resources</AdditionalFilesDirectory>
+    <AdditionalFilesDirectory>Resources</AdditionalFilesDirectory>
 		
 		<!--The file where mod information which is required for publishing mod on PDX mods are stored-->
 		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
@@ -35,7 +35,7 @@
 
   <!--Imports must be after PropertyGroup block-->
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
-	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
+  <Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
 
    <ItemGroup>
     <Reference Include="$(CustomManagedPath)\Colossal.*.dll" Private="False" />
@@ -43,7 +43,7 @@
     <Reference Include="$(CustomManagedPath)\Unity*.dll" Private="False" />
     <Reference Include="$(CustomManagedPath)\cohtml.Net.dll" Private="False" />
     <Reference Include="$(CustomManagedPath)\PDX.*.dll" Private="False" />
-	<Reference Include="$(UserDataPath)\.cache\Mods\pdx_mods\75724_*\ExtraLib.dll" Private="False" />
+    <Reference Include="$(UserDataPath)\.cache\Mods\mods_subscribed\75724_*\ExtraLib.dll" Private="False" />
     <!--<Reference Include="$(LocalModsPath)\ExtraLib\ExtraLib.dll" Private="False" />-->
   </ItemGroup>
 

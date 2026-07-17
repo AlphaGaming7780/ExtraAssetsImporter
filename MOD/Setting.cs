@@ -27,7 +27,7 @@ namespace ExtraAssetsImporter
         public bool DisableCondition_UseNewImporters => UseNewImporters;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
-        public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.None;
+        public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.PreEditor;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool ExportDefaultJson { set { AssetsImporterManager.ExportImportersTemplate(); } }
@@ -49,7 +49,7 @@ namespace ExtraAssetsImporter
         public bool NetLanes { get; set; } = true;
 
         [SettingsUISection(kMainSection, kOldImportersGroup)]
-        public EAIOldImportersCompatibility OldImportersCompatibilityDropDown { get; set; } = EAIOldImportersCompatibility.None;
+        public EAIOldImportersCompatibility OldImportersCompatibilityDropDown { get; set; } = EAIOldImportersCompatibility.PreEditor;
 
         [SettingsUISection(kDataBaseSection, "")]
         [SettingsUIDirectoryPicker]
@@ -61,7 +61,7 @@ namespace ExtraAssetsImporter
                     return "";
                 return EAIDataBaseManager.eaiDataBase.ActualDataBasePath;
             }
-            set { try { SavedDatabasePath = Path.GetFullPath(value); } catch { EAI.Logger.Warn($"Invalid database path: {value}"); } }
+            set { SavedDatabasePath = Path.GetDirectoryName(value); }
         }
         public string SavedDatabasePath = null;
 
@@ -77,14 +77,14 @@ namespace ExtraAssetsImporter
             Decals = true;
             Surfaces = true;
             NetLanes = true;
-            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
-            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
+            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.PreEditor;
+            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.PreEditor;
         }
 
         internal void ResetCompatibility()
         {
-            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
-            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
+            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.PreEditor;
+            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.PreEditor;
             Apply();
         }
     }

@@ -174,14 +174,12 @@ namespace ExtraAssetsImporter.OldImporters
                                 }
                             }
 
-                            PrefabBase prefab = CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
+                            EAIDataBaseManager.AddOrValidateAsset(asset);
 
-                            asset.PrefabID = prefab.GetPrefabID().ToString();
+                            CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
 
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullDecalName}]")) csLocalisation.Add($"Assets.NAME[{fullDecalName}]", decalName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullDecalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullDecalName}]", decalName);
-
-                            EAIDataBaseManager.AddOrValidateAsset(asset);
 
                         }
                         catch (Exception e)
@@ -190,7 +188,6 @@ namespace ExtraAssetsImporter.OldImporters
                             EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
                             string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
                             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
-                            else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
                         }
                         ammoutOfDecalsloaded++;
                         yield return null;
@@ -216,7 +213,7 @@ namespace ExtraAssetsImporter.OldImporters
             DecalsLoading = false;
         }
 
-        private static PrefabBase CreateCustomDecal(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, UIAssetParentCategoryPrefab assetCat, RenderPrefab renderPrefab)
+        private static void CreateCustomDecal(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, UIAssetParentCategoryPrefab assetCat, RenderPrefab renderPrefab)
         {
             if (renderPrefab == null) throw new NullReferenceException("RenderPrefab is NULL.");
 
@@ -230,7 +227,6 @@ namespace ExtraAssetsImporter.OldImporters
             StaticObjectPrefab decalPrefab = ScriptableObject.CreateInstance<StaticObjectPrefab>();
             decalPrefab.name = fullDecalName;
             decalPrefab.m_Meshes = new[] { objectMeshInfo };
-            decalPrefab.version = 0;
 
             JSONDecalsMaterail jSONMaterail = new();
 
@@ -297,8 +293,6 @@ namespace ExtraAssetsImporter.OldImporters
             EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
             EL.m_PrefabSystem.AddPrefab(decalPrefab);
-
-            return decalPrefab;
         }
 
         internal static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, string materialName = "DefaultDecal")
@@ -571,7 +565,7 @@ namespace ExtraAssetsImporter.OldImporters
             try
             {
                 if (EAIDataBaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) &&
-                    EAIDataBaseManager.EAIAssetDataBase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true, EscapeStrategy.None), 
+                    EAIDataBaseManager.EAIAssetDataBase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true), 
                     out renderPrefab))
                 {
                     EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");

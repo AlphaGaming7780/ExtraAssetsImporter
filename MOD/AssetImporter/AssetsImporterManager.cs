@@ -1,7 +1,6 @@
-﻿using Colossal.AssetPipeline;
+﻿using Colossal.Core;
 using Colossal.IO;
 using Colossal.IO.AssetDatabase;
-using Colossal.IO.AssetDatabase.Internal;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
@@ -11,8 +10,6 @@ using ExtraAssetsImporter.DataBase;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
 using Game.Prefabs;
-using Game.SceneFlow;
-using Game.Tutorials;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,7 +18,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
-using MainThreadDispatcher = Colossal.Core.MainThreadDispatcher;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -147,15 +143,15 @@ namespace ExtraAssetsImporter.AssetImporter
 
             s_AssetFolder.Clear();
 
-            EAIDataBaseManager.LoadDataBase().Wait();
+            EAIDataBaseManager.LoadDataBase();
 
             EAI.Logger.Info("Start loading custom stuff.");
 
             if (EAI.m_Setting.UseOldImporters)
             {
-                if (EAI.m_Setting.Decals) GameManager.instance.StartCoroutine(DecalsImporter.CreateCustomDecals());
-                if (EAI.m_Setting.Surfaces) GameManager.instance.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
-                if (EAI.m_Setting.NetLanes) GameManager.instance.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
+                if (EAI.m_Setting.Decals) EL.extraLibMonoScript.StartCoroutine(DecalsImporter.CreateCustomDecals());
+                if (EAI.m_Setting.Surfaces) EL.extraLibMonoScript.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
+                if (EAI.m_Setting.NetLanes) EL.extraLibMonoScript.StartCoroutine(NetLanesDecalImporter.CreateCustomNetLanes());
             }
 
             // Load the custom assets with the new importers
@@ -180,7 +176,7 @@ namespace ExtraAssetsImporter.AssetImporter
             }
             else
             {
-                GameManager.instance.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
+                EL.extraLibMonoScript.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
             }
         }
 
@@ -274,27 +270,27 @@ namespace ExtraAssetsImporter.AssetImporter
         }
 
 #if DEBUG
-        //public static Task ReloadAllAsset()
-        //{
-        //    if(!EAI.m_Setting.UseNewImporters)
-        //    {
-        //        return null;
-        //    }
+        public static Task ReloadAllAsset()
+        {
+            if(!EAI.m_Setting.UseNewImporters)
+            {
+                return null;
+            }
 
-        //    EAIDataBaseManager.LoadDataBase();
+            EAIDataBaseManager.LoadDataBase();
 
             
-        //    foreach(string path in s_AddAssetFolder)
-        //    {
-        //        foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
-        //        {
-        //            importer.AddCustomAssetsFolder(path);
-        //        }
-        //    }
+            foreach(string path in s_AddAssetFolder)
+            {
+                foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
+                {
+                    importer.AddCustomAssetsFolder(path);
+                }
+            }
 
-        //    return LoadCustomAssetsAsync(ImporterSettings.GetDefault());
+            return LoadCustomAssetsAsync(ImporterSettings.GetDefault());
 
-        //}
+        }
 #endif
         public static Task LoadCustomAssetsAsync(ImporterSettings importerSettings)
         {
@@ -423,44 +419,6 @@ namespace ExtraAssetsImporter.AssetImporter
             };
             File.WriteAllText(Path.Combine(path, "TextureSharing.json"), Encoder.Encode(textureJson, EncodeOptions.None));
 
-//#if DEBUG
-            Settings settings = Settings.GetDefault("TEST_SETTING");
-            File.WriteAllText(Path.Combine(path, "settings.json"), Encoder.Encode(settings, EncodeOptions.None));
-
-            string matPath = Path.Combine(path, $"MaterialProperties");
-            Directory.CreateDirectory(matPath);
-
-
-            static object GetMaterialValue(Material material,  string key, UnityEngine.MaterialPropertyType type)
-            {
-                return type switch
-                {
-                    UnityEngine.MaterialPropertyType.Vector => material.GetVector(key),
-                    UnityEngine.MaterialPropertyType.Float => material.GetFloat(key),
-                    UnityEngine.MaterialPropertyType.Int => material.GetInt(key),
-                    _ => null,
-                };
-            }
-
-            foreach (MaterialLibrary.MaterialDescription material in AssetDatabase.global.resources.materialLibrary.m_Materials)
-            {
-                EAI.Logger.Info(material.m_Material.name);
-
-                EAI.Logger.Info($"{material.m_Material.name} | Shader name : {material.m_Material.shader.name}");
-
-                Dictionary<UnityEngine.MaterialPropertyType, Dictionary<string, object>> properties = new();
-
-                foreach (UnityEngine.MaterialPropertyType type
-                         in Enum.GetValues(typeof(UnityEngine.MaterialPropertyType)))
-                {
-                    properties.Add(type, new Dictionary<string, object>());
-                    foreach (string s in material.m_Material.GetPropertyNames(type))
-                        properties[type].Add(s, GetMaterialValue(material.m_Material, s, type));
-                }
-                File.WriteAllText(Path.Combine(matPath, $"{material.m_Material.name}.json"), Encoder.Encode(properties, EncodeOptions.None));
-
-            }
-//#endif
         }
 
         public static List<Type> FindAllDerivedTypes(Type baseType)
