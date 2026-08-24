@@ -83,7 +83,7 @@ namespace ExtraAssetsImporter.AssetImporter
             AssetsLoading = true;
             AssetsLoaded = false;
 
-            EAI.Logger.Info($"The {ImporterId} importer start to load is custom assets.");
+            EAI.Logger.Info($"The {ImporterId} importer starts loading its custom assets.");
 
             numberOfAssets = 0;
             ammoutOfAssetsloaded = 0;
@@ -167,7 +167,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 progress: 100
             );
 
-            EAI.Logger.Info($"The {ImporterId} importer finish to load all is assets. {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped.");
+            EAI.Logger.Info($"The {ImporterId} importer finished loading all its assets. {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped.");
 
             AssetsLoaded = true;
             AssetsLoading = false;

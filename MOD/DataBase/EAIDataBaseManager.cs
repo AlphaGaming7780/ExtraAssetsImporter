@@ -47,7 +47,7 @@ namespace ExtraAssetsImporter.DataBase
 
             if (eaiDataBase.DataBaseVersion != DataBaseVersion)
             {
-                EAI.Logger.Warn($"The database version is not the good one, expected {DataBaseVersion}, got {eaiDataBase.DataBaseVersion}. The database will be reseted.");
+                EAI.Logger.Warn($"The database version is incorrect, expected {DataBaseVersion}, got {eaiDataBase.DataBaseVersion}. The database will be reset.");
                 eaiDataBase.ClearDatabase();
             }
 
@@ -79,7 +79,7 @@ namespace ExtraAssetsImporter.DataBase
 
             if (database.DataBaseVersion != DataBaseVersion)
             {
-                EAI.Logger.Warn($"The database version is not the good one, expected {DataBaseVersion}, got {database.DataBaseVersion}. The database will be reseted.");
+                EAI.Logger.Warn($"The database version is incorrect, expected {DataBaseVersion}, got {database.DataBaseVersion}. The database will be reset.");
                 database = new();
             }
 
@@ -331,7 +331,7 @@ namespace ExtraAssetsImporter.DataBase
                     {
                         if (!AssetsDataBase.Remove(asset))
                         {
-                            EAI.Logger.Warn($"Failed to remove a none loaded asset at path {path} from the data base.");
+                            EAI.Logger.Warn($"Failed to remove an unloaded asset at path {path} from the database.");
                             continue;
                         }
 
@@ -386,7 +386,7 @@ namespace ExtraAssetsImporter.DataBase
 
                         Directory.Delete(path, true);
                     }
-                    else EAI.Logger.Warn($"Trying to delete a none loaded asset at path {path}, but this path doesn't exist.");
+                    else EAI.Logger.Warn($"Trying to delete an unloaded asset at path {path}, but this path doesn't exist.");
                 }
                 EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDataBase.Count}.");
                 _ValidateAssetsDataBase.AddRange(AssetsDataBase);

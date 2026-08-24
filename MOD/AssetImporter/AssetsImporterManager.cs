@@ -15,10 +15,12 @@ using Game.SceneFlow;
 using Game.Tutorials;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using MainThreadDispatcher = Colossal.Core.MainThreadDispatcher;
@@ -40,8 +42,7 @@ namespace ExtraAssetsImporter.AssetImporter
         public const string k_CompiledAssetPacksFolderName = "_CompiledAssetPacks";
         public const string k_TemplateFolderName = "_DefaultJson";
 
-        //private static bool s_firstTimeLoad = true;
-        //private static bool s_IsImporting = false;
+        private static readonly ConcurrentDictionary<(Type baseType, Assembly assembly), List<Type>> s_DerivedTypesCache = new();
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
@@ -51,11 +52,6 @@ namespace ExtraAssetsImporter.AssetImporter
 
             if(importer.PreImporter) s_PreImporters.Add(typeof(T), importer);
             else s_Importers.Add(typeof(T), importer);
-
-            //foreach(string path in s_AddAssetFolder)
-            //{
-            //    importer.AddCustomAssetsFolder(path);
-            //}
 
             return true;
         }
@@ -76,11 +72,6 @@ namespace ExtraAssetsImporter.AssetImporter
             if (Path.GetDirectoryName(path).StartsWith(".")) return false;
 
             s_AssetFolder.Add(path);
-            
-            //foreach( ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values) )
-            //{
-            //    importer.AddCustomAssetsFolder(path);
-            //}
 
             return true;
         }
@@ -95,7 +86,7 @@ namespace ExtraAssetsImporter.AssetImporter
             List<ComponentImporter> importers = new List<ComponentImporter>();
             foreach (ComponentImporter importer in s_ComponentImporters.Values)
             {
-                if (importer.PrefabType == prefabType || FindAllDerivedTypes(importer.PrefabType).Contains(prefabType))
+                if (importer.PrefabType == prefabType || GetOrCacheDerivedTypes(importer.PrefabType).Contains(prefabType))
                 {
                     importers.Add(importer);
                 }
@@ -123,7 +114,7 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 if (componentsVariant.TryGetValue(importer.ComponentType.FullName, out Variant componentJson))
                 {
-                    if (importer.PrefabType != prefabBase.GetType() && !FindAllDerivedTypes(importer.PrefabType).Contains(prefabBase.GetType()))
+                    if (importer.PrefabType != prefabBase.GetType() && !GetOrCacheDerivedTypes(importer.PrefabType).Contains(prefabBase.GetType()))
                     {
                         EAI.Logger.Warn($"The component importer {importer.ComponentType.FullName} is not compatible with the prefab type {prefabBase.GetType().FullName} for the asset {prefabBase.name}.");
                         continue;
@@ -246,8 +237,6 @@ namespace ExtraAssetsImporter.AssetImporter
             }
 
             return LoadCustomAssetsAsync(importerSettings);
-
-            //LoadCustomAssets(importerSettings);
         }
 
         public static Task BuildAssetPack(IEnumerable<string> assetPacksName)
@@ -273,29 +262,6 @@ namespace ExtraAssetsImporter.AssetImporter
             return task;
         }
 
-#if DEBUG
-        //public static Task ReloadAllAsset()
-        //{
-        //    if(!EAI.m_Setting.UseNewImporters)
-        //    {
-        //        return null;
-        //    }
-
-        //    EAIDataBaseManager.LoadDataBase();
-
-            
-        //    foreach(string path in s_AddAssetFolder)
-        //    {
-        //        foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
-        //        {
-        //            importer.AddCustomAssetsFolder(path);
-        //        }
-        //    }
-
-        //    return LoadCustomAssetsAsync(ImporterSettings.GetDefault());
-
-        //}
-#endif
         public static Task LoadCustomAssetsAsync(ImporterSettings importerSettings)
         {
             return Task.Run(() => LoadCustomAssetsAsync_Impl(importerSettings));
@@ -313,7 +279,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             Task.WaitAll(tasks);
 
-            EAI.Logger.Info("The loading of pre importers as finished.");
+            EAI.Logger.Info("The loading of pre importers has finished.");
             EAI.Logger.Info("Starting the loading of importers.");
 
             tasks = s_Importers.Values
@@ -322,16 +288,14 @@ namespace ExtraAssetsImporter.AssetImporter
 
             Task.WaitAll(tasks);
 
-            while (
-                (EAI.m_Setting.UseOldImporters && EAI.m_Setting.Decals && !DecalsImporter.DecalsLoaded) ||
-                (EAI.m_Setting.UseOldImporters && EAI.m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) ||
-                (EAI.m_Setting.UseOldImporters && EAI.m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded)
-            )
+            // At this point every pre-importer/importer Task above has already completed, so this only
+            // waits on the legacy (old importers) coroutines, which have no completion event to await.
+            while (!AreImportersFinished())
             {
-                
+                Thread.Sleep(50);
             }
 
-            EAI.Logger.Info("The loading of importers as finished.");
+            EAI.Logger.Info("The loading of importers has finished.");
 
             if (!importerSettings.isAssetPack)
                 EAI.m_Setting.ResetCompatibility();
@@ -354,7 +318,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 yield return null;
             }
 
-            EAI.Logger.Info("The loading of the old importers as finished.");
+            EAI.Logger.Info("The loading of the old importers has finished.");
             EAI.m_Setting.ResetCompatibility();
             EAIDataBaseManager.eaiDataBase.SaveValidateDataBase(importerSettings);
 
@@ -381,16 +345,13 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             string path = Path.Combine(EAI.pathModsData, k_TemplateFolderName);
 
-            Directory.Delete(path, true);
+            if (Directory.Exists(path)) Directory.Delete(path, true);
 
             Directory.CreateDirectory(path);
             foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
             {
                 importer.ExportTemplate(path);
             }
-            //string textureSharing = Path.Combine(path, "TextureSharing");
-            //Directory.CreateDirectory(textureSharing);
-
             TextureJson textureJson = new TextureJson()
             {
                 path = "ImporterID\\Category\\AssetName",
@@ -438,20 +399,20 @@ namespace ExtraAssetsImporter.AssetImporter
 //#endif
         }
 
-        public static List<Type> FindAllDerivedTypes(Type baseType)
+        private static List<Type> GetOrCacheDerivedTypes(Type baseType)
         {
-            return FindAllDerivedTypes(baseType, Assembly.GetAssembly(baseType));
+            return GetOrCacheDerivedTypes(baseType, Assembly.GetAssembly(baseType));
         }
 
-        public static List<Type> FindAllDerivedTypes(Type baseType,Assembly assembly)
+        // Assembly.GetTypes() + the LINQ filter below is a slow reflection scan whose result never changes
+        // for a given (baseType, assembly) pair, but GetComponentImportersForPrefab/ProcessComponentImporters
+        // call it per component importer for every prefab processed during an import — cache it.
+        private static List<Type> GetOrCacheDerivedTypes(Type baseType, Assembly assembly)
         {
-            return assembly
+            return s_DerivedTypesCache.GetOrAdd((baseType, assembly), key => key.assembly
                 .GetTypes()
-                .Where(t =>
-                    t != baseType &&
-                    baseType.IsAssignableFrom(t)
-                    ).ToList();
-
+                .Where(t => t != key.baseType && key.baseType.IsAssignableFrom(t))
+                .ToList());
         }
 
         public static bool AreImportersFinished()
@@ -464,13 +425,16 @@ namespace ExtraAssetsImporter.AssetImporter
                 if (EAI.m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded) return false;
             }
 
-            // Pré-importers
-            if (s_PreImporters.Values.Any(importer => !importer.AssetsLoaded))
-                return false;
+            if(EAI.m_Setting.UseNewImporters)
+            {
+                // Pré-importers
+                if (s_PreImporters.Values.Any(importer => !importer.AssetsLoaded))
+                    return false;
 
-            // Importers
-            if (s_Importers.Values.Any(importer => !importer.AssetsLoaded))
-                return false;
+                // Importers
+                if (s_Importers.Values.Any(importer => !importer.AssetsLoaded))
+                    return false;
+            }
 
             return true;
         }

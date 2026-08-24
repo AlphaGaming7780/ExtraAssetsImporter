@@ -148,7 +148,7 @@ namespace ExtraAssetsImporter.OldImporters
 
                             if (!EAIDataBaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.SourceAssetHash != EAIDataBaseManager.GetAssetHash(decalsFolder))
                             {
-                                EAI.Logger.Info($"No cahed data for {fullDecalName}, creating the cache.");
+                                EAI.Logger.Info($"No cached data for {fullDecalName}, creating the cache.");
                                 renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
                                 asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
                             }

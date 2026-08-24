@@ -98,7 +98,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if (eaiAsset.SourceAssetHash != sourceAssetFolderHash)
                         {
-                            EAI.Logger.Info($"The asset {fullAssetName} source files has changed, updating it. Old hash {eaiAsset.SourceAssetHash}, new hash {sourceAssetFolderHash}.");
+                            EAI.Logger.Info($"The asset {fullAssetName} source files have changed, updating it. Old hash {eaiAsset.SourceAssetHash}, new hash {sourceAssetFolderHash}.");
                             needToUpdateAsset = true;
                             eaiAsset.SourceAssetHash = sourceAssetFolderHash;
                         }
@@ -106,7 +106,7 @@ namespace ExtraAssetsImporter.AssetImporter
                         int hash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
                         if (eaiAsset.BuildAssetHash != hash)
                         {
-                            EAI.Logger.Info($"The asset {fullAssetName} builded files has changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
+                            EAI.Logger.Info($"The asset {fullAssetName} built files have changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
                             needToUpdateAsset = true;
                         }
 
