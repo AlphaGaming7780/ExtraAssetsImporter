@@ -190,27 +190,16 @@ namespace ExtraAssetsImporter.AssetImporter
             return Decoder.Decode(File.ReadAllText(path));
         }
 
-        public static Task ProcessIconOnMainThread(PrefabImportData data) 
+        public static Task ProcessIconOnMainThread(PrefabImportData data)
         {
+            Task task = MainThreadHelper.RunOnMainThread(() => ProcessIcon(data));
 
-            TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
+            task.ContinueWith(
+                t => EAI.Logger.Warn($"Failed to process icon.\nException:{t.Exception?.GetBaseException()}."),
+                TaskContinuationOptions.OnlyOnFaulted
+            );
 
-            MainThreadDispatcher.RunOnMainThread( () =>
-            {
-                try
-                {
-                    ProcessIcon(data);
-                    tcs.SetResult(null);
-                }
-                catch (Exception e)
-                {
-                    EAI.Logger.Warn($"Failed to process icon.\nException:{e}.");
-                    tcs.SetException(e);
-                }
-            });
-
-            return tcs.Task;
-
+            return task;
         }
 
         public static void ProcessIcon(PrefabImportData data)
@@ -296,7 +285,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             if (!data.ImportSettings.isAssetPack) 
             {
-                UIAssetChildCategoryPrefab categoryPrefab = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null);
+                UIAssetChildCategoryPrefab categoryPrefab = MainThreadHelper.RunOnMainThread(() => PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null)).Result;
                 AssetDataPath assetDataPath = AssetDataPath.Create(EAI.kTempFolderName, $"{categoryPrefab.name}_CategoryPrefab", EscapeStrategy.None);
                 EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, categoryPrefab);
                 prefabUI.m_Group = categoryPrefab;

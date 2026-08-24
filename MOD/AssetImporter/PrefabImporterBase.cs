@@ -33,7 +33,7 @@ namespace ExtraAssetsImporter.AssetImporter
         protected override void PreLoadCustomAssetFolder(ImporterSettings importSettings)
         {
             base.PreLoadCustomAssetFolder(importSettings);
-            assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab( CatName ?? ImporterId );
+            assetCat = MainThreadHelper.RunOnMainThread(() => PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab(CatName ?? ImporterId)).Result;
         }
 
         protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
