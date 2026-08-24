@@ -82,8 +82,10 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
 	<ChangeLog>
-### Fixes
-- Fixed an issue with the settings failing to load when the saved path was invalid.
+### Optimizations and fixes
+- Various optimizations and fixes to the asset importer.
+- Fixed a rare stability issue during import.
+- Minor wording fixes in log messages.
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />

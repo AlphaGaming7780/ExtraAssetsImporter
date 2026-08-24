@@ -74,7 +74,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                     string prefabJsonPath = Path.Combine(assetFolder, PrefabJsonName);
                     Variant prefabJson = null;
-                    if (File.Exists(prefabJsonPath)) prefabJson = ImportersUtils.LoadJson(Path.Combine(assetFolder, PrefabJsonName));
+                    if (File.Exists(prefabJsonPath)) prefabJson = ImportersUtils.LoadJson(prefabJsonPath);
 
                     int sourceAssetFolderHash = EAIDataBaseManager.GetAssetHash(assetFolder);
                     bool needToUpdateAsset = false;
@@ -103,11 +103,14 @@ namespace ExtraAssetsImporter.AssetImporter
                             eaiAsset.SourceAssetHash = sourceAssetFolderHash;
                         }
 
-                        int hash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
-                        if (eaiAsset.BuildAssetHash != hash)
+                        if (!needToUpdateAsset)
                         {
-                            EAI.Logger.Info($"The asset {fullAssetName} built files have changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
-                            needToUpdateAsset = true;
+                            int hash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
+                            if (eaiAsset.BuildAssetHash != hash)
+                            {
+                                EAI.Logger.Info($"The asset {fullAssetName} built files have changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
+                                needToUpdateAsset = true;
+                            }
                         }
 
                         if (!needToUpdateAsset && importSettings.savePrefabs)
@@ -169,8 +172,6 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         // Should see this prefab has a pre-editor prefab.
                         prefab.version = 0;
-
-                        //CreateEditorAssetCategories(importData);
 
                         EditorAssetCategoryOverride categoryOverride = prefab.AddComponent<EditorAssetCategoryOverride>();
                         categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
@@ -257,7 +258,6 @@ namespace ExtraAssetsImporter.AssetImporter
             obsoleteIdentifiers.m_PrefabIdentifiers ??= new PrefabIdentifierInfo[0];
 
             string name;
-            string hash = null;
 
             switch (compatibility)
             {
@@ -277,7 +277,7 @@ namespace ExtraAssetsImporter.AssetImporter
             PrefabIdentifierInfo prefabIdentifierInfo = new()
             {
                 m_Name = name,
-                m_Hash = hash,
+                m_Hash = null,
                 m_Type = prefabBase.GetType().Name
             };
 
@@ -324,9 +324,6 @@ namespace ExtraAssetsImporter.AssetImporter
         public string AssetDataPath { get; private set; }
         public Variant PrefabJson { get; private set; }
         public UIAssetParentCategoryPrefab AssetCat { get; private set; }
-
-        //public Mesh[] meshes;
-        //public Surface surface;
     }
 
 }
