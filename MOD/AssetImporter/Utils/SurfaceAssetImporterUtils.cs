@@ -60,6 +60,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
                 id = new Identifier(Guid.NewGuid()),
                 database = data.ImportSettings.dataBase
             };
+            surfaceAsset.AddKeyword("_TANGENTSPACE_OCTO");
             surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
             surfaceAsset.SetData(surface);
 
