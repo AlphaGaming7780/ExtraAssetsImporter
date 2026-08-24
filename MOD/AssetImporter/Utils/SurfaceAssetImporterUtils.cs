@@ -1,17 +1,15 @@
 ﻿using Colossal.AssetPipeline;
 using Colossal.IO.AssetDatabase;
-using Colossal.IO.AssetDatabase.VirtualTexturing;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ExtraAssetsImporter.AssetImporter.Utils
 {
-    internal class SurfaceAssetImporterUtils
+    internal static class SurfaceAssetImporterUtils
     {
         public const string MaterialJsonFileName = "Material.json";
         public const string BaseColorMap = "_BaseColorMap";
@@ -26,23 +24,13 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return materialJson;
         }
 
-        public static Task<SurfaceAsset> AsyncCreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
-        {
-            return Task.Run(() => CreateSurface(data, defaultMaterialName, importTextures));
-        }
-
-        public static Task<SurfaceAsset> AsyncCreateMaterial(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
-        {
-            return Task.Run(() => CreateSurface(data, materialJson, defaultMaterialName, importTextures));
-        }
-
         public static SurfaceAsset CreateSurface(PrefabImportData data, string defaultMaterialName, bool importTextures = true)
         {
             MaterialJson materialJson = LoadMaterialJson(data);
             return CreateSurface(data, materialJson, defaultMaterialName, importTextures);
         }
 
-        public static SurfaceAsset CreateSurface(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true, bool useVT = false)
+        public static SurfaceAsset CreateSurface(PrefabImportData data, MaterialJson materialJson, string defaultMaterialName, bool importTextures = true)
         {
             string materialName = materialJson != null ? materialJson.MaterialName ?? defaultMaterialName : defaultMaterialName;
 
@@ -60,13 +48,12 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
                 id = new Identifier(Guid.NewGuid()),
                 database = data.ImportSettings.dataBase
             };
-            surfaceAsset.AddKeyword("_TANGENTSPACE_OCTO");
+
             surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
             surfaceAsset.SetData(surface);
 
             if (importTextures)
             {
-                //TexturesImporterUtils.ImportTextures(data, surface);
                 EAI.Logger.Info($"Importing textures for surface asset {surfaceAssetDataPath}");
 
                 var baseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
@@ -79,27 +66,7 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
                 if (maskMap != null) surfaceAsset.UpdateTexture(MaskMap, maskMap);
             }
 
-            if (useVT)
-            {
-                //VT Stuff
-                VirtualTexturingConfig virtualTexturingConfig = EAI.textureStreamingSystem.virtualTexturingConfig; //(VirtualTexturingConfig)ScriptableObject.CreateInstance("VirtualTexturingConfig");
-                Dictionary<Colossal.IO.AssetDatabase.TextureAsset, List<SurfaceAsset>> textureReferencesMap = new();
-
-                // TODO : Update that to support texture referencing between multiple assets.
-                foreach (Colossal.IO.AssetDatabase.TextureAsset asset in surfaceAsset.textures.Values)
-                {
-                    asset.Save();
-                    textureReferencesMap.Add(asset, new() { surfaceAsset });
-                }
-
-                surfaceAsset.Save(force: false, saveTextures: false, vt: true, virtualTexturingConfig: virtualTexturingConfig, textureReferencesMap: textureReferencesMap, tileSize: virtualTexturingConfig.tileSize, nbMidMipLevelsRequested: 0);
-
-                //END OF VT Stuff.
-            }
-            else
-            {
-                surfaceAsset.Save(force: false, saveTextures: false, vt: false);
-            }
+            surfaceAsset.Save(force: false, saveTextures: false, vt: false);
 
             surface.Dispose();
 
@@ -119,18 +86,12 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
             foreach (string key in material.GetPropertyNames(MaterialPropertyType.Float))
             {
-                if (materialJson.Float.ContainsKey(key))
-                    materialJson.Float[key] = material.GetFloat(key);
-                else
-                    materialJson.Float.Add(key, material.GetFloat(key));
+                materialJson.Float[key] = material.GetFloat(key);
             }
 
             foreach (string key in material.GetPropertyNames(MaterialPropertyType.Vector))
             {
-                if (materialJson.Vector.ContainsKey(key))
-                    materialJson.Vector[key] = material.GetVector(key);
-                else
-                    materialJson.Vector.Add(key, material.GetVector(key));
+                materialJson.Vector[key] = material.GetVector(key);
             }
 
             UnityEngine.Object.Destroy(material);

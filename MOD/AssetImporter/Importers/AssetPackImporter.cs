@@ -53,6 +53,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string folder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
         {
+            numberOfAssets++;
             EAI.Logger.Info($"{modName} {AssetEndName}");
 
             string assetDataPath = importSettings.isAssetPack ?
@@ -107,7 +108,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             };
 
             ImportersUtils.SetupLocalisationForPrefab(localisation, importSettings, assetDataPath, fullAssetName);
-
+            ammoutOfAssetsloaded++;
         }
 
         public override void ExportTemplate(string path)

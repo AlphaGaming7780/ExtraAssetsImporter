@@ -305,47 +305,22 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             CreateEAILocalAssetPackPrefab();
 
-            List<Task> tasks = new List<Task>();
-
             EAI.Logger.Info("Starting the loading of pre importers.");
 
-            foreach (ImporterBase importer in s_PreImporters.Values)
-            {
+            var tasks = s_PreImporters.Values
+                .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings)))
+                .ToArray();
 
-                Task task = Task.Run(() =>
-                {
-                    importer.LoadCustomAssets(importerSettings);
-                });
-                tasks.Add(task);
-            }
-
-            foreach (Task task in tasks)
-            {
-                task.Wait();
-            }
-
-            tasks.Clear();
+            Task.WaitAll(tasks);
 
             EAI.Logger.Info("The loading of pre importers as finished.");
             EAI.Logger.Info("Starting the loading of importers.");
 
+            tasks = s_Importers.Values
+                .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings)))
+                .ToArray();
 
-            foreach (ImporterBase importer in s_Importers.Values)
-            {
-                Task task = Task.Run(() =>
-                {
-                    importer.LoadCustomAssets(importerSettings);
-                });
-                tasks.Add(task);
-
-            }
-
-            foreach (Task task in tasks)
-            {
-                task.Wait();
-            }
-
-            tasks.Clear();
+            Task.WaitAll(tasks);
 
             while (
                 (EAI.m_Setting.UseOldImporters && EAI.m_Setting.Decals && !DecalsImporter.DecalsLoaded) ||
@@ -479,5 +454,25 @@ namespace ExtraAssetsImporter.AssetImporter
 
         }
 
+        public static bool AreImportersFinished()
+        {
+            // Conditions des anciens importers
+            if (EAI.m_Setting.UseOldImporters)
+            {
+                if (EAI.m_Setting.Decals && !DecalsImporter.DecalsLoaded) return false;
+                if (EAI.m_Setting.Surfaces && !SurfacesImporter.SurfacesIsLoaded) return false;
+                if (EAI.m_Setting.NetLanes && !NetLanesDecalImporter.NetLanesLoaded) return false;
+            }
+
+            // Pré-importers
+            if (s_PreImporters.Values.Any(importer => !importer.AssetsLoaded))
+                return false;
+
+            // Importers
+            if (s_Importers.Values.Any(importer => !importer.AssetsLoaded))
+                return false;
+
+            return true;
+        }
     }
 }

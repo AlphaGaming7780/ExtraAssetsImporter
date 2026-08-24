@@ -412,10 +412,12 @@ namespace ExtraAssetsImporter.AssetImporter
             mesh.triangles = triangles;
             mesh.normals = normals;
             mesh.uv = uvs;
-            mesh.Optimize();
             // mesh.RecalculateNormals();
             mesh.RecalculateTangents();
             mesh.RecalculateBounds();
+
+            mesh.OptimizeIndexBuffers();
+            mesh.OptimizeReorderVertexBuffer();
 
             return mesh;
         }

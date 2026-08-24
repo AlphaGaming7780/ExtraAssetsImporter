@@ -1,13 +1,13 @@
-﻿using Colossal.AssetPipeline.Importers;
+﻿using Colossal.AssetPipeline;
+using Colossal.AssetPipeline.Importers;
+using Colossal.AssetPipeline.Native;
 using Colossal.IO.AssetDatabase;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
 using Hash128 = Colossal.Hash128;
@@ -19,41 +19,30 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
     public static class TextureAssetImporterUtils
     {
 
-        private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
-        //private static DefaultTextureImporter defaultTextureImporter = ImporterCache.GetInstance<DefaultTextureImporter>();
+        private static readonly DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
 
         public const string BaseColorMapName = "_BaseColorMap.png";
         public const string NormalMapName = "_NormalMap.png";
         public const string MaskMapName = "_MaskMap.png";
 
-        private static readonly List<string> s_TexturePaths = new List<string>();
+        private static readonly ConcurrentDictionary<string, Lazy<TextureAsset>> s_PendingImports = new();
 
-        private static object _lock = new object();
         public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data)
         {
-            ImportSettings importSettings = ImportSettings.GetDefault();
+            ImportSettings importSettings = Settings.Defaults.Texture.GetDefault(TextureWrapMode.Repeat);
             return ImportTexture_BaseColorMap(data, importSettings);
         }
 
         public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data, ImportSettings importSettings)
         {
             importSettings.wrapMode = TextureWrapMode.Repeat;
+            importSettings.alphaIsTransparency = true;
             return ImportTexture(data, BaseColorMapName, importSettings);
-        }
-
-        public static Task<TextureAsset> AsyncImportTexture_BaseColorMap(PrefabImportData data)
-        {
-            return Task.Run<TextureAsset>(() => ImportTexture_BaseColorMap(data));
-        }
-
-        public static Task<TextureAsset> AsyncImportTexture_BaseColorMap(PrefabImportData data, ImportSettings importSettings)
-        {
-            return Task.Run<TextureAsset>(() => ImportTexture_BaseColorMap(data, importSettings));
         }
 
         public static TextureAsset ImportTexture_NormalMap(PrefabImportData data)
         {
-            ImportSettings importSettings = ImportSettings.GetDefault();
+            ImportSettings importSettings = Settings.Defaults.Texture.GetNormal(TextureWrapMode.Repeat);
             return ImportTexture_NormalMap(data, importSettings);
         }
 
@@ -62,22 +51,13 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             importSettings.normalMap = true;
             importSettings.alphaIsTransparency = false;
             importSettings.wrapMode = TextureWrapMode.Repeat;
+            importSettings.overrideCompressionFormat = NativeTextures.BlockCompressionFormat.BC7;
             return ImportTexture(data, NormalMapName, importSettings);
-        }
-
-        public static Task<TextureAsset> AsyncImportTexture_NormalMap(PrefabImportData data)
-        {
-            return Task.Run<TextureAsset>(() => ImportTexture_NormalMap(data));
-        }
-
-        public static Task<TextureAsset> AsyncImportTexture_NormalMap(PrefabImportData data, ImportSettings importSettings)
-        {
-            return Task.Run<TextureAsset>(() => ImportTexture_NormalMap(data, importSettings));
         }
 
         public static TextureAsset ImportTexture_MaskMap(PrefabImportData data)
         {
-            ImportSettings importSettings = ImportSettings.GetDefault();
+            ImportSettings importSettings = Settings.Defaults.Texture.GetLinear(TextureWrapMode.Repeat);
             return ImportTexture_MaskMap(data, importSettings);
         }
 
@@ -87,16 +67,6 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             importSettings.alphaIsTransparency = false;
             importSettings.linearTexture = true;
             return ImportTexture(data, MaskMapName, importSettings);
-        }
-
-        public static Task<TextureAsset> AsyncImportTexture_MaskMap(PrefabImportData data)
-        {
-            return Task.Run<TextureAsset>(() => ImportTexture_MaskMap(data));
-        }
-
-        public static Task<TextureAsset> AsyncImportTexture_MaskMap(PrefabImportData data, ImportSettings importSettings)
-        {
-            return Task.Run<TextureAsset>(() => ImportTexture_MaskMap(data, importSettings));
         }
 
         public static TextureAsset ImportTexture(PrefabImportData data, string textureFileName, ImportSettings importSettings)
@@ -121,65 +91,46 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             return ImportTexture_Impl(importSettings, data, path, textureDataPath, GetFullAssetTextureName(data, textureName));
         }
 
-        
-
         internal static TextureAsset ImportTexture_Impl(ImportSettings importSettings, PrefabImportData data, string textureFilePath, AssetDataPath textureDataPath, string fullAssetTextureName)
         {
+            if (data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset))
+                return textureAsset;
 
-            while (IsTextureBeingImported(textureFilePath))
-            {
-                EAI.Logger.Info($"{data.FullAssetName} is waiting for {textureFilePath}.");
-                Thread.Sleep(500);
-            }
+            Lazy<TextureAsset> pendingImport = s_PendingImports.GetOrAdd(textureFilePath, _ => new Lazy<TextureAsset>(
+                () => ImportAndSaveTexture(importSettings, data, textureFilePath, textureDataPath, fullAssetTextureName),
+                LazyThreadSafetyMode.ExecutionAndPublication));
 
-            if (!data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset))
-            {
-                bool value = false;
-                lock (_lock)
-                {   
-                    value = s_TexturePaths.Contains(textureFilePath);
-                    if(!value) s_TexturePaths.Add(textureFilePath);
-                }
-
-                if (value) return ImportTexture_Impl(importSettings, data, textureFilePath, textureDataPath, fullAssetTextureName); // Go back waiting for your turn.
-
-                var texture = defaultTextureImporter.Import(importSettings, textureFilePath);
-
-                textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
-                textureAsset.Save();
-                textureAsset.Unload();
-                texture.Dispose();
-
-                lock (_lock)
-                {
-                    s_TexturePaths.Remove(textureFilePath);
-                }
-            }
+            textureAsset = pendingImport.Value;
+            s_PendingImports.TryRemove(textureFilePath, out _);
 
             return textureAsset;
         }
 
-        private static bool IsTextureBeingImported(string path)
+        private static TextureAsset ImportAndSaveTexture(ImportSettings importSettings, PrefabImportData data, string textureFilePath, AssetDataPath textureDataPath, string fullAssetTextureName)
         {
-            lock (_lock)
-            {
-                return s_TexturePaths.Contains(path);
-            }
+            var texture = defaultTextureImporter.Import(importSettings, textureFilePath);
+
+            TextureAsset textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
+            textureAsset.Save();
+            textureAsset.Unload();
+            texture.Dispose();
+
+            return textureAsset;
         }
 
         public static string GetFullAssetTextureName(PrefabImportData data, string textureName)
         {
-            return $"{data.FullAssetName}{textureName}";
+            return GetFullAssetTextureName(data.FullAssetName, textureName);
         }
 
-        public static string GetFullAssetTextureName(string FullAssetName, string textureName)
+        public static string GetFullAssetTextureName(string fullAssetName, string textureName)
         {
-            return $"{FullAssetName}{textureName}";
+            return $"{fullAssetName}{textureName}";
         }
 
         public static string GetTextureFullFileName(PrefabImportData data, string textureName)
         {
-            return $"{data.AssetName}{textureName}{TextureAsset.kExtension}";
+            return GetTextureFullFileName(data.AssetName, textureName);
         }
 
         public static string GetTextureFullFileName(string assetName, string textureName)
