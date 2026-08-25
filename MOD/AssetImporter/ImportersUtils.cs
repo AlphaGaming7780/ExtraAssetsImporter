@@ -5,7 +5,6 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.UI;
-using Commons;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.DataBase;
 using ExtraLib;
@@ -26,20 +25,8 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     static class ImportersUtils
     {
-
-        //public static string GetFullAssetDataPath(PrefabImportData data)
-        //{
-        //    return Path.Combine(data.ImportSettings.outputFolderOffset, data.AssetDataPath);
-        //}
-
-        //public static string FormatImageAssetUri(ImageAsset imageAsset)
-        //{
-        //    return $"assetdb://Global/{imageAsset.identifier}"
-        //}
-
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
-
             if (data.NeedToUpdateAsset)
             {
                 EAI.Logger.Info($"Need to update the cached data for {data.FullAssetName}.");
@@ -80,18 +67,15 @@ namespace ExtraAssetsImporter.AssetImporter
             }
 
             return null;
-
-
         }
 
-        public static RenderPrefab CreateRenderPrefab(PrefabImportData data, SurfaceAsset surfaceAsset, Mesh[] meshes, Action<PrefabImportData, RenderPrefab, SurfaceAsset> setupRenderPrefab, bool useVT = false)
+        public static RenderPrefab CreateRenderPrefab(PrefabImportData data, SurfaceAsset surfaceAsset, Mesh[] meshes, Action<PrefabImportData, RenderPrefab, SurfaceAsset> setupRenderPrefab)
         {
             EAI.Logger.Info($"Creating RenderPrefab for {data.FullAssetName}.");
-            //SurfaceAsset surfaceAsset =  SurfaceImporterUtils.SetupSurfaceAsset(data, surface, useVT);
             surfaceAsset.Save(false);
 
             string pathToRenderPrefabJson = Path.Combine(data.FolderPath, "RenderPrefab.json");
-            Variant renderPrefabVariant = File.Exists(pathToRenderPrefabJson) ? ImportersUtils.LoadJson(pathToRenderPrefabJson) : null;
+            Variant renderPrefabVariant = File.Exists(pathToRenderPrefabJson) ? LoadJson(pathToRenderPrefabJson) : null;
 
             Vector4 MeshSize = surfaceAsset.vectors["colossal_MeshSize"];
 
@@ -105,7 +89,6 @@ namespace ExtraAssetsImporter.AssetImporter
             geometryAsset.SetData(meshes);
             geometryAsset.Save(false);
 
-            //RenderPrefab renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
             PrefabID prefabID = new PrefabID(typeof(RenderPrefab).Name, GetRenderPrefabName(data));
 
             if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) || prefabBase is not RenderPrefab renderPrefab)
@@ -113,8 +96,8 @@ namespace ExtraAssetsImporter.AssetImporter
                 renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
             }
 
-            renderPrefab.name = GetRenderPrefabName(data); // $"{data.FullAssetName}_RenderPrefab";
-            renderPrefab.geometryAsset = geometryAsset;//new AssetReference<GeometryAsset>(geometryAsset.guid);
+            renderPrefab.name = GetRenderPrefabName(data);
+            renderPrefab.geometryAsset = geometryAsset;
             renderPrefab.surfaceAssets = new[] { surfaceAsset };
             renderPrefab.bounds = new(new(-MeshSize.x * 0.5f, -MeshSize.y * 0.5f, -MeshSize.z * 0.5f), new(MeshSize.x * 0.5f, MeshSize.y * 0.5f, MeshSize.z * 0.5f));
             renderPrefab.meshCount = geometryAsset.data.meshCount;
@@ -129,13 +112,9 @@ namespace ExtraAssetsImporter.AssetImporter
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
             PrefabAsset renderPrefabAsset = data.ImportSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Hash128.CreateGuid(renderPrefab.name));
             renderPrefabAsset.Save();
-            //EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
 
             geometryAsset.Unload();
             surfaceAsset.Unload();
-
-            //EAIAsset asset = new(data.FullAssetName, EAIDataBaseManager.GetAssetHash(data.FolderPath), data.AssetDataPath);
-            //EAIDataBaseManager.AddAssets(asset);
 
             return renderPrefab;
         }
@@ -158,11 +137,6 @@ namespace ExtraAssetsImporter.AssetImporter
             {
 
                 MainThreadDispatcher.RunOnMainThread( () => localizationManager.AddSource(localeID, new MemorySource(localisation)));
-
-                //foreach (string localeID in localizationManager.GetSupportedLocales())
-                //{
-                //    localizationManager.AddSource(localeID, new MemorySource(localisation));
-                //}
             }
         }
         public static string GetRenderPrefabName(PrefabImportData data)
@@ -175,14 +149,9 @@ namespace ExtraAssetsImporter.AssetImporter
             return $"{data.AssetName}_RenderPrefab{PrefabAsset.kExtension}";
         }
 
-        public static Task<T> AsyncLoadJson<T>(string path) where T : class
-        {
-            return Task.Run(() => LoadJson<T>(path));
-        }
-
         public static T LoadJson<T>(string path) where T : class
         {
-            return Decoder.Decode(File.ReadAllText(path)).Make<T>();
+            return LoadJson(path).Make<T>();
         }
 
         public static Variant LoadJson(string path)
@@ -206,31 +175,28 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             string iconPath = Path.Combine(data.FolderPath, "icon.png");
             string baseColorMapPath = Path.Combine(data.FolderPath, "_BaseColorMap.png");
-            Texture2D texture2D_Icon = new(1, 1);
-            if (File.Exists(iconPath))
-            {
-                byte[] fileData = File.ReadAllBytes(iconPath);
 
-                if (texture2D_Icon.LoadImage(fileData))
-                {
-                    if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
-                    {
-                        TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
-                    }
-                }
-            }
+            Texture2D texture2D_Icon = new(1, 1);
+
+            if (File.Exists(iconPath))
+                LoadAndCacheIcon(ref texture2D_Icon, iconPath, iconPath);
             else if (File.Exists(baseColorMapPath))
-            {
-                byte[] fileData = File.ReadAllBytes(baseColorMapPath);
-                if (texture2D_Icon.LoadImage(fileData))
-                {
-                    if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
-                    {
-                        TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
-                    }
-                }
-            }
+                LoadAndCacheIcon(ref texture2D_Icon, baseColorMapPath, iconPath);
+
             UnityEngine.Object.Destroy(texture2D_Icon);
+        }
+
+        // Loads sourcePath into texture and, if it's bigger than the icon size, downscales it and
+        // caches the result at iconSavePath (always icon.png, even when the source is _BaseColorMap.png).
+        // texture is passed by ref because ResizeTexture destroys the original and swaps in a new instance.
+        private static void LoadAndCacheIcon(ref Texture2D texture, string sourcePath, string iconSavePath)
+        {
+            byte[] fileData = File.ReadAllBytes(sourcePath);
+
+            if (texture.LoadImage(fileData) && (texture.width > 128 || texture.height > 128))
+            {
+                TextureHelper.ResizeTexture(ref texture, 128, iconSavePath);
+            }
         }
 
         public static ImageAsset ImportImageFromPath(string path, PrefabImportData data)
@@ -294,22 +260,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static Task<Mesh> CreateBoxMeshAsyncOnMainThread(Vector3 size)
         {
-            var tcs = new TaskCompletionSource<Mesh>();
-
-            MainThreadDispatcher.RunOnMainThread(() =>
-            {
-                try
-                {
-                    var mesh = ImportersUtils.CreateBoxMesh(size.x, size.y, size.z);
-                    tcs.SetResult(mesh);
-                }
-                catch (Exception e)
-                {
-                    tcs.SetException(e);
-                }
-            });
-
-            return tcs.Task;
+            return MainThreadHelper.RunOnMainThread(() => CreateBoxMesh(size.x, size.y, size.z));
         }
 
         public static Mesh CreateBoxMesh(float length, float height, float width)
@@ -413,7 +364,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static string GetModPath(PrefabImportData data)
         {
-            return new DirectoryInfo(data.FolderPath).Parent.Parent.Parent.FullName; //Path.Combine(data.FolderPath, "..", "..", "..");
+            return new DirectoryInfo(data.FolderPath).Parent.Parent.Parent.FullName;
         }
 
         public static string GetFullAssetName(string modName, string catName, string assetName, string assetEndName)
