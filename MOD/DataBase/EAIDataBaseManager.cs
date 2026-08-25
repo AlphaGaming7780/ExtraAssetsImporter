@@ -167,19 +167,49 @@ namespace ExtraAssetsImporter.Database
             return eaiDatabase.TryGetEAIAsset(AssetID, out asset);
         }
 
+        internal static List<EAIAsset> GetAllAssets()
+        {
+            return eaiDatabase.GetAllAssets();
+        }
+
+        // Unregisters (from PrefabSystem) and unloads (from the asset database) every known asset whose
+        // source mod's path isn't in activeModPaths, without touching anything generated on disk — for
+        // mods present but disabled in the current playset (contrast with EAIDatabase.ClearNotLoadedAssetsFromFiles,
+        // which deletes for a mod that's genuinely gone). Re-enabling a mod needs no separate "re-add" path:
+        // a normal AddAssetFolder + import pass finds the mod's cached prefabs again via
+        // ImportersUtils.TryGetCachedPrefab instead of rebuilding them.
+        //
+        // Not wired to any trigger yet — no reliable signal exists today for "the playset just changed"
+        // (mods' OnLoad isn't re-invoked on a playset switch). Call manually, or from a future trigger.
+        internal static void UnloadAssetsForInactiveMods(IEnumerable<string> activeModPaths)
+        {
+            HashSet<string> active = new(activeModPaths, StringComparer.OrdinalIgnoreCase);
+
+            foreach (EAIAsset asset in GetAllAssets())
+            {
+                if (string.IsNullOrEmpty(asset.SourceModPath) || active.Contains(asset.SourceModPath)) continue;
+                if (!ImportersUtils.TryParsePrefabID(asset.PrefabID, out PrefabID prefabID)) continue;
+
+                ImportersUtils.UnloadPrefab(prefabID);
+            }
+        }
+
 
         internal static int GetAssetHash(string assetFolder)
         {
             if(!Directory.Exists(assetFolder))
             {
-                return 0; 
+                return 0;
             }
 
             DirectoryInfo directoryInfo = new(assetFolder);
-            int hash = 0;
+            int hash = 17;
             foreach (FileInfo file in directoryInfo.GetFiles())
             {
-                hash += file.LastWriteTimeUtc.GetHashCode();
+                if (file.Extension == ".cid") continue;
+
+                hash = unchecked(hash * 31 + file.Name.GetHashCode());
+                hash = unchecked(hash * 31 + file.Length.GetHashCode());
             }
             return hash;
         }
@@ -339,6 +369,14 @@ namespace ExtraAssetsImporter.Database
                 {
                     if (asset.AssetPath == null) continue;
 
+                    // The source mod is still installed but wasn't re-registered this session (most likely
+                    // disabled in the playset, since a disabled mod's OnLoad never runs). Leave the generated
+                    // asset and its database entry untouched so it comes back instantly if re-enabled, instead
+                    // of treating it the same as a genuinely uninstalled mod. The trailing sweep below already
+                    // carries anything left in AssetsDatabase forward into _ValidateAssetsDatabase.
+                    if (!string.IsNullOrEmpty(asset.SourceModPath) && Directory.Exists(asset.SourceModPath))
+                        continue;
+
                     string path = Path.Combine(importerSettings.dataBase.rootPath, asset.AssetPath);
                     if (Directory.Exists(path))
                     {
@@ -438,6 +476,14 @@ namespace ExtraAssetsImporter.Database
             }
         }
 
+        internal List<EAIAsset> GetAllAssets()
+        {
+            lock (_lock)
+            {
+                return new List<EAIAsset>(AssetsDatabase.Values);
+            }
+        }
+
         internal void ClearDatabase()
         {
             lock (_lock)
@@ -460,14 +506,16 @@ namespace ExtraAssetsImporter.Database
         public int SourceAssetHash { get; set; }
         public int BuildAssetHash { get; set; }
         public string AssetPath { get; set; }
+        public string SourceModPath { get; set; }
 
-        public EAIAsset(string assetID, int assetHash, string assetPath, string prefabID = null)
+        public EAIAsset(string assetID, int assetHash, string assetPath, string prefabID = null, string sourceModPath = null)
         {
             AssetID = assetID;
             SourceAssetHash = assetHash;
             AssetPath = assetPath;
             BuildAssetHash = 0;
             PrefabID = prefabID;
+            SourceModPath = sourceModPath;
         }
 
         public static bool operator ==(EAIAsset lhs, EAIAsset rhs)

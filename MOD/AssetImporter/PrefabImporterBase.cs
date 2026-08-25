@@ -38,6 +38,10 @@ namespace ExtraAssetsImporter.AssetImporter
 
         protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
         {
+            // FolderImporter.AddCustomAssetsFolder registers Combine(modRoot, FolderName) as importerFolder,
+            // so its parent recovers the raw mod root that was passed to AssetsImporterManager.AddAssetFolder.
+            string sourceModPath = Directory.GetParent(importerFolder)?.FullName;
+
             foreach (string catFolder in Directory.GetDirectories(importerFolder))
             {
                 string catName = new DirectoryInfo(catFolder).Name;
@@ -81,6 +85,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                     if (importSettings.eaiDatabase.TryGetEAIAsset(fullAssetName, out EAIAsset eaiAsset))
                     {
+                        eaiAsset.SourceModPath = sourceModPath;
 
                         if(eaiAsset.AssetPath != assetDataPath)
                         {
@@ -113,16 +118,11 @@ namespace ExtraAssetsImporter.AssetImporter
                             }
                         }
 
-                        if (!needToUpdateAsset && importSettings.savePrefabs)
-                        {
-                            importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
-                            continue;
-                        }
-                    } 
+                    }
                     else
                     {
                         EAI.Logger.Info($"The asset {fullAssetName} is new, adding it.");
-                        eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath);
+                        eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath, sourceModPath: sourceModPath);
                         needToUpdateAsset = true;
                     }
 
@@ -173,12 +173,12 @@ namespace ExtraAssetsImporter.AssetImporter
                         // Should see this prefab has a pre-editor prefab.
                         prefab.version = 0;
 
-                        EditorAssetCategoryOverride categoryOverride = prefab.AddComponent<EditorAssetCategoryOverride>();
+                        EditorAssetCategoryOverride categoryOverride = prefab.AddOrGetComponent<EditorAssetCategoryOverride>();
                         categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
 
                         if (AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab))
                         {
-                            AssetPackItem assetPackItem = prefab.AddComponent<AssetPackItem>();
+                            AssetPackItem assetPackItem = prefab.AddOrGetComponent<AssetPackItem>();
                             assetPackItem.m_Packs = new[] { assetPackPrefab };
                         }
 
@@ -187,21 +187,16 @@ namespace ExtraAssetsImporter.AssetImporter
                         AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
                         VersionCompatiblity(prefab, importData);
 
-                        AssetDataPath prefabAssetPath;
-                        if (importSettings.isAssetPack)
-                        {
-                            prefabAssetPath = AssetDataPath.Create(importData.AssetDataPath, $"{importData.AssetName}{PrefabAsset.kExtension}", EscapeStrategy.None);
-                        }
-                        else
-                        {
-                            prefabAssetPath = AssetDataPath.Create(EAI.kTempFolderName, importData.FullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
-                        }
+                        // Saved next to the asset's own data (not the temp folder, which gets wiped on
+                        // every mod unload) so ImportersUtils.TryGetCachedPrefab can find and reload it
+                        // on a later session instead of rebuilding it from source.
+                        AssetDataPath prefabAssetPath = AssetDataPath.Create(importData.AssetDataPath, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None);
 
                         PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, Hash128.CreateGuid(importData.FullAssetName));
 
                         eaiAsset.PrefabID = prefab.GetPrefabID().ToString();
 
-                        // NOTE : When serializing, the version is set pack to 1 by the OnSerialise methode in the prefabBase.
+                        // NOTE : When serializing, the version is set back to 1 by the OnSerialise methode in the prefabBase.
                         if (importSettings.savePrefabs) prefabAsset.Save();
 
                         MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab));

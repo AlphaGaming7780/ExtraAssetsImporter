@@ -159,6 +159,8 @@ namespace ExtraAssetsImporter
                 
                 EL.AddOnInitialize(Initialize);
 
+                ClearTempFolder();
+
                 updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 
             } catch (Exception ex)
@@ -185,11 +187,16 @@ namespace ExtraAssetsImporter
 
         internal static void ClearData()
 		{
-			if (Directory.Exists(pathTempFolder))
-			{
-				Directory.Delete(pathTempFolder, true);
-			}
+			ClearTempFolder();
             if ( EAI.m_Setting.DeleteDataBase ) EAIDatabaseManager.DeleteDatabase();
+        }
+
+        internal static void ClearTempFolder()
+        {
+            if (Directory.Exists(pathTempFolder))
+            {
+                Directory.Delete(pathTempFolder, true);
+            }
         }
 
         internal static void AutoImportCustomAssets()

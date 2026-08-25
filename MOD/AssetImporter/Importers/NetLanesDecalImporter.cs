@@ -23,7 +23,10 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         protected override PrefabBase Import(PrefabImportData data)
         {
-            NetLaneGeometryPrefab netLanesPrefab = ScriptableObject.CreateInstance<NetLaneGeometryPrefab>();
+            if (ImportersUtils.TryGetCachedPrefab<NetLaneGeometryPrefab>(data, data.FullAssetName, ImportersUtils.GetPrefabFileName(data), out NetLaneGeometryPrefab cachedPrefab))
+                return cachedPrefab;
+
+            NetLaneGeometryPrefab netLanesPrefab = ImportersUtils.GetOrCreatePrefabInstance<NetLaneGeometryPrefab>(data.FullAssetName);
 
             if(data.PrefabJson != null)
             {

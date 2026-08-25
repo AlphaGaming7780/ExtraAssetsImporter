@@ -1,4 +1,5 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal;
+using Colossal.IO.AssetDatabase;
 using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.Database;
@@ -28,7 +29,7 @@ namespace ExtraAssetsImporter.AssetImporter
             ImporterSettings result = default(ImporterSettings);
             result.eaiDatabase = EAIDatabaseManager.eaiDatabase;
             result.dataBase = EAIDatabaseManager.EAIAssetDatabase;
-            result.savePrefabs = false;
+            result.savePrefabs = true;
             result.isAssetPack = false;
             result.outputFolderOffset = "";
             return result;
@@ -85,6 +86,8 @@ namespace ExtraAssetsImporter.AssetImporter
 
             EAI.Logger.Info($"The {ImporterId} importer starts loading its custom assets.");
 
+            PerformanceCounter performanceCounter = new();
+
             numberOfAssets = 0;
             ammoutOfAssetsloaded = 0;
             failedAssets = 0;
@@ -117,8 +120,6 @@ namespace ExtraAssetsImporter.AssetImporter
 
             PreLoadCustomAssetFolder(importSettings);
 
-            //Dictionary<string, string> csLocalisation = new();
-
             foreach (string importerFolder in _FolderToLoadAssets)
             {
 
@@ -148,26 +149,23 @@ namespace ExtraAssetsImporter.AssetImporter
                     modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(importerFolder).Parent.Name.Split('_')[0];
                 }
 
-                //yield return 
                 LoadCustomAssetFolder(importSettings, importerFolder, modName, notificationInfo);
             }
 
             AfterLoadCustomAssetFolder(importSettings);
 
-            //foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
-            //{
-            //    GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(csLocalisation));
-            //}
+            TimeSpan elapsed = performanceCounter.result;
+            double msPerAsset = numberOfAssets > 0 ? elapsed.TotalMilliseconds / numberOfAssets : 0;
 
             EL.m_NotificationUISystem.RemoveNotification(
                 identifier: notificationInfo.id,
                 delay: 5f,
-                text: $"Complete, {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped.",
+                text: $"Complete, {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped. Took {elapsed.TotalSeconds:F2}s ({msPerAsset:F1}ms/asset).",
                 progressState: ProgressState.Complete,
                 progress: 100
             );
 
-            EAI.Logger.Info($"The {ImporterId} importer finished loading all its assets. {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped.");
+            EAI.Logger.Info($"The {ImporterId} importer finished loading all its assets. {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped. Took {elapsed.TotalSeconds:F2}s ({msPerAsset:F1}ms/asset).");
 
             AssetsLoaded = true;
             AssetsLoading = false;

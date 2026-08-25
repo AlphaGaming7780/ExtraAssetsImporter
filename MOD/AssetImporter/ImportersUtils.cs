@@ -27,46 +27,107 @@ namespace ExtraAssetsImporter.AssetImporter
     {
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
-            if (data.NeedToUpdateAsset)
+            TryGetCachedPrefab<RenderPrefab>(data, GetRenderPrefabName(data), GetRenderPrefabFileName(data), out RenderPrefab renderPrefab);
+            return renderPrefab;
+        }
+
+        public static T GetOrCreatePrefabInstance<T>(string prefabName) where T : PrefabBase
+        {
+            return MainThreadHelper.RunOnMainThread(() =>
             {
-                EAI.Logger.Info($"Need to update the cached data for {data.FullAssetName}.");
-                return null;
+                PrefabID prefabID = new PrefabID(typeof(T).Name, prefabName, Hash128.CreateGuid(prefabName));
+
+                if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is T existing)
+                    return existing;
+
+                return (T)ScriptableObject.CreateInstance(typeof(T));
+            }).Result;
+        }
+
+        public static bool TryParsePrefabID(string value, out PrefabID prefabID)
+        {
+            prefabID = default;
+            if (string.IsNullOrEmpty(value)) return false;
+
+            int typeSeparator = value.IndexOf(':');
+            if (typeSeparator < 0) return false;
+
+            string type = value.Substring(0, typeSeparator);
+            string rest = value.Substring(typeSeparator + 1);
+
+            int hashStart = rest.LastIndexOf(" (", StringComparison.Ordinal);
+            if (hashStart >= 0 && rest[rest.Length - 1] == ')')
+            {
+                string hashText = rest.Substring(hashStart + 2, rest.Length - hashStart - 3);
+                if (Hash128.TryParse(hashText, out Hash128 hash))
+                {
+                    prefabID = new PrefabID(type, rest.Substring(0, hashStart), hash);
+                    return true;
+                }
             }
 
-            string renderPrefabName = GetRenderPrefabName(data);
-            PrefabID prefabID = new PrefabID(nameof(RenderPrefab), renderPrefabName, Hash128.CreateGuid(renderPrefabName));
-            if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is RenderPrefab renderPrefab)
+            prefabID = new PrefabID(type, rest);
+            return true;
+        }
+
+        public static void UnloadPrefab(PrefabID prefabID)
+        {
+            if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefab))
+                return;
+
+            MainThreadHelper.RunOnMainThread(() =>
             {
-                EAI.Logger.Info($"RenderPrefab for {data.FullAssetName} was already loaded and in the prefab system.");
-                return renderPrefab;
+                EL.m_PrefabSystem.RemovePrefab(prefab);
+                prefab.asset?.Unload();
+            }).Wait();
+        }
+
+        public static bool TryGetCachedPrefab<T>(PrefabImportData data, string prefabName, string fileName, out T prefab) where T : PrefabBase
+        {
+            if (data.NeedToUpdateAsset)
+            {
+                prefab = null;
+                return false;
+            }
+
+            PrefabID prefabID = new PrefabID(typeof(T).Name, prefabName, Hash128.CreateGuid(prefabName));
+            if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is T existing)
+            {
+                EAI.Logger.Info($"{typeof(T).Name} for {prefabName} was already loaded and in the prefab system.");
+                prefab = existing;
+                return true;
             }
 
             try
             {
-                AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
-                if (data.ImportSettings.dataBase.TryLoadPrefab<RenderPrefab>(renderPrefabAssetPath, out renderPrefab))
+                AssetDataPath prefabAssetPath = AssetDataPath.Create(data.AssetDataPath, fileName, true, EscapeStrategy.None);
+                if (data.ImportSettings.dataBase.TryLoadPrefab<T>(prefabAssetPath, out prefab))
                 {
-                    EAI.Logger.Info($"Cached data for {data.FullAssetName}, loading the cache.");
+                    EAI.Logger.Info($"Cached data for {prefabName}, loading the cache.");
 
-                    if(!EL.m_PrefabSystem.TryGetPrefab(renderPrefab.GetPrefabID(), out _))
+                    T loaded = prefab;
+                    if (!EL.m_PrefabSystem.TryGetPrefab(loaded.GetPrefabID(), out _))
                     {
-                        EAI.Logger.Info($"Adding {renderPrefab.name} to the prefab system.");
-                        MainThreadDispatcher.RunOnMainThread( () => EL.m_PrefabSystem.AddPrefab(renderPrefab));
+                        MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddPrefab(loaded));
                     }
 
-                    return renderPrefab;
+                    return true;
                 }
 
-                EAI.Logger.Info($"No cached data for {data.FullAssetName}.");
-                return null;
-
+                EAI.Logger.Info($"No cached data for {prefabName}.");
             }
             catch (Exception e)
             {
-                EAI.Logger.Warn($"Failed to load the cached data for {data.FullAssetName}.\nException:{e}.");
+                EAI.Logger.Warn($"Failed to load the cached prefab for {prefabName}.\nException:{e}.");
             }
 
-            return null;
+            prefab = null;
+            return false;
+        }
+
+        public static string GetPrefabFileName(PrefabImportData data)
+        {
+            return $"{data.AssetName}{PrefabAsset.kExtension}";
         }
 
         public static RenderPrefab CreateRenderPrefab(PrefabImportData data, SurfaceAsset surfaceAsset, Mesh[] meshes, Action<PrefabImportData, RenderPrefab, SurfaceAsset> setupRenderPrefab)
@@ -89,12 +150,7 @@ namespace ExtraAssetsImporter.AssetImporter
             geometryAsset.SetData(meshes);
             geometryAsset.Save(false);
 
-            PrefabID prefabID = new PrefabID(typeof(RenderPrefab).Name, GetRenderPrefabName(data));
-
-            if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) || prefabBase is not RenderPrefab renderPrefab)
-            {
-                renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
-            }
+            RenderPrefab renderPrefab = GetOrCreatePrefabInstance<RenderPrefab>(GetRenderPrefabName(data));
 
             renderPrefab.name = GetRenderPrefabName(data);
             renderPrefab.geometryAsset = geometryAsset;
@@ -244,7 +300,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     iconString = imageAsset.ToGlobalUri();
             }
 
-            UIObject prefabUI = prefab.AddComponent<UIObject>();
+            UIObject prefabUI = prefab.AddOrGetComponent<UIObject>();
             prefabUI.m_IsDebugObject = false;
             prefabUI.m_Icon = iconString;
             prefabUI.m_Priority = UiPriority;

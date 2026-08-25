@@ -136,6 +136,7 @@ namespace ExtraAssetsImporter.OldImporters
 
                         FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
                         string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                        string sourceModPath = new DirectoryInfo(folder).Parent.FullName;
                         string fullNetLaneName = $"{modName} {catName} {netLanesName} NetLane";
                         string assetDataPath = Path.Combine("CustomNetLanes", modName, catName, netLanesName);
 
@@ -175,6 +176,7 @@ namespace ExtraAssetsImporter.OldImporters
                             PrefabBase prefab = CreateCustomNetLane(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, assetCat, renderPrefab);
 
                             asset.PrefabID = prefab.GetPrefabID().ToString();
+                            asset.SourceModPath = sourceModPath;
 
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullNetLaneName}]")) csLocalisation.Add($"Assets.NAME[{fullNetLaneName}]", netLanesName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullNetLaneName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullNetLaneName}]", netLanesName);

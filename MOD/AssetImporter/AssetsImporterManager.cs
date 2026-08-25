@@ -1,4 +1,5 @@
-﻿using Colossal.AssetPipeline;
+﻿using Colossal;
+using Colossal.AssetPipeline;
 using Colossal.IO;
 using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.Internal;
@@ -269,9 +270,13 @@ namespace ExtraAssetsImporter.AssetImporter
 
         private static void LoadCustomAssetsAsync_Impl(ImporterSettings importerSettings)
         {
+            PerformanceCounter totalPerformanceCounter = new();
+
             CreateEAILocalAssetPackPrefab();
 
             EAI.Logger.Info("Starting the loading of pre importers.");
+
+            PerformanceCounter preImportersPerformanceCounter = new();
 
             var tasks = s_PreImporters.Values
                 .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings)))
@@ -279,8 +284,10 @@ namespace ExtraAssetsImporter.AssetImporter
 
             Task.WaitAll(tasks);
 
-            EAI.Logger.Info("The loading of pre importers has finished.");
+            EAI.Logger.Info($"The loading of pre importers has finished. Took {preImportersPerformanceCounter.result.TotalSeconds:F2}s.");
             EAI.Logger.Info("Starting the loading of importers.");
+
+            PerformanceCounter importersPerformanceCounter = new();
 
             tasks = s_Importers.Values
                 .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings)))
@@ -295,14 +302,14 @@ namespace ExtraAssetsImporter.AssetImporter
                 Thread.Sleep(50);
             }
 
-            EAI.Logger.Info("The loading of importers has finished.");
+            EAI.Logger.Info($"The loading of importers has finished. Took {importersPerformanceCounter.result.TotalSeconds:F2}s.");
 
             if (!importerSettings.isAssetPack)
                 EAI.m_Setting.ResetCompatibility();
 
             importerSettings.eaiDatabase.SaveValidateDatabase(importerSettings);
 
-            EAI.Logger.Info("All custom assets have been loaded.");
+            EAI.Logger.Info($"All custom assets have been loaded. Took {totalPerformanceCounter.result.TotalSeconds:F2}s.");
 
         }
 

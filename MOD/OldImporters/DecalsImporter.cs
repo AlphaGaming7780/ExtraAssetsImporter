@@ -139,6 +139,7 @@ namespace ExtraAssetsImporter.OldImporters
 
                         FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
                         string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                        string sourceModPath = new DirectoryInfo(folder).Parent.FullName;
                         string fullDecalName = $"{modName} {catName} {decalName} Decal";
                         string assetDataPath = Path.Combine("CustomDecals", modName, catName, decalName);
 
@@ -177,6 +178,7 @@ namespace ExtraAssetsImporter.OldImporters
                             PrefabBase prefab = CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
 
                             asset.PrefabID = prefab.GetPrefabID().ToString();
+                            asset.SourceModPath = sourceModPath;
 
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullDecalName}]")) csLocalisation.Add($"Assets.NAME[{fullDecalName}]", decalName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullDecalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullDecalName}]", decalName);

@@ -22,7 +22,10 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         protected override PrefabBase Import(PrefabImportData data)
         {
-            SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
+            if (ImportersUtils.TryGetCachedPrefab<SurfacePrefab>(data, data.FullAssetName, ImportersUtils.GetPrefabFileName(data), out SurfacePrefab cachedPrefab))
+                return cachedPrefab;
+
+            SurfacePrefab surfacePrefab = ImportersUtils.GetOrCreatePrefabInstance<SurfacePrefab>(data.FullAssetName);
             surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
 
             if (data.PrefabJson != null)
@@ -38,7 +41,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         private void SetupRenderedArea(SurfacePrefab surfacePrefab, PrefabImportData data )
         {
-            RenderedArea renderedArea = surfacePrefab.AddComponent<RenderedArea>();
+            RenderedArea renderedArea = surfacePrefab.AddOrGetComponent<RenderedArea>();
 
             renderedArea.m_BaseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
             renderedArea.m_NormalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data);
