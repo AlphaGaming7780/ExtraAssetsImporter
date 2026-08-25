@@ -1,7 +1,7 @@
 ﻿using Colossal.IO.AssetDatabase;
 using Colossal.Localization;
 using Colossal.PSI.Common;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using ExtraLib;
 using Game.SceneFlow;
 using Game.UI.Menu;
@@ -26,8 +26,8 @@ namespace ExtraAssetsImporter.AssetImporter
         public static ImporterSettings GetDefault()
         {
             ImporterSettings result = default(ImporterSettings);
-            result.eaiDatabase = EAIDataBaseManager.eaiDataBase;
-            result.dataBase = EAIDataBaseManager.EAIAssetDataBase;
+            result.eaiDatabase = EAIDatabaseManager.eaiDatabase;
+            result.dataBase = EAIDatabaseManager.EAIAssetDatabase;
             result.savePrefabs = false;
             result.isAssetPack = false;
             result.outputFolderOffset = "";

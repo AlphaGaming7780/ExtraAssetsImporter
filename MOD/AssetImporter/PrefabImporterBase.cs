@@ -5,7 +5,7 @@ using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
 using ExtraLib.Helpers;
@@ -76,7 +76,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     Variant prefabJson = null;
                     if (File.Exists(prefabJsonPath)) prefabJson = ImportersUtils.LoadJson(prefabJsonPath);
 
-                    int sourceAssetFolderHash = EAIDataBaseManager.GetAssetHash(assetFolder);
+                    int sourceAssetFolderHash = EAIDatabaseManager.GetAssetHash(assetFolder);
                     bool needToUpdateAsset = false;
 
                     if (importSettings.eaiDatabase.TryGetEAIAsset(fullAssetName, out EAIAsset eaiAsset))
@@ -105,7 +105,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if (!needToUpdateAsset)
                         {
-                            int hash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
+                            int hash = EAIDatabaseManager.GetAssetHash(fullAssetDataPath);
                             if (eaiAsset.BuildAssetHash != hash)
                             {
                                 EAI.Logger.Info($"The asset {fullAssetName} built files have changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
@@ -218,7 +218,7 @@ namespace ExtraAssetsImporter.AssetImporter
                         // End of importing, saving cache.
                         if (needToUpdateAsset)
                         {
-                            int buildAssetFolderHash = EAIDataBaseManager.GetAssetHash(fullAssetDataPath);
+                            int buildAssetFolderHash = EAIDatabaseManager.GetAssetHash(fullAssetDataPath);
                             eaiAsset.BuildAssetHash = buildAssetFolderHash;
                         }
 
@@ -242,7 +242,7 @@ namespace ExtraAssetsImporter.AssetImporter
             failedAssets++;
             ammoutOfAssetsloaded++;
             EAI.Logger.Error($"Failed to load the custom asset at {assetFolder} | ERROR : {e}");
-            string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
+            string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
         }
 

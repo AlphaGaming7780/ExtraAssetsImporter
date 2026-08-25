@@ -6,7 +6,7 @@ using Colossal.PSI.Environment;
 using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
 using ExtraLib.Debugger;
@@ -38,7 +38,7 @@ namespace ExtraAssetsImporter
 
         internal const string kTempFolderName = "TempAssetsFolder";
 
-        internal static string pathTempFolder => Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, kTempFolderName);
+        internal static string pathTempFolder => Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, kTempFolderName);
 
         internal static TextureStreamingSystem textureStreamingSystem;
 
@@ -106,7 +106,7 @@ namespace ExtraAssetsImporter
                 {
                     try
                     {
-                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? EAIDataBaseManager.defaultDatabasePath);
+                        Directory.Move(oldDataPath, m_Setting.DatabasePath ?? EAIDatabaseManager.defaultDatabasePath);
                     }
                     catch
                     {
@@ -173,7 +173,7 @@ namespace ExtraAssetsImporter
 		public void OnDispose()
 		{
 			Logger.Info(nameof(OnDispose));
-			EAIDataBaseManager.CheckIfDataBaseNeedToBeRelocated();
+			EAIDatabaseManager.CheckIfDatabaseNeedToBeRelocated();
             ClearData();
 		}
 
@@ -189,7 +189,7 @@ namespace ExtraAssetsImporter
 			{
 				Directory.Delete(pathTempFolder, true);
 			}
-            if ( EAI.m_Setting.DeleteDataBase ) EAIDataBaseManager.DeleteDatabase();
+            if ( EAI.m_Setting.DeleteDataBase ) EAIDatabaseManager.DeleteDatabase();
         }
 
         internal static void AutoImportCustomAssets()

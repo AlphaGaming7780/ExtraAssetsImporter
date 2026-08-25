@@ -2,7 +2,7 @@
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
@@ -143,11 +143,11 @@ namespace ExtraAssetsImporter.OldImporters
                         {
                             RenderPrefab renderPrefab = null;
 
-                            if (!EAIDataBaseManager.TryGetEAIAsset(fullNetLaneName, out EAIAsset asset) || asset.SourceAssetHash != EAIDataBaseManager.GetAssetHash(netLanesFolder))
+                            if (!EAIDatabaseManager.TryGetEAIAsset(fullNetLaneName, out EAIAsset asset) || asset.SourceAssetHash != EAIDatabaseManager.GetAssetHash(netLanesFolder))
                             {
                                 //renderPrefab = CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath);
                                 renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
-                                asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
+                                asset = new(fullNetLaneName, EAIDatabaseManager.GetAssetHash(netLanesFolder), assetDataPath);
                             }
                             else
                             {
@@ -168,7 +168,7 @@ namespace ExtraAssetsImporter.OldImporters
                                 {
                                     //EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
                                     renderPrefab = DecalsImporter.CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, "CurvedDecal");
-                                    asset = new(fullNetLaneName, EAIDataBaseManager.GetAssetHash(netLanesFolder), assetDataPath);
+                                    asset = new(fullNetLaneName, EAIDatabaseManager.GetAssetHash(netLanesFolder), assetDataPath);
                                 }
                             }
 
@@ -179,14 +179,14 @@ namespace ExtraAssetsImporter.OldImporters
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullNetLaneName}]")) csLocalisation.Add($"Assets.NAME[{fullNetLaneName}]", netLanesName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullNetLaneName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullNetLaneName}]", netLanesName);
 
-                            EAIDataBaseManager.AddOrValidateAsset(asset);
+                            EAIDatabaseManager.AddOrValidateAsset(asset);
 
                         }
                         catch (Exception e)
                         {
                             failedNetLanes++;
                             EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
-                            string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
+                            string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
                             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
                             else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
                         }
@@ -323,7 +323,7 @@ namespace ExtraAssetsImporter.OldImporters
             netLanesPrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}");
 
             AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullNetLaneName + PrefabAsset.kExtension, EscapeStrategy.None);
-            EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
+            EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, netLanesPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullNetLaneName));
 
             EL.m_PrefabSystem.AddPrefab(netLanesPrefab);
 

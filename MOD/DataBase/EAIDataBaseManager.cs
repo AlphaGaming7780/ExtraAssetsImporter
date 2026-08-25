@@ -15,48 +15,48 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Mathematics;
 
-namespace ExtraAssetsImporter.DataBase
+namespace ExtraAssetsImporter.Database
 {
-    internal static class EAIDataBaseManager
+    internal static class EAIDatabaseManager
     {
-        public const int DataBaseVersion = 3;
+        public const int DatabaseVersion = 4;
         internal const string databaseFolderName = ".Database";
-        internal static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDataBase.json");
+        internal static readonly string pathToAssetsDatabase = Path.Combine(EAI.pathModsData, "AssetsDatabase.json");
         internal static readonly string defaultDatabasePath = Path.GetFullPath(Path.Combine(EAI.pathModsData, databaseFolderName));
-        public static EAIDatabase eaiDataBase;
-        public static AssetDatabase<EAIAssetDataBaseDescriptor> EAIAssetDataBase => AssetDatabase<EAIAssetDataBaseDescriptor>.instance;
+        public static EAIDatabase eaiDatabase;
+        public static AssetDatabase<EAIAssetDatabaseDescriptor> EAIAssetDatabase => AssetDatabase<EAIAssetDatabaseDescriptor>.instance;
 
-        internal static Task LoadDataBase()
+        internal static Task LoadDatabase()
         {
             if(!File.Exists(pathToAssetsDatabase))
             {
-                eaiDataBase = new();
+                eaiDatabase = new();
             } else
             {
                 try
                 {
-                    eaiDataBase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDatabase>();
+                    eaiDatabase = Decoder.Decode(File.ReadAllText(pathToAssetsDatabase)).Make<EAIDatabase>();
                 }
                 catch
                 {
-                    eaiDataBase = new();
+                    eaiDatabase = new();
                 }
             }
 
-            eaiDataBase._DatabasePath = pathToAssetsDatabase;
+            eaiDatabase._DatabasePath = pathToAssetsDatabase;
 
-            if (eaiDataBase.DataBaseVersion != DataBaseVersion)
+            if (eaiDatabase.DatabaseVersion != DatabaseVersion)
             {
-                EAI.Logger.Warn($"The database version is incorrect, expected {DataBaseVersion}, got {eaiDataBase.DataBaseVersion}. The database will be reset.");
-                eaiDataBase.ClearDatabase();
+                EAI.Logger.Warn($"The database version is incorrect, expected {DatabaseVersion}, got {eaiDatabase.DatabaseVersion}. The database will be reset.");
+                eaiDatabase.ClearDatabase();
             }
 
-            CheckIfDataBaseNeedToBeRelocated();
+            CheckIfDatabaseNeedToBeRelocated();
 
             return RegisterEaiAssetDatabase();
         }
 
-        internal static EAIDatabase LoadDataBase(string path, string databasePath = null)
+        internal static EAIDatabase LoadDatabase(string path, string databasePath = null)
         {
 
             EAIDatabase database;
@@ -77,35 +77,35 @@ namespace ExtraAssetsImporter.DataBase
                 }
             }
 
-            if (database.DataBaseVersion != DataBaseVersion)
+            if (database.DatabaseVersion != DatabaseVersion)
             {
-                EAI.Logger.Warn($"The database version is incorrect, expected {DataBaseVersion}, got {database.DataBaseVersion}. The database will be reset.");
+                EAI.Logger.Warn($"The database version is incorrect, expected {DatabaseVersion}, got {database.DatabaseVersion}. The database will be reset.");
                 database = new();
             }
 
             database._DatabasePath = path;
-            database.ActualDataBasePath = databasePath;
+            database.ActualDatabasePath = databasePath;
 
             return database;
         }
 
-        internal static void SaveDataBase()
+        internal static void SaveDatabase()
         {
 
-            eaiDataBase.SaveDataBase();
+            eaiDatabase.SaveDatabase();
         }
         internal static void DeleteDatabase()
         {
 
-            eaiDataBase.ClearDatabase();
+            eaiDatabase.ClearDatabase();
         }
 
         internal static Task RegisterEaiAssetDatabase()
         {
             CancellationToken cancellationToken = new();
-            ProgressTracker progressTracker = new("EAI_PopulateDataBase", true);
+            ProgressTracker progressTracker = new("EAI_PopulateDatabase", true);
 
-            var notif = EL.m_NotificationUISystem.AddOrUpdateNotification("EAI.PopulatingDataBase", "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
+            var notif = EL.m_NotificationUISystem.AddOrUpdateNotification("EAI.PopulatingDatabase", "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
             void action(ProgressTracker tracker)
             {
                 notif.progress = (int)math.round(tracker.progress * 100);
@@ -113,7 +113,7 @@ namespace ExtraAssetsImporter.DataBase
             }
             TaskProgress taskProgress = new(action);
 
-            Task task = AssetDatabase.global.RegisterDatabase(EAIAssetDataBase).ContinueWith((t) =>
+            Task task = AssetDatabase.global.RegisterDatabase(EAIAssetDatabase).ContinueWith((t) =>
             {
                 if (t.IsFaulted)
                 {
@@ -126,7 +126,7 @@ namespace ExtraAssetsImporter.DataBase
 
                 else
                 {
-                    Task task2 = EAIAssetDataBase.PopulateFromDataSource(false, cancellationToken, taskProgress);
+                    Task task2 = EAIAssetDatabase.PopulateFromDataSource(false, cancellationToken, taskProgress);
 
                     task2.Wait();
 
@@ -150,7 +150,7 @@ namespace ExtraAssetsImporter.DataBase
 
             });
 
-            EAI.Logger.Info($"DataBase Location : {EAIAssetDataBase.rootPath}.");
+            EAI.Logger.Info($"Database Location : {EAIAssetDatabase.rootPath}.");
 
             return task;
         }
@@ -158,13 +158,13 @@ namespace ExtraAssetsImporter.DataBase
         internal static void AddOrValidateAsset(EAIAsset asset)
         {
 
-            eaiDataBase.AddOrValidateAsset(asset);
+            eaiDatabase.AddOrValidateAsset(asset);
             
         }
 
         internal static bool TryGetEAIAsset(string AssetID, out EAIAsset asset)
         {
-            return eaiDataBase.TryGetEAIAsset(AssetID, out asset);
+            return eaiDatabase.TryGetEAIAsset(AssetID, out asset);
         }
 
 
@@ -186,7 +186,7 @@ namespace ExtraAssetsImporter.DataBase
 
         public static void RemoveAllPrefab()
         {
-            IEnumerable<IAssetData> assetsData = EAIAssetDataBase.AllAssets();
+            IEnumerable<IAssetData> assetsData = EAIAssetDatabase.AllAssets();
 
             foreach (IAssetData assetData in assetsData)
             {
@@ -201,11 +201,11 @@ namespace ExtraAssetsImporter.DataBase
             }
         }
 
-        internal static void CheckIfDataBaseNeedToBeRelocated()
+        internal static void CheckIfDatabaseNeedToBeRelocated()
         {
-            if (eaiDataBase == null) LoadDataBase();
+            if (eaiDatabase == null) LoadDatabase();
 
-            if(string.IsNullOrEmpty(EAI.m_Setting.SavedDatabasePath) || EAI.m_Setting.SavedDatabasePath == eaiDataBase.ActualDataBasePath) return;
+            if(string.IsNullOrEmpty(EAI.m_Setting.SavedDatabasePath) || EAI.m_Setting.SavedDatabasePath == eaiDatabase.ActualDatabasePath) return;
 
             if(!Directory.Exists(EAI.m_Setting.SavedDatabasePath))
             {
@@ -215,46 +215,59 @@ namespace ExtraAssetsImporter.DataBase
 
             string newPath = Path.Combine(EAI.m_Setting.SavedDatabasePath, databaseFolderName);
 
-            if (newPath != eaiDataBase.ActualDataBasePath)
+            if (newPath != eaiDatabase.ActualDatabasePath)
             {
-                RelocateAssetDataBase(newPath);
-                EAI.m_Setting.SavedDatabasePath = eaiDataBase.ActualDataBasePath;
-                EAI.m_Setting.Apply();
+                if (RelocateAssetDatabase(newPath))
+                {
+                    EAI.m_Setting.SavedDatabasePath = eaiDatabase.ActualDatabasePath;
+                    EAI.m_Setting.Apply();
+                }
             }
         }
 
-        public static bool RelocateAssetDataBase(string newDirectory)
+        public static bool RelocateAssetDatabase(string newDirectory)
         {
-            if (newDirectory == eaiDataBase.ActualDataBasePath) return false;
+            if (newDirectory == eaiDatabase.ActualDatabasePath) return false;
+
+            bool sourceExists = Directory.Exists(eaiDatabase.ActualDatabasePath);
 
             if (Directory.Exists(newDirectory))
             {
-                EAI.Logger.Error($"Failed to relocate database, the directory already exist: {newDirectory}");
-                return false;
-            }
+                if (sourceExists)
+                {
+                    // Genuine conflict: both the currently tracked path and the target already hold data.
+                    EAI.Logger.Error($"Failed to relocate database, the directory already exist: {newDirectory}");
+                    return false;
+                }
 
-            if (!Directory.Exists(eaiDataBase.ActualDataBasePath))
-            {
-                eaiDataBase.ActualDataBasePath = newDirectory;
-                SaveDataBase();
+                // Nothing to move — a database already lives at the target (e.g. the tracked path was lost
+                // after AssetsDatabase.json got reset while the real data still lives there). Adopt it.
+                eaiDatabase.ActualDatabasePath = newDirectory;
+                SaveDatabase();
                 return true;
             }
 
-            //RemoveAllPrefab();
-            AssetDatabase.global.UnregisterDatabase(EAIAssetDataBase).Wait();
-            EAIAssetDataBase.Dispose();
+            if (!sourceExists)
+            {
+                eaiDatabase.ActualDatabasePath = newDirectory;
+                SaveDatabase();
+                return true;
+            }
+
+            AssetDatabase.global.UnregisterDatabase(EAIAssetDatabase).Wait();
+            EAIAssetDatabase.Dispose();
 
             try
             {
-                Directory.Move(eaiDataBase.ActualDataBasePath, newDirectory);
-                eaiDataBase.ActualDataBasePath = newDirectory;
-                SaveDataBase();
+                Directory.Move(eaiDatabase.ActualDatabasePath, newDirectory);
+                eaiDatabase.ActualDatabasePath = newDirectory;
+                SaveDatabase();
             }
             catch (Exception ex)
             {
                 EAI.Logger.Warn(
                     $"Failed to relocate database.\n" +
-                    $"From: {eaiDataBase.ActualDataBasePath}\n" +
+                    $"From: {eaiDatabase.ActualDatabasePath}\n" +
                     $"To: {newDirectory}\n" +
                     $"Error: {ex}"
                 );
@@ -270,40 +283,40 @@ namespace ExtraAssetsImporter.DataBase
 
         public EAIDatabase() {}
 
-        public int DataBaseVersion = EAIDataBaseManager.DataBaseVersion;
-        public string ActualDataBasePath = EAIDataBaseManager.defaultDatabasePath;
-        public List<EAIAsset> AssetsDataBase = new List<EAIAsset>();
-        private readonly List<EAIAsset> _ValidateAssetsDataBase = new List<EAIAsset>();
+        public int DatabaseVersion = EAIDatabaseManager.DatabaseVersion;
+        public string ActualDatabasePath = EAIDatabaseManager.defaultDatabasePath;
+        public Dictionary<string, EAIAsset> AssetsDatabase = new Dictionary<string, EAIAsset>();
+        private readonly Dictionary<string, EAIAsset> _ValidateAssetsDatabase = new Dictionary<string, EAIAsset>();
         internal string _DatabasePath = null;
 
         private readonly object _lock = new object();
 
 
-        internal void SaveValidateDataBase(ImporterSettings importerSettings)
+        internal void SaveValidateDatabase(ImporterSettings importerSettings)
         {
             lock (_lock)
             {
                 if (!EAI.m_Setting.DeleteNotLoadedAssets)
                 {
-                    _ValidateAssetsDataBase.AddRange(AssetsDataBase);
-                    AssetsDataBase.Clear();
+                    foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase) _ValidateAssetsDatabase[entry.Key] = entry.Value;
+                    AssetsDatabase.Clear();
                 }
                 else
                 {
                     ClearNotLoadedAssetsFromFiles(importerSettings);
                 }
 
-                AssetsDataBase = _ValidateAssetsDataBase;
-                SaveDataBase();
+                AssetsDatabase = _ValidateAssetsDatabase;
+                SaveDatabase();
             }
         }
 
-        internal void SaveDataBase()
+        internal void SaveDatabase()
         {
             lock (_lock)
             {
-                DataBaseVersion = EAIDataBaseManager.DataBaseVersion;
-                EAI.Logger.Info($"Saving the database at {_DatabasePath}, saving {AssetsDataBase.Count} assets.");
+                DatabaseVersion = EAIDatabaseManager.DatabaseVersion;
+                EAI.Logger.Info($"Saving the database at {_DatabasePath}, saving {AssetsDatabase.Count} assets.");
                 string directoryPath = Path.GetDirectoryName(_DatabasePath);
                 if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
                 File.WriteAllText(_DatabasePath, Encoder.Encode(this, EncodeOptions.None));
@@ -320,16 +333,16 @@ namespace ExtraAssetsImporter.DataBase
                     EAI.Logger.Info("Skipping clearing not loaded assets from files because the setting is disabled.");
                     return;
                 }
-                List<EAIAsset> tempDataBase = new(AssetsDataBase);
-                EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDataBase.Count}");
-                foreach (EAIAsset asset in tempDataBase)
+                List<EAIAsset> tempAssets = new(AssetsDatabase.Values);
+                EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDatabase.Count}");
+                foreach (EAIAsset asset in tempAssets)
                 {
                     if (asset.AssetPath == null) continue;
 
                     string path = Path.Combine(importerSettings.dataBase.rootPath, asset.AssetPath);
                     if (Directory.Exists(path))
                     {
-                        if (!AssetsDataBase.Remove(asset))
+                        if (!AssetsDatabase.Remove(asset.AssetID))
                         {
                             EAI.Logger.Warn($"Failed to remove an unloaded asset at path {path} from the database.");
                             continue;
@@ -352,17 +365,17 @@ namespace ExtraAssetsImporter.DataBase
                                 }
                                 string pathA = a.subPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
                                 string pathB = Path.DirectorySeparatorChar + asset.AssetPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-                                return pathA.Contains(pathB) && !ActualDataBasePath.Contains(pathA);
+                                return pathA.Contains(pathB) && !ActualDatabasePath.Contains(pathA);
                             }
                             catch (Exception ex)
                             {
-                                EAI.Logger.Warn($"Exception when trying to compare prefab asset paths when removing unused assets from database. Exception : {ex.ToString()}");
+                                EAI.Logger.Warn($"Exception when trying to compare prefab asset paths when removing unused assets from database. Exception : {ex}");
                                 return false;
                             }
                         });
 
-                        IEnumerable<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter);
-                        prefabAssets.Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter));
+                        IEnumerable<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter)
+                            .Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter));
 
                         foreach (PrefabAsset prefabAsset in prefabAssets)
                         {
@@ -388,54 +401,53 @@ namespace ExtraAssetsImporter.DataBase
                     }
                     else EAI.Logger.Warn($"Trying to delete an unloaded asset at path {path}, but this path doesn't exist.");
                 }
-                EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDataBase.Count}.");
-                _ValidateAssetsDataBase.AddRange(AssetsDataBase);
-                AssetsDataBase.Clear();
+                EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDatabase.Count}.");
+                foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase) _ValidateAssetsDatabase[entry.Key] = entry.Value;
+                AssetsDatabase.Clear();
             }
         }
 
         internal void AddOrValidateAsset(EAIAsset asset)
         {
-            lock (_lock) 
+            lock (_lock)
             {
-                if (AssetsDataBase.Contains(asset))
-                {
-                    AssetsDataBase.RemoveAll((Asset2) => Asset2 == asset);
-                }
+                AssetsDatabase.Remove(asset.AssetID);
 
-                if (_ValidateAssetsDataBase.Contains(asset))
+                if (_ValidateAssetsDatabase.Remove(asset.AssetID))
                 {
                     EAI.Logger.Warn($"Validating an already validated asset {asset.AssetID}, removing the old one and adding the new one.");
-                    _ValidateAssetsDataBase.RemoveAll((asset2) => asset2 == asset);
                 }
 
-                _ValidateAssetsDataBase.Add(asset);
+                _ValidateAssetsDatabase[asset.AssetID] = asset;
             }
         }
 
         internal EAIAsset GetEAIAsset(string AssetID)
         {
-            EAIAsset asset = AssetsDataBase.Find((asset) => asset.AssetID == AssetID);
+            if (TryGetEAIAsset(AssetID, out EAIAsset asset)) return asset;
 
-            if (asset != EAIAsset.Null) return asset;
-
-            EAI.Logger.Warn($"Try to get an asset with this ID '{AssetID}', but it's not in the dataBase");
+            EAI.Logger.Warn($"Tried to get an asset with this ID '{AssetID}', but it's not in the dataBase");
             return asset;
         }
 
         internal bool TryGetEAIAsset(string AssetID, out EAIAsset asset)
         {
-            asset = AssetsDataBase.Find(asset => asset.AssetID == AssetID);
-            return asset != EAIAsset.Null;
+            lock (_lock)
+            {
+                return AssetsDatabase.TryGetValue(AssetID, out asset);
+            }
         }
 
         internal void ClearDatabase()
         {
-            EAI.Logger.Info($"Clearing database at {this._DatabasePath}.");
-            _ValidateAssetsDataBase.Clear();
-            AssetsDataBase.Clear();
-            SaveDataBase();
-            Directory.Delete(ActualDataBasePath, true);
+            lock (_lock)
+            {
+                EAI.Logger.Info($"Clearing database at {this._DatabasePath}.");
+                _ValidateAssetsDatabase.Clear();
+                AssetsDatabase.Clear();
+                SaveDatabase();
+                Directory.Delete(ActualDatabasePath, true);
+            }
         }
 
     }

@@ -5,7 +5,7 @@ using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.ClassExtension;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
 using ExtraLib.Helpers;
@@ -146,11 +146,11 @@ namespace ExtraAssetsImporter.OldImporters
                         {
                             RenderPrefab renderPrefab = null;
 
-                            if (!EAIDataBaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.SourceAssetHash != EAIDataBaseManager.GetAssetHash(decalsFolder))
+                            if (!EAIDatabaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.SourceAssetHash != EAIDatabaseManager.GetAssetHash(decalsFolder))
                             {
                                 EAI.Logger.Info($"No cached data for {fullDecalName}, creating the cache.");
                                 renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
-                                asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
+                                asset = new(fullDecalName, EAIDatabaseManager.GetAssetHash(decalsFolder), assetDataPath);
                             }
                             else
                             {
@@ -170,7 +170,7 @@ namespace ExtraAssetsImporter.OldImporters
                                 {
                                     //EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
                                     renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
-                                    asset = new(fullDecalName, EAIDataBaseManager.GetAssetHash(decalsFolder), assetDataPath);
+                                    asset = new(fullDecalName, EAIDatabaseManager.GetAssetHash(decalsFolder), assetDataPath);
                                 }
                             }
 
@@ -181,14 +181,14 @@ namespace ExtraAssetsImporter.OldImporters
                             if (!csLocalisation.ContainsKey($"Assets.NAME[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullDecalName}]")) csLocalisation.Add($"Assets.NAME[{fullDecalName}]", decalName);
                             if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullDecalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullDecalName}]", decalName);
 
-                            EAIDataBaseManager.AddOrValidateAsset(asset);
+                            EAIDatabaseManager.AddOrValidateAsset(asset);
 
                         }
                         catch (Exception e)
                         {
                             failedDecals++;
                             EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
-                            string pathToAssetInDatabase = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
+                            string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
                             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
                             else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
                         }
@@ -294,7 +294,7 @@ namespace ExtraAssetsImporter.OldImporters
             decalPrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/CustomDecals/{catName}/icon.svg" : null);
 
             AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullDecalName + PrefabAsset.kExtension, EscapeStrategy.None);
-            EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
+            EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, decalPrefab, forceGuid: Colossal.Hash128.CreateGuid(fullDecalName));
 
             EL.m_PrefabSystem.AddPrefab(decalPrefab);
 
@@ -303,7 +303,7 @@ namespace ExtraAssetsImporter.OldImporters
 
         internal static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, string materialName = "DefaultDecal")
         {
-            string fullAssetDataPath = Path.Combine(EAIAssetDataBaseDescriptor.kRootPath, assetDataPath);
+            string fullAssetDataPath = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
             if (Directory.Exists(fullAssetDataPath)) { Directory.Delete(fullAssetDataPath, true); }
 
             Surface decalSurface = new(decalName, materialName);
@@ -357,7 +357,7 @@ namespace ExtraAssetsImporter.OldImporters
             SurfaceAsset surfaceAsset = new()
             {
                 id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.EAIAssetDataBase
+                database = EAIDatabaseManager.EAIAssetDatabase
             };
             surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
             surfaceAsset.SetData(decalSurface);
@@ -386,7 +386,7 @@ namespace ExtraAssetsImporter.OldImporters
             GeometryAsset geometryAsset = new()
             {
                 id = new Identifier(Guid.NewGuid()),
-                database = EAIDataBaseManager.EAIAssetDataBase
+                database = EAIDatabaseManager.EAIAssetDatabase
             };
             geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
             geometryAsset.SetData(meshes);
@@ -416,7 +416,7 @@ namespace ExtraAssetsImporter.OldImporters
             decalProperties.m_EnableInfoviewColor = false;
 
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(assetDataPath, $"{decalName}_RenderPrefab", EscapeStrategy.None);
-            PrefabAsset renderPrefabAsset = EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Colossal.Hash128.CreateGuid(renderPrefab.name)); // Colossal.Hash128.CreateGuid(fullDecalName)
+            PrefabAsset renderPrefabAsset = EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Colossal.Hash128.CreateGuid(renderPrefab.name)); // Colossal.Hash128.CreateGuid(fullDecalName)
             renderPrefabAsset.Save();
             //EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
 
@@ -570,8 +570,8 @@ namespace ExtraAssetsImporter.OldImporters
 
             try
             {
-                if (EAIDataBaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) &&
-                    EAIDataBaseManager.EAIAssetDataBase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true, EscapeStrategy.None), 
+                if (EAIDatabaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) &&
+                    EAIDatabaseManager.EAIAssetDatabase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true, EscapeStrategy.None), 
                     out renderPrefab))
                 {
                     EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");

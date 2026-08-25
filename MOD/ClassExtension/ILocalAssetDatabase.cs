@@ -1,5 +1,5 @@
 ﻿using Colossal.IO.AssetDatabase;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using Game.Prefabs;
 using System;
 using System.IO;

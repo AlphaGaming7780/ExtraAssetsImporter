@@ -2,11 +2,11 @@
 using Colossal.PSI.Common;
 using System;
 
-namespace ExtraAssetsImporter.DataBase
+namespace ExtraAssetsImporter.Database
 {
-	public readonly struct EAIAssetDataBaseDescriptor : IAssetDatabaseDescriptor<EAIAssetDataBaseDescriptor>, IEquatable<EAIAssetDataBaseDescriptor>
+	public readonly struct EAIAssetDatabaseDescriptor : IAssetDatabaseDescriptor<EAIAssetDatabaseDescriptor>, IEquatable<EAIAssetDatabaseDescriptor>
 	{
-		public static string kRootPath => EAIDataBaseManager.eaiDataBase.ActualDataBasePath;
+		public static string kRootPath => EAIDatabaseManager.eaiDatabase.ActualDatabasePath;
 
 		public bool canWriteSettings => false;
 
@@ -19,14 +19,14 @@ namespace ExtraAssetsImporter.DataBase
 
         public DlcId dlcId => DlcId.Virtual;
 
-        public bool Equals(EAIAssetDataBaseDescriptor other)
+        public bool Equals(EAIAssetDatabaseDescriptor other)
 		{
 			return true;
 		}
 
 		public override bool Equals(object obj)
 		{
-			return obj is EAIAssetDataBaseDescriptor;
+			return obj is EAIAssetDatabaseDescriptor;
 		}
 
 		public override int GetHashCode()

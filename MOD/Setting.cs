@@ -1,6 +1,6 @@
 ﻿using Colossal.IO.AssetDatabase;
 using ExtraAssetsImporter.AssetImporter;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using Game.Modding;
 using Game.Settings;
 using System.IO;
@@ -57,9 +57,9 @@ namespace ExtraAssetsImporter
         {
             get
             {
-                if (EAIDataBaseManager.eaiDataBase == null || EAIDataBaseManager.eaiDataBase.ActualDataBasePath == null)
+                if (EAIDatabaseManager.eaiDatabase == null || EAIDatabaseManager.eaiDatabase.ActualDatabasePath == null)
                     return "";
-                return EAIDataBaseManager.eaiDataBase.ActualDataBasePath;
+                return EAIDatabaseManager.eaiDatabase.ActualDatabasePath;
             }
             set { try { SavedDatabasePath = Path.GetFullPath(value); } catch { EAI.Logger.Warn($"Invalid database path: {value}"); } }
         }

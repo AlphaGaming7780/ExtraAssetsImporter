@@ -7,7 +7,7 @@ using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
 using Game.Prefabs;
@@ -138,7 +138,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             s_AssetFolder.Clear();
 
-            EAIDataBaseManager.LoadDataBase().Wait();
+            EAIDatabaseManager.LoadDatabase().Wait();
 
             EAI.Logger.Info("Start loading custom stuff.");
 
@@ -216,7 +216,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             string databasePath = Path.Combine(AssetDatabase.user.rootPath, "ImportedData");
 
-            EAIDatabase eaiDatabase = EAIDataBaseManager.LoadDataBase(Path.Combine(path, "AssetPackDatabase.json"), databasePath);
+            EAIDatabase eaiDatabase = EAIDatabaseManager.LoadDatabase(Path.Combine(path, "AssetPackDatabase.json"), databasePath);
             if (eaiDatabase == null) return null;
 
             ImporterSettings importerSettings = new ImporterSettings
@@ -300,7 +300,7 @@ namespace ExtraAssetsImporter.AssetImporter
             if (!importerSettings.isAssetPack)
                 EAI.m_Setting.ResetCompatibility();
 
-            importerSettings.eaiDatabase.SaveValidateDataBase(importerSettings);
+            importerSettings.eaiDatabase.SaveValidateDatabase(importerSettings);
 
             EAI.Logger.Info("All custom assets have been loaded.");
 
@@ -320,7 +320,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             EAI.Logger.Info("The loading of the old importers has finished.");
             EAI.m_Setting.ResetCompatibility();
-            EAIDataBaseManager.eaiDataBase.SaveValidateDataBase(importerSettings);
+            EAIDatabaseManager.eaiDatabase.SaveValidateDatabase(importerSettings);
 
             yield break;
         }

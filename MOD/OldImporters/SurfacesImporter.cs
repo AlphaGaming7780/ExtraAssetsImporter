@@ -2,7 +2,7 @@
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
@@ -303,7 +303,7 @@ namespace ExtraAssetsImporter.OldImporters
             surfacePrefabUI.m_Group = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(assetCat, $"{catName} {assetCat.name}");
 
             AssetDataPath prefabAssetPath = AssetDataPath.Create("TempAssetsFolder", fullSurfaceName + PrefabAsset.kExtension, EscapeStrategy.None);
-            EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
+            EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
             EL.m_PrefabSystem.AddPrefab(surfacePrefab);
         }

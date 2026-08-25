@@ -6,7 +6,7 @@ using Colossal.Json;
 using Colossal.Localization;
 using Colossal.UI;
 using ExtraAssetsImporter.ClassExtension;
-using ExtraAssetsImporter.DataBase;
+using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
@@ -253,7 +253,7 @@ namespace ExtraAssetsImporter.AssetImporter
             {
                 UIAssetChildCategoryPrefab categoryPrefab = MainThreadHelper.RunOnMainThread(() => PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null)).Result;
                 AssetDataPath assetDataPath = AssetDataPath.Create(EAI.kTempFolderName, $"{categoryPrefab.name}_CategoryPrefab", EscapeStrategy.None);
-                EAIDataBaseManager.EAIAssetDataBase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, categoryPrefab);
+                EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, categoryPrefab);
                 prefabUI.m_Group = categoryPrefab;
             }
         }
