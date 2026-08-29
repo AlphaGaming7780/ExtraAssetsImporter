@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 using Hash128 = Colossal.Hash128;
@@ -25,6 +26,12 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     abstract class PrefabImporterBase : FolderImporter
     {
+        // static: DecalsImporterNew/SurfacesImporterNew/NetLanesDecalImporterNew are 3 separate instances
+        // (AssetsImporterManager.AddImporter<T> does `new T()` once per importer), each running its own
+        // LoadCustomAssetFolder on its own Task.Run thread. An instance field here would give each one its
+        // own lock — protecting nothing, since the race is precisely between those 3 threads. Has to be one
+        // lock shared by all of them.
+        private static readonly object PrefabSaveLock = new object();
         public const string PrefabJsonName = "Prefab.json";
         private UIAssetParentCategoryPrefab assetCat = null;
 
@@ -33,14 +40,21 @@ namespace ExtraAssetsImporter.AssetImporter
         protected override void PreLoadCustomAssetFolder(ImporterSettings importSettings)
         {
             base.PreLoadCustomAssetFolder(importSettings);
-            assetCat = MainThreadHelper.RunOnMainThread(() => PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab(CatName ?? ImporterId)).Result;
+            assetCat = MainThreadHelper.RunOnMainThread(() =>
+            {
+                UIAssetParentCategoryPrefab category = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab(CatName ?? ImporterId);
+                ImportersUtils.EnsurePrefabHasAsset(category);
+                ImportersUtils.EnsurePrefabHasAsset(category.parentCategoryOrMenu);
+                return category;
+            }).Result;
         }
 
         protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
         {
-            // FolderImporter.AddCustomAssetsFolder registers Combine(modRoot, FolderName) as importerFolder,
-            // so its parent recovers the raw mod root that was passed to AssetsImporterManager.AddAssetFolder.
             string sourceModPath = Directory.GetParent(importerFolder)?.FullName;
+
+            if (string.Equals(sourceModPath, EAI.pathModsData, StringComparison.OrdinalIgnoreCase))
+                sourceModPath = null;
 
             foreach (string catFolder in Directory.GetDirectories(importerFolder))
             {
@@ -147,11 +161,14 @@ namespace ExtraAssetsImporter.AssetImporter
 
 
                     PrefabBase prefab;
+                    bool cachedPrefab = true;
                     try
                     {
-
-                        prefab = Import(importData);
-
+                        if (!ImportersUtils.TryGetCachedPrefab(importData, out prefab))
+                        {
+                            prefab = Import(importData);
+                            cachedPrefab = false;
+                        }
                     }
                     catch (Exception e)
                     {
@@ -167,37 +184,42 @@ namespace ExtraAssetsImporter.AssetImporter
 
                     try
                     {
-
-                        prefab.name = importData.FullAssetName;
-
-                        // Should see this prefab has a pre-editor prefab.
-                        prefab.version = 0;
-
-                        EditorAssetCategoryOverride categoryOverride = prefab.AddOrGetComponent<EditorAssetCategoryOverride>();
-                        categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
-
-                        if (AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab))
+                        if(!cachedPrefab)
                         {
-                            AssetPackItem assetPackItem = prefab.AddOrGetComponent<AssetPackItem>();
-                            assetPackItem.m_Packs = new[] { assetPackPrefab };
+                            prefab.name = importData.FullAssetName;
+
+                            // Should see this prefab has a pre-editor prefab.
+                            prefab.version = 0;
+
+                            EditorAssetCategoryOverride categoryOverride = prefab.AddOrGetComponent<EditorAssetCategoryOverride>();
+                            categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
+
+                            if (AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab))
+                            {
+                                AssetPackItem assetPackItem = prefab.AddOrGetComponent<AssetPackItem>();
+                                assetPackItem.m_Packs = new[] { assetPackPrefab };
+                            }
+
+                            AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
+
+                            AssetDataPath prefabAssetPath = importSettings.savePrefabs
+                                ? AssetDataPath.Create(importData.AssetDataPath, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None)
+                                : AssetDataPath.Create(EAI.kTempFolderName, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None);
+
+                            PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, Hash128.CreateGuid(importData.FullAssetName));
+
+                            eaiAsset.PrefabID = prefab.GetPrefabID().ToString();
+
+                            //MainThreadHelper.RunOnMainThread(() => prefabAsset.Save()).Wait();
+                            if (importSettings.savePrefabs) lock (PrefabSaveLock) prefabAsset.Save();
+
+                            int buildAssetFolderHash = EAIDatabaseManager.GetAssetHash(fullAssetDataPath);
+                            eaiAsset.BuildAssetHash = buildAssetFolderHash;
                         }
 
-                        ImportersUtils.SetupUIObject(this, importData, prefab);
-
-                        AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
                         VersionCompatiblity(prefab, importData);
 
-                        // Saved next to the asset's own data (not the temp folder, which gets wiped on
-                        // every mod unload) so ImportersUtils.TryGetCachedPrefab can find and reload it
-                        // on a later session instead of rebuilding it from source.
-                        AssetDataPath prefabAssetPath = AssetDataPath.Create(importData.AssetDataPath, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None);
-
-                        PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, Hash128.CreateGuid(importData.FullAssetName));
-
-                        eaiAsset.PrefabID = prefab.GetPrefabID().ToString();
-
-                        // NOTE : When serializing, the version is set back to 1 by the OnSerialise methode in the prefabBase.
-                        if (importSettings.savePrefabs) prefabAsset.Save();
+                        ImportersUtils.SetupUIObject(this, importData, prefab);
 
                         MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab));
 
@@ -208,14 +230,6 @@ namespace ExtraAssetsImporter.AssetImporter
                         };
 
                         ImportersUtils.SetupLocalisationForPrefab(localisation, importSettings, assetDataPath, assetName);
-
-
-                        // End of importing, saving cache.
-                        if (needToUpdateAsset)
-                        {
-                            int buildAssetFolderHash = EAIDatabaseManager.GetAssetHash(fullAssetDataPath);
-                            eaiAsset.BuildAssetHash = buildAssetFolderHash;
-                        }
 
                         importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
 

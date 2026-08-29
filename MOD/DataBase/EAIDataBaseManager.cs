@@ -53,6 +53,8 @@ namespace ExtraAssetsImporter.Database
 
             CheckIfDatabaseNeedToBeRelocated();
 
+            EAI.ClearTempFolder();
+
             return RegisterEaiAssetDatabase();
         }
 
@@ -328,7 +330,7 @@ namespace ExtraAssetsImporter.Database
             {
                 if (!EAI.m_Setting.DeleteNotLoadedAssets)
                 {
-                    foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase) _ValidateAssetsDatabase[entry.Key] = entry.Value;
+                    foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase.ToList()) _ValidateAssetsDatabase[entry.Key] = entry.Value;
                     AssetsDatabase.Clear();
                 }
                 else
@@ -440,7 +442,7 @@ namespace ExtraAssetsImporter.Database
                     else EAI.Logger.Warn($"Trying to delete an unloaded asset at path {path}, but this path doesn't exist.");
                 }
                 EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDatabase.Count}.");
-                foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase) _ValidateAssetsDatabase[entry.Key] = entry.Value;
+                foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase.ToList()) _ValidateAssetsDatabase[entry.Key] = entry.Value;
                 AssetsDatabase.Clear();
             }
         }

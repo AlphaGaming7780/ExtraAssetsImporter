@@ -29,7 +29,7 @@ namespace ExtraAssetsImporter.AssetImporter
             ImporterSettings result = default(ImporterSettings);
             result.eaiDatabase = EAIDatabaseManager.eaiDatabase;
             result.dataBase = EAIDatabaseManager.EAIAssetDatabase;
-            result.savePrefabs = true;
+            result.savePrefabs = EAI.m_Setting.SavePrefabs;
             result.isAssetPack = false;
             result.outputFolderOffset = "";
             return result;

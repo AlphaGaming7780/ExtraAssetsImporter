@@ -22,9 +22,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         protected override PrefabBase Import(PrefabImportData data)
         {
-            if (ImportersUtils.TryGetCachedPrefab<SurfacePrefab>(data, data.FullAssetName, ImportersUtils.GetPrefabFileName(data), out SurfacePrefab cachedPrefab))
-                return cachedPrefab;
-
             SurfacePrefab surfacePrefab = ImportersUtils.GetOrCreatePrefabInstance<SurfacePrefab>(data.FullAssetName);
             surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
 

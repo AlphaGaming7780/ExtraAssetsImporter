@@ -33,7 +33,10 @@ namespace ExtraAssetsImporter.AssetImporter
         private static readonly Dictionary<Type, ImporterBase> s_PreImporters = new();
         private static readonly Dictionary<Type, ImporterBase> s_Importers = new();
         private static readonly Dictionary<Type, ComponentImporter> s_ComponentImporters = new();
-        private static readonly List<string> s_AssetFolder = new();
+        // Every mod path ever registered via AddAssetFolder, kept for the lifetime of the session. RunImportPass
+        // reads straight from this (not a separate staging list that gets cleared) so ReloadCustomAssets can
+        // re-run a full import pass over every known mod path without needing a mod's OnLoad to run again.
+        private static readonly HashSet<string> s_RegisteredModPaths = new();
 
         public static IReadOnlyDictionary<Type, ImporterBase> PreImporters => s_PreImporters;
         public static IReadOnlyDictionary<Type, ImporterBase> Importers => s_Importers;
@@ -44,6 +47,8 @@ namespace ExtraAssetsImporter.AssetImporter
         public const string k_TemplateFolderName = "_DefaultJson";
 
         private static readonly ConcurrentDictionary<(Type baseType, Assembly assembly), List<Type>> s_DerivedTypesCache = new();
+
+        public static bool IsImporting => !AreImportersFinished();
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
@@ -68,13 +73,10 @@ namespace ExtraAssetsImporter.AssetImporter
         public static bool AddAssetFolder(string path)
         {
             path = PathUtils.Normalize(path);
-            if (s_AssetFolder.Contains(path)) return false;
             // Ignore path that start with "."
             if (Path.GetDirectoryName(path).StartsWith(".")) return false;
 
-            s_AssetFolder.Add(path);
-
-            return true;
+            return s_RegisteredModPaths.Add(path);
         }
 
         public static List<ComponentImporter> GetComponentImportersForPrefab<T>()
@@ -127,9 +129,23 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void ImportCustomAssets()
         {
+            EAIDatabaseManager.LoadDatabase().Wait();
 
-            // adding all request to the importers
-            foreach (string path in s_AssetFolder)
+            RunImportPass(includeOldImporters: true);
+        }
+
+        public static void ReloadCustomAssets()
+        {
+            EAI.Logger.Info("Reloading all custom assets (new importers only).");
+
+            RunImportPass(includeOldImporters: false);
+        }
+
+        private static void RunImportPass(bool includeOldImporters)
+        {
+            // Re-distributing to every importer each time (not just once) is cheap and idempotent —
+            // ImporterBase.AddCustomAssetsFolder already skips a path already in its own _FolderToLoadAssets.
+            foreach (string path in s_RegisteredModPaths)
             {
                 foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
                 {
@@ -137,13 +153,9 @@ namespace ExtraAssetsImporter.AssetImporter
                 }
             }
 
-            s_AssetFolder.Clear();
-
-            EAIDatabaseManager.LoadDatabase().Wait();
-
             EAI.Logger.Info("Start loading custom stuff.");
 
-            if (EAI.m_Setting.UseOldImporters)
+            if (includeOldImporters && EAI.m_Setting.UseOldImporters)
             {
                 if (EAI.m_Setting.Decals) GameManager.instance.StartCoroutine(DecalsImporter.CreateCustomDecals());
                 if (EAI.m_Setting.Surfaces) GameManager.instance.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
@@ -170,7 +182,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     AssetsImporterManager.BuildAllAssetPacks();
                 });
             }
-            else
+            else if (includeOldImporters)
             {
                 GameManager.instance.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
             }

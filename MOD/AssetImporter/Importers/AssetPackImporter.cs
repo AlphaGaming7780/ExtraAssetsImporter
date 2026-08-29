@@ -3,6 +3,8 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.UI;
 using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraAssetsImporter.ClassExtension;
+using ExtraAssetsImporter.Database;
 using ExtraLib;
 using Game.Prefabs;
 using Game.SceneFlow;
@@ -56,21 +58,50 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             numberOfAssets++;
             EAI.Logger.Info($"{modName} {AssetEndName}");
 
+            string fullAssetName = $"{modName} {AssetEndName}";
+
+            // AddCustomAssetsFolder (FileImporter) hands us the full path to AssetPack.json itself, so its
+            // parent is the mod's own root — the same folder the icon (modName.svg/.png) lives in.
+            string sourceFolder = Path.GetDirectoryName(folder);
+
             string assetDataPath = importSettings.isAssetPack ?
                         Path.Combine(importSettings.outputFolderOffset, modName) :
                         Path.Combine(importSettings.outputFolderOffset, ImporterId, modName);
 
+            int sourceAssetFolderHash = EAIDatabaseManager.GetAssetHash(sourceFolder);
+            bool needToUpdateAsset;
+
+            if (importSettings.eaiDatabase.TryGetEAIAsset(fullAssetName, out EAIAsset eaiAsset))
+            {
+                needToUpdateAsset = eaiAsset.SourceAssetHash != sourceAssetFolderHash || eaiAsset.AssetPath != assetDataPath;
+                eaiAsset.SourceAssetHash = sourceAssetFolderHash;
+                eaiAsset.AssetPath = assetDataPath;
+            }
+            else
+            {
+                eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath);
+                needToUpdateAsset = true;
+            }
+
+            string prefabFileName = $"{fullAssetName}{PrefabAsset.kExtension}";
+
+            if (!needToUpdateAsset && ImportersUtils.TryGetCachedPrefab(importSettings, assetDataPath, fullAssetName, prefabFileName, out AssetPackPrefab cachedAssetPackPrefab))
+            {
+                eaiAsset.PrefabID = cachedAssetPackPrefab.GetPrefabID().ToString();
+                importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
+                ammoutOfAssetsloaded++;
+                return;
+            }
+
             AssetPackJson assetPackJson = LoadJSON(folder);
 
-            AssetPackPrefab assetPackPrefab = ScriptableObject.CreateInstance<AssetPackPrefab>();
-
-            string fullAssetName = $"{modName} {AssetEndName}";
+            AssetPackPrefab assetPackPrefab = ImportersUtils.GetOrCreatePrefabInstance<AssetPackPrefab>(fullAssetName);
             assetPackPrefab.name = fullAssetName;
 
-            UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
+            UIObject assetPackUI = assetPackPrefab.AddOrGetComponent<UIObject>();
 
-            string svgIconPath = Path.Combine(Path.GetDirectoryName(folder), $"{modName}.svg"); // Doesn't work with SVG, fuck.
-            string pngIconPath = Path.Combine(Path.GetDirectoryName(folder), $"{modName}.png"); // Doesn't work with SVG, fuck.
+            string svgIconPath = Path.Combine(sourceFolder, $"{modName}.svg"); // Doesn't work with SVG, fuck.
+            string pngIconPath = Path.Combine(sourceFolder, $"{modName}.png"); // Doesn't work with SVG, fuck.
 
             if (importSettings.isAssetPack)
             {
@@ -85,21 +116,15 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 assetPackUI.m_Icon = File.Exists(svgIconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
             }
 
-            AssetDataPath prefabAssetPath;
-            if (importSettings.isAssetPack)
-            {
-                prefabAssetPath = AssetDataPath.Create(assetDataPath, $"{fullAssetName}{PrefabAsset.kExtension}", EscapeStrategy.None);
-            }
-            else
-            {
-                prefabAssetPath = AssetDataPath.Create(EAI.kTempFolderName, fullAssetName + PrefabAsset.kExtension, EscapeStrategy.None);
-            }
 
+            AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, prefabFileName, true, EscapeStrategy.None);
             PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, assetPackPrefab, Colossal.Hash128.CreateGuid(fullAssetName));
 
-            if (importSettings.savePrefabs) prefabAsset.Save();
+            eaiAsset.PrefabID = assetPackPrefab.GetPrefabID().ToString();
 
-            MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddPrefab(assetPackPrefab));
+            if(importSettings.savePrefabs) prefabAsset.Save();
+
+            MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(assetPackPrefab));
 
             Dictionary<string, string> localisation = new()
             {
@@ -108,6 +133,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             };
 
             ImportersUtils.SetupLocalisationForPrefab(localisation, importSettings, assetDataPath, fullAssetName);
+
+            importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
             ammoutOfAssetsloaded++;
         }
 

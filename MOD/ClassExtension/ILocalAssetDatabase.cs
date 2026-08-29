@@ -82,5 +82,16 @@ namespace ExtraAssetsImporter.ClassExtension
             prefab = null;
             return false;
         }
+
+        public static bool TryLoadPrefab(this ILocalAssetDatabase assetDatabase, AssetDataPath assetDataPath, out PrefabBase prefab)
+        {
+            if (TryGetOrAddAsset<PrefabAsset>(assetDatabase, assetDataPath, out PrefabAsset prefabAsset))
+            {
+                prefab = prefabAsset.Load() as PrefabBase;
+                return prefab != null;
+            }
+            prefab = null;
+            return false;
+        }
     }
 }

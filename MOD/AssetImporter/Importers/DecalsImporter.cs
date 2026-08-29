@@ -20,9 +20,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         protected override PrefabBase Import(PrefabImportData data)
         {
-            if (ImportersUtils.TryGetCachedPrefab<StaticObjectPrefab>(data, data.FullAssetName, ImportersUtils.GetPrefabFileName(data), out StaticObjectPrefab cachedPrefab))
-                return cachedPrefab;
-
             StaticObjectPrefab decalPrefab = ImportersUtils.GetOrCreatePrefabInstance<StaticObjectPrefab>(data.FullAssetName);
 
             RenderPrefabBase renderPrefab = ImportersUtils.GetRenderPrefab(data);

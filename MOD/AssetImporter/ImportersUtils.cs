@@ -25,10 +25,25 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     static class ImportersUtils
     {
+
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
             TryGetCachedPrefab<RenderPrefab>(data, GetRenderPrefabName(data), GetRenderPrefabFileName(data), out RenderPrefab renderPrefab);
             return renderPrefab;
+        }
+
+        // Gives prefab an explicit .asset if it doesn't have one yet, so a later PrefabAsset.Save() elsewhere
+        // in the reference graph can't trigger PrefabReferenceResolver's auto-create fallback for it
+        // (prefabBase.asset ?? m_Database.AddAsset(...)) — that fallback runs inline on whatever background
+        // thread happens to Save() first, with no synchronization, so two importers racing to auto-create
+        // the SAME shared prefab (e.g. the UI category/menu chain, shared across every importer) can collide
+        // writing the same .cid file. Must be called from the main thread — same requirement as AddAsset.
+        public static void EnsurePrefabHasAsset(PrefabBase prefab)
+        {
+            if (prefab == null || prefab.asset != null) return;
+
+            AssetDataPath assetDataPath = AssetDataPath.Create(EAI.kTempFolderName, $"{prefab.name}_{prefab.GetType().Name}", EscapeStrategy.None);
+            EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, prefab);
         }
 
         public static T GetOrCreatePrefabInstance<T>(string prefabName) where T : PrefabBase
@@ -72,11 +87,11 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void UnloadPrefab(PrefabID prefabID)
         {
-            if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefab))
-                return;
-
             MainThreadHelper.RunOnMainThread(() =>
             {
+                if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefab))
+                    return;
+
                 EL.m_PrefabSystem.RemovePrefab(prefab);
                 prefab.asset?.Unload();
             }).Wait();
@@ -84,41 +99,82 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static bool TryGetCachedPrefab<T>(PrefabImportData data, string prefabName, string fileName, out T prefab) where T : PrefabBase
         {
-            if (data.NeedToUpdateAsset)
+            return TryGetCachedPrefab(data.NeedToUpdateAsset, data.ImportSettings, data.AssetDataPath, prefabName, fileName, out prefab);
+        }
+
+        public static bool TryGetCachedPrefab<T>(bool needToUpdateAsset, ImporterSettings importerSettings, string assetDataPath, string prefabName, string fileName, out T prefab) where T : PrefabBase
+        {
+            PrefabID prefabID = new PrefabID(typeof(T).Name, prefabName, Hash128.CreateGuid(prefabName));
+            bool found = TryGetCachedPrefab(prefabID, needToUpdateAsset, importerSettings, assetDataPath, fileName, out PrefabBase prefabBase);
+            prefab = prefabBase as T;
+            return found && prefab != null;
+        }
+
+        public static bool TryGetCachedPrefab<T>(ImporterSettings importerSettings, string assetDataPath, string prefabName, string fileName, out T prefab) where T : PrefabBase
+        {
+            PrefabID prefabID = new PrefabID(typeof(T).Name, prefabName, Hash128.CreateGuid(prefabName));
+            bool found = TryGetCachedPrefab(prefabID, importerSettings, assetDataPath, fileName, out PrefabBase prefabBase);
+            prefab = prefabBase as T;
+            return found && prefab != null;
+        }
+
+        public static bool TryGetCachedPrefab(PrefabImportData data, out PrefabBase prefab)
+        {
+            if (TryParsePrefabID(data.EAIAsset.PrefabID, out PrefabID prefabID) && TryGetCachedPrefab(prefabID, data.NeedToUpdateAsset, data.ImportSettings, data.AssetDataPath, GetPrefabFileName(data), out prefab))
             {
+                return true;
+            }
+            prefab = null;
+            return false;
+        }
+
+        public static bool TryGetCachedPrefab(PrefabID prefabID, bool needToUpdateAsset, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab)
+        {
+            if (needToUpdateAsset)
+            {
+                UnloadPrefab(prefabID);
+
                 prefab = null;
                 return false;
             }
 
-            PrefabID prefabID = new PrefabID(typeof(T).Name, prefabName, Hash128.CreateGuid(prefabName));
-            if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is T existing)
+            return TryGetCachedPrefab(prefabID, importerSettings, assetDataPath, fileName, out prefab);
+        }
+
+        public static bool TryGetCachedPrefab(PrefabID prefabID, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab)
+        {
+            PrefabBase existing = MainThreadHelper.RunOnMainThread(() =>
+                EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) ? prefabBase : null ).Result;
+
+            if (existing != null)
             {
-                EAI.Logger.Info($"{typeof(T).Name} for {prefabName} was already loaded and in the prefab system.");
+                EAI.Logger.Info($"{prefabID} was already loaded and in the prefab system.");
                 prefab = existing;
                 return true;
             }
 
             try
             {
-                AssetDataPath prefabAssetPath = AssetDataPath.Create(data.AssetDataPath, fileName, true, EscapeStrategy.None);
-                if (data.ImportSettings.dataBase.TryLoadPrefab<T>(prefabAssetPath, out prefab))
+                AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, fileName, true, EscapeStrategy.None);
+                if (importerSettings.dataBase.TryLoadPrefab(prefabAssetPath, out prefab))
                 {
-                    EAI.Logger.Info($"Cached data for {prefabName}, loading the cache.");
+                    EAI.Logger.Info($"Cached data for {prefabID}, loading the cache.");
 
-                    T loaded = prefab;
-                    if (!EL.m_PrefabSystem.TryGetPrefab(loaded.GetPrefabID(), out _))
+                    PrefabBase loaded = prefab;
+                    MainThreadHelper.RunOnMainThread(() =>
                     {
-                        MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddPrefab(loaded));
-                    }
+                        if (!EL.m_PrefabSystem.TryGetPrefab(loaded.GetPrefabID(), out _))
+                            EL.m_PrefabSystem.AddPrefab(loaded);
+                    }).Wait();
 
                     return true;
                 }
 
-                EAI.Logger.Info($"No cached data for {prefabName}.");
+                EAI.Logger.Info($"No cached data for {prefabID}.");
             }
             catch (Exception e)
             {
-                EAI.Logger.Warn($"Failed to load the cached prefab for {prefabName}.\nException:{e}.");
+                EAI.Logger.Warn($"Failed to load the cached prefab for {prefabID}.\nException:{e}.");
             }
 
             prefab = null;
@@ -167,7 +223,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
             PrefabAsset renderPrefabAsset = data.ImportSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Hash128.CreateGuid(renderPrefab.name));
-            renderPrefabAsset.Save();
+            renderPrefabAsset.Save(); // No UIObject on the render prefab — can't reach the shared UI chain, see PrefabImporterBase.PrefabSaveLock.
 
             geometryAsset.Unload();
             surfaceAsset.Unload();
@@ -195,6 +251,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 MainThreadDispatcher.RunOnMainThread( () => localizationManager.AddSource(localeID, new MemorySource(localisation)));
             }
         }
+
         public static string GetRenderPrefabName(PrefabImportData data)
         {
             return $"{data.FullAssetName}_RenderPrefab";
@@ -280,7 +337,7 @@ namespace ExtraAssetsImporter.AssetImporter
             return null;
         }
 
-        public static void SetupUIObject( FolderImporter importer, PrefabImportData data, PrefabBase prefab, int UiPriority = 0)
+        public static void SetupUIObject( FolderImporter importer, PrefabImportData data, PrefabBase prefab)
         {
             Task taskTexture = ProcessIconOnMainThread(data);
 
@@ -303,13 +360,15 @@ namespace ExtraAssetsImporter.AssetImporter
             UIObject prefabUI = prefab.AddOrGetComponent<UIObject>();
             prefabUI.m_IsDebugObject = false;
             prefabUI.m_Icon = iconString;
-            prefabUI.m_Priority = UiPriority;
 
-            if (!data.ImportSettings.isAssetPack) 
+            if (!data.ImportSettings.isAssetPack)
             {
-                UIAssetChildCategoryPrefab categoryPrefab = MainThreadHelper.RunOnMainThread(() => PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null)).Result;
-                AssetDataPath assetDataPath = AssetDataPath.Create(EAI.kTempFolderName, $"{categoryPrefab.name}_CategoryPrefab", EscapeStrategy.None);
-                EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, categoryPrefab);
+                UIAssetChildCategoryPrefab categoryPrefab = MainThreadHelper.RunOnMainThread(() =>
+                {
+                    UIAssetChildCategoryPrefab child = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null);
+                    EnsurePrefabHasAsset(child);
+                    return child;
+                }).Result;
                 prefabUI.m_Group = categoryPrefab;
             }
         }

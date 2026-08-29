@@ -29,8 +29,18 @@ namespace ExtraAssetsImporter
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.None;
 
+        // Saves the final built prefabs to disk so a later session can reload them instead of rebuilding
+        // from source (ImportersUtils.TryGetCachedPrefab). Independent of the render prefab, which is
+        // always saved regardless — see PrefabImporterBase/AssetPackImporter for the exact save points.
+        [SettingsUISection(kMainSection, kNewImportersGroup)]
+        public bool SavePrefabs { get; set; } = false;
+
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool ExportDefaultJson { set { AssetsImporterManager.ExportImportersTemplate(); } }
+
+        [SettingsUISection(kMainSection, kNewImportersGroup)]
+        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_IsImporting))]
+        public bool ReloadDatabase { set { AssetsImporterManager.ReloadCustomAssets(); } }
 
         [SettingsUISection(kMainSection, kOldImportersGroup)]
         public bool UseOldImporters { get; set; } = true;
@@ -67,6 +77,8 @@ namespace ExtraAssetsImporter
 
         [SettingsUISection(kDataBaseSection, "")]
         public bool DeleteNotLoadedAssets { get; set; } = true;
+
+        public bool DisableCondition_IsImporting => AssetsImporterManager.IsImporting;
 
         [SettingsUISection(kDataBaseSection, "")]
         [SettingsUIDisableByCondition(typeof(Setting), nameof(DeleteDataBase))]

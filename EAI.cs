@@ -38,7 +38,7 @@ namespace ExtraAssetsImporter
 
         internal const string kTempFolderName = "TempAssetsFolder";
 
-        internal static string pathTempFolder => Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, kTempFolderName);
+        internal static string PathTempFolder => Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, kTempFolderName);
 
         internal static TextureStreamingSystem textureStreamingSystem;
 
@@ -159,8 +159,6 @@ namespace ExtraAssetsImporter
                 
                 EL.AddOnInitialize(Initialize);
 
-                ClearTempFolder();
-
                 updateSystem.UpdateAt<sys>(SystemUpdatePhase.MainLoop);
 
             } catch (Exception ex)
@@ -193,9 +191,9 @@ namespace ExtraAssetsImporter
 
         internal static void ClearTempFolder()
         {
-            if (Directory.Exists(pathTempFolder))
+            if (Directory.Exists(PathTempFolder))
             {
-                Directory.Delete(pathTempFolder, true);
+                Directory.Delete(PathTempFolder, true);
             }
         }
 
