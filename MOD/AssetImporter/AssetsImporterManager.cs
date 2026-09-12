@@ -11,6 +11,7 @@ using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.Database;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
+using ExtraLib.Helpers;
 using Game.Prefabs;
 using Game.SceneFlow;
 using Game.Tutorials;
@@ -350,7 +351,7 @@ namespace ExtraAssetsImporter.AssetImporter
             if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(typeof(AssetPackPrefab).Name, packName), out var existingPrefab))
                 return;
 
-            AssetPackPrefab assetPackPrefab = ScriptableObject.CreateInstance<AssetPackPrefab>();
+            AssetPackPrefab assetPackPrefab = MainThreadHelper.RunOnMainThread<AssetPackPrefab>(() => ScriptableObject.CreateInstance<AssetPackPrefab>()).Result;
             assetPackPrefab.name = packName;
 
             UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
