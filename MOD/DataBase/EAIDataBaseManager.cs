@@ -26,6 +26,17 @@ namespace ExtraAssetsImporter.Database
         public static EAIDatabase eaiDatabase;
         public static AssetDatabase<EAIAssetDatabaseDescriptor> EAIAssetDatabase => AssetDatabase<EAIAssetDatabaseDescriptor>.instance;
 
+        // True when the database lives in a folder named ".Database" (the default layout, also used by relocation).
+        internal static bool IsDatabaseInDatabaseFolder
+        {
+            get
+            {
+                string path = eaiDatabase?.ActualDatabasePath;
+                if (string.IsNullOrEmpty(path)) return false;
+                return Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) == databaseFolderName;
+            }
+        }
+
         internal static Task LoadDatabase()
         {
             if(!File.Exists(pathToAssetsDatabase))

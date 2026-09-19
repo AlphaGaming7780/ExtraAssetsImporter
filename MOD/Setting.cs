@@ -24,7 +24,7 @@ namespace ExtraAssetsImporter
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool UseNewImporters { get; set; } = true;
-        public bool DisableCondition_UseNewImporters => UseNewImporters;
+        public bool DisableCondition_UseNewImporters => !UseNewImporters;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public EAINewImportersCompatibility NewImportersCompatibilityDropDown { get; set; } = EAINewImportersCompatibility.None;
@@ -32,15 +32,20 @@ namespace ExtraAssetsImporter
         // Saves the final built prefabs to disk so a later session can reload them instead of rebuilding
         // from source (ImportersUtils.TryGetCachedPrefab). Independent of the render prefab, which is
         // always saved regardless — see PrefabImporterBase/AssetPackImporter for the exact save points.
+        // Disabled (and forced off, see CanSavePrefabs) when the database isn't in a ".Database" folder.
         [SettingsUISection(kMainSection, kNewImportersGroup)]
+        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_SavePrefabs))]
         public bool SavePrefabs { get; set; } = false;
+        public bool DisableCondition_SavePrefabs => DisableCondition_UseNewImporters || !EAIDatabaseManager.IsDatabaseInDatabaseFolder;
+        internal bool CanSavePrefabs => SavePrefabs && !DisableCondition_SavePrefabs;
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool ExportDefaultJson { set { AssetsImporterManager.ExportImportersTemplate(); } }
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
-        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_IsImporting))]
-        public bool ReloadDatabase { set { AssetsImporterManager.ReloadCustomAssets(); } }
+        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_ReloadDatabase))]
+        public bool ReloadDatabase { set { if (!DisableCondition_ReloadDatabase) AssetsImporterManager.ReloadCustomAssets(); } }
+        public bool DisableCondition_ReloadDatabase => DisableCondition_IsImporting || !EAIDatabaseManager.IsDatabaseInDatabaseFolder;
 
         [SettingsUISection(kMainSection, kOldImportersGroup)]
         public bool UseOldImporters { get; set; } = true;
@@ -86,6 +91,10 @@ namespace ExtraAssetsImporter
 
         public override void SetDefaults()
         {
+            UseNewImporters = true;
+            SavePrefabs = false;
+            UseOldImporters = true;
+            DeleteNotLoadedAssets = true;
             Decals = true;
             Surfaces = true;
             NetLanes = true;
