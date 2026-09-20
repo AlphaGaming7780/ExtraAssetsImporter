@@ -231,25 +231,13 @@ namespace ExtraAssetsImporter.AssetImporter
             return renderPrefab;
         }
 
-        public static void SetupLocalisationForPrefab(Dictionary<string, string> localisation, ImporterSettings importSettings, string assetDataPath, string assetName)
+        public static void SetupLocalisationForPrefab(Dictionary<string, string> localisation)
         {
             LocalizationManager localizationManager = GameManager.instance.localizationManager;
 
             string localeID = localizationManager.fallbackLocaleId;
 
-            if (importSettings.isAssetPack)
-            {
-                LocaleData localeData = new LocaleData(localeID, localisation, new());
-                AssetDataPath localAssetDataPath = AssetDataPath.Create(assetDataPath, $"{assetName}_{localeID}", EscapeStrategy.None);
-                LocaleAsset localeAsset = importSettings.dataBase.AddAsset<LocaleAsset>(localAssetDataPath);
-                localeAsset.SetData(localeData, localizationManager.LocaleIdToSystemLanguage(localeID), localizationManager.GetLocalizedName(localeID));
-                localeAsset.Save();
-                MainThreadDispatcher.RunOnMainThread(() => localizationManager.AddLocale(localeAsset));
-            } else
-            {
-
-                MainThreadDispatcher.RunOnMainThread( () => localizationManager.AddSource(localeID, new MemorySource(localisation)));
-            }
+            MainThreadDispatcher.RunOnMainThread( () => localizationManager.AddSource(localeID, new MemorySource(localisation)));
         }
 
         public static string GetRenderPrefabName(PrefabImportData data)
@@ -312,31 +300,6 @@ namespace ExtraAssetsImporter.AssetImporter
             }
         }
 
-        public static ImageAsset ImportImageFromPath(string path, PrefabImportData data)
-        {
-            return ImportImageFromPath(path, data.AssetDataPath, data.ImportSettings, data.AssetName);
-        }
-
-        public static ImageAsset ImportImageFromPath(string inPath, string assetDataPath, ImporterSettings importerSettings, string assetName)
-        {
-            if (LongFile.Exists(inPath))
-            {
-                string extension = Path.GetExtension(inPath);
-                string fullAssetName = $"{assetName}_Icon{extension}";
-                ImageAsset imageAsset = importerSettings.dataBase.AddAsset<ImageAsset>(AssetDataPath.Create(assetDataPath, fullAssetName, hasExtension: true, EscapeStrategy.None));
-                using (FileStream source = LongFile.OpenRead(inPath))
-                {
-                    using Stream destination = imageAsset.GetWriteStream();
-                    IOUtils.CopyStream(source, destination);
-                }
-
-                imageAsset.Save();
-                return imageAsset;
-            }
-
-            return null;
-        }
-
         public static void SetupUIObject( FolderImporter importer, PrefabImportData data, PrefabBase prefab)
         {
             Task taskTexture = ProcessIconOnMainThread(data);
@@ -350,27 +313,18 @@ namespace ExtraAssetsImporter.AssetImporter
             string catIconPath = Path.Combine(Directory.GetParent(data.FolderPath).FullName, "icon.svg");
 
             string iconString = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/{data.AssetName}/icon.png" : Icons.DecalPlaceholder;
-            if (data.ImportSettings.isAssetPack)
-            {
-                ImageAsset imageAsset = ImportImageFromPath(iconPath, data);
-                if (imageAsset != null)
-                    iconString = imageAsset.ToGlobalUri();
-            }
 
             UIObject prefabUI = prefab.AddOrGetComponent<UIObject>();
             prefabUI.m_IsDebugObject = false;
             prefabUI.m_Icon = iconString;
 
-            if (!data.ImportSettings.isAssetPack)
+            UIAssetChildCategoryPrefab categoryPrefab = MainThreadHelper.RunOnMainThread(() =>
             {
-                UIAssetChildCategoryPrefab categoryPrefab = MainThreadHelper.RunOnMainThread(() =>
-                {
-                    UIAssetChildCategoryPrefab child = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null);
-                    EnsurePrefabHasAsset(child);
-                    return child;
-                }).Result;
-                prefabUI.m_Group = categoryPrefab;
-            }
+                UIAssetChildCategoryPrefab child = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null);
+                EnsurePrefabHasAsset(child);
+                return child;
+            }).Result;
+            prefabUI.m_Group = categoryPrefab;
         }
 
         public static Task<Mesh> CreateBoxMeshAsyncOnMainThread(Vector3 size)

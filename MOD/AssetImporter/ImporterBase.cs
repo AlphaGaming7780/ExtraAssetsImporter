@@ -20,9 +20,6 @@ namespace ExtraAssetsImporter.AssetImporter
         internal EAIDatabase eaiDatabase;
         public ILocalAssetDatabase dataBase;
         public bool savePrefabs;
-        public bool isAssetPack;
-        public string outputFolderOffset;
-        public string assetPackName;
 
         public static ImporterSettings GetDefault()
         {
@@ -30,8 +27,6 @@ namespace ExtraAssetsImporter.AssetImporter
             result.eaiDatabase = EAIDatabaseManager.eaiDatabase;
             result.dataBase = EAIDatabaseManager.EAIAssetDatabase;
             result.savePrefabs = EAI.m_Setting.CanSavePrefabs;
-            result.isAssetPack = false;
-            result.outputFolderOffset = "";
             return result;
         }
     }
@@ -94,8 +89,8 @@ namespace ExtraAssetsImporter.AssetImporter
             skipedAsset = 0;
 
             var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotification(
-                importSettings.isAssetPack ? $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}.{importSettings.assetPackName}" : $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}",
-                title: importSettings.isAssetPack ? $"{importSettings.assetPackName} - Importing {ImporterId}." : $"EAI - Importing {ImporterId}.",
+                $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}",
+                title: $"EAI - Importing {ImporterId}.",
                 progressState: ProgressState.Indeterminate,
                 thumbnail: $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/{ImporterId}.svg",
                 progress: 0
@@ -123,31 +118,22 @@ namespace ExtraAssetsImporter.AssetImporter
             foreach (string importerFolder in _FolderToLoadAssets)
             {
 
-                string modName = "Unknown";
-                if (importSettings.isAssetPack)
+                FileInfo[] fileInfos = new FileInfo[0];
+
+                // Note: This is a workaround for the fact that the FolderImporter and FileImporter are not compatible with each other.
+                if (this is FolderImporter)
                 {
-                    modName = new DirectoryInfo(importerFolder).Parent.Name;
-                } 
-                else
-                {
+                    if (!Directory.Exists(importerFolder)) continue;
+                    fileInfos = new DirectoryInfo(importerFolder).Parent.GetFiles("*.dll");
 
-                    FileInfo[] fileInfos = new FileInfo[0];
-
-                    // Note: This is a workaround for the fact that the FolderImporter and FileImporter are not compatible with each other.
-                    if (this is FolderImporter)
-                    {
-                        if (!Directory.Exists(importerFolder)) continue;
-                        fileInfos = new DirectoryInfo(importerFolder).Parent.GetFiles("*.dll");
-
-                    }
-                    else if (this is FileImporter)
-                    {
-                        if (!File.Exists(importerFolder)) continue;
-                        fileInfos = new FileInfo(importerFolder).Directory.GetFiles("*.dll");
-                    }
-
-                    modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(importerFolder).Parent.Name.Split('_')[0];
                 }
+                else if (this is FileImporter)
+                {
+                    if (!File.Exists(importerFolder)) continue;
+                    fileInfos = new FileInfo(importerFolder).Directory.GetFiles("*.dll");
+                }
+
+                string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(importerFolder).Parent.Name.Split('_')[0];
 
                 LoadCustomAssetFolder(importSettings, importerFolder, modName, notificationInfo);
             }

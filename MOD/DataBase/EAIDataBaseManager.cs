@@ -69,39 +69,6 @@ namespace ExtraAssetsImporter.Database
             return RegisterEaiAssetDatabase();
         }
 
-        internal static EAIDatabase LoadDatabase(string path, string databasePath = null)
-        {
-
-            EAIDatabase database;
-
-            if (!File.Exists(path))
-            {
-                database = new();
-            }
-            else
-            {
-                try
-                {
-                    database = Decoder.Decode(File.ReadAllText(path)).Make<EAIDatabase>();
-                }
-                catch
-                {
-                    database = new();
-                }
-            }
-
-            if (database.DatabaseVersion != DatabaseVersion)
-            {
-                EAI.Logger.Warn($"The database version is incorrect, expected {DatabaseVersion}, got {database.DatabaseVersion}. The database will be reset.");
-                database = new();
-            }
-
-            database._DatabasePath = path;
-            database.ActualDatabasePath = databasePath;
-
-            return database;
-        }
-
         internal static void SaveDatabase()
         {
 
@@ -349,7 +316,10 @@ namespace ExtraAssetsImporter.Database
                     ClearNotLoadedAssetsFromFiles(importerSettings);
                 }
 
-                AssetsDatabase = _ValidateAssetsDatabase;
+                // Copy, never alias: if both fields pointed at the same dictionary, the next pass (ReloadDatabase)
+                // would see freshly validated assets as "not loaded" and the AssetsDatabase.Clear() above would wipe both.
+                AssetsDatabase = new Dictionary<string, EAIAsset>(_ValidateAssetsDatabase);
+                _ValidateAssetsDatabase.Clear();
                 SaveDatabase();
             }
         }

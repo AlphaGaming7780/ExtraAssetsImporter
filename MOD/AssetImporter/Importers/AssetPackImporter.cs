@@ -64,9 +64,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             // parent is the mod's own root — the same folder the icon (modName.svg/.png) lives in.
             string sourceFolder = Path.GetDirectoryName(folder);
 
-            string assetDataPath = importSettings.isAssetPack ?
-                        Path.Combine(importSettings.outputFolderOffset, modName) :
-                        Path.Combine(importSettings.outputFolderOffset, ImporterId, modName);
+            string assetDataPath = Path.Combine(ImporterId, modName);
 
             int sourceAssetFolderHash = EAIDatabaseManager.GetAssetHash(sourceFolder);
             bool needToUpdateAsset;
@@ -100,21 +98,9 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             UIObject assetPackUI = assetPackPrefab.AddOrGetComponent<UIObject>();
 
-            string svgIconPath = Path.Combine(sourceFolder, $"{modName}.svg"); // Doesn't work with SVG, fuck.
-            string pngIconPath = Path.Combine(sourceFolder, $"{modName}.png"); // Doesn't work with SVG, fuck.
+            string svgIconPath = Path.Combine(sourceFolder, $"{modName}.svg");
 
-            if (importSettings.isAssetPack)
-            {
-                ImageAsset imageAsset = ImportersUtils.ImportImageFromPath(pngIconPath, assetDataPath, importSettings, fullAssetName);
-
-                if (imageAsset == null) EAI.Logger.Warn("Image asset is null.");
-
-                assetPackUI.m_Icon = imageAsset != null ? imageAsset.ToGlobalUri() : Icons.GetIcon(assetPackPrefab);
-            }
-            else
-            {
-                assetPackUI.m_Icon = File.Exists(svgIconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
-            }
+            assetPackUI.m_Icon = File.Exists(svgIconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
 
 
             AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, prefabFileName, true, EscapeStrategy.None);
@@ -132,7 +118,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 { $"Assets.DESCRIPTION[{fullAssetName}]", assetPackJson.PackName }
             };
 
-            ImportersUtils.SetupLocalisationForPrefab(localisation, importSettings, assetDataPath, fullAssetName);
+            ImportersUtils.SetupLocalisationForPrefab(localisation);
 
             importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
             ammoutOfAssetsloaded++;

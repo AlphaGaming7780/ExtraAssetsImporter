@@ -48,20 +48,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             {
                 if(!local.ContainsKey(localeID)) continue;
 
-                if (importSettings.isAssetPack)
-                {
-                    LocaleData localeData = new LocaleData(localeID, local[localeID], new());
-                    AssetDataPath assetDataPath = AssetDataPath.Create(Path.Combine(importSettings.outputFolderOffset, modName, "Localization"), $"{localeID}", EscapeStrategy.None);
-                    LocaleAsset localeAsset = importSettings.dataBase.AddAsset<LocaleAsset>(assetDataPath);
-                    localeAsset.SetData(localeData, localizationManager.LocaleIdToSystemLanguage(localeID), localizationManager.GetLocalizedName(localeID));
-                    localeAsset.Save();
-                    MainThreadDispatcher.RunOnMainThread(() => localizationManager.AddLocale(localeAsset));
-                    //GameManager.instance.localizationManager.AddLocale(localeAsset);
-                } else
-                {
-                    MainThreadDispatcher.RunOnMainThread(() => localizationManager.AddSource(localeID, new MemorySource(local[localeID])));
-                    //GameManager.instance.localizationManager.AddSource(localeID, new MemorySource(local[localeID]));
-                }
+                MainThreadDispatcher.RunOnMainThread(() => localizationManager.AddSource(localeID, new MemorySource(local[localeID])));
                 MainThreadDispatcher.WaitXFrames(1).Wait();
             }
         }

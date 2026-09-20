@@ -84,9 +84,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                     string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
 
-                    string assetDataPath = importSettings.isAssetPack ?  
-                        Path.Combine(importSettings.outputFolderOffset, modName, FolderName, catName, assetName) :
-                        Path.Combine(importSettings.outputFolderOffset, FolderName, modName, catName, assetName);
+                    string assetDataPath = Path.Combine(FolderName, modName, catName, assetName);
 
                     string fullAssetDataPath = Path.Combine(importSettings.dataBase.rootPath, assetDataPath);
 
@@ -229,7 +227,7 @@ namespace ExtraAssetsImporter.AssetImporter
                             { $"Assets.DESCRIPTION[{fullAssetName}]", assetName }
                         };
 
-                        ImportersUtils.SetupLocalisationForPrefab(localisation, importSettings, assetDataPath, assetName);
+                        ImportersUtils.SetupLocalisationForPrefab(localisation);
 
                         importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
 
@@ -291,18 +289,6 @@ namespace ExtraAssetsImporter.AssetImporter
             };
 
             obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo).ToArray();
-
-            if(!data.ImportSettings.isAssetPack || compatibility == EAINewImportersCompatibility.PreEditor) return;
-
-            PrefabIdentifierInfo preEditor = new()
-            {
-                m_Name = data.FullAssetName,
-                m_Hash = null,
-                m_Type = prefabBase.GetType().Name
-            };
-
-            obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(preEditor).ToArray();
-
         }
     }
     public struct PrefabImportData

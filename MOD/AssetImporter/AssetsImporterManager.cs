@@ -43,8 +43,6 @@ namespace ExtraAssetsImporter.AssetImporter
         public static IReadOnlyDictionary<Type, ImporterBase> Importers => s_Importers;
         public static IReadOnlyDictionary<Type, ComponentImporter> ComponentImporters => s_ComponentImporters;
 
-        public const string k_AssetPacksFolderName = "_AssetPacks";
-        public const string k_CompiledAssetPacksFolderName = "_CompiledAssetPacks";
         public const string k_TemplateFolderName = "_DefaultJson";
 
         private static readonly ConcurrentDictionary<(Type baseType, Assembly assembly), List<Type>> s_DerivedTypesCache = new();
@@ -173,107 +171,15 @@ namespace ExtraAssetsImporter.AssetImporter
 
                 Task task = AssetsImporterManager.LoadCustomAssetsAsync(importerSettings);
 
-                task.ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
-                    {
-                        EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}");
-                    }
-
-                    AssetsImporterManager.BuildAllAssetPacks();
-                });
+                task.ContinueWith(
+                    t => EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}"),
+                    TaskContinuationOptions.OnlyOnFaulted
+                );
             }
             else if (includeOldImporters)
             {
                 GameManager.instance.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
             }
-        }
-
-        public static Task BuildAllAssetPacks()
-        {
-            List<string> assetPacksToBuild = new List<string>();
-
-            string path = Path.Combine(EAI.pathModsData, k_AssetPacksFolderName);
-
-            if (!Directory.Exists(path)) return null;
-
-            foreach (DirectoryInfo directoryInfo in new DirectoryInfo(path).GetDirectories())
-            {
-                if(directoryInfo.Name.StartsWith('.')) continue;
-                assetPacksToBuild.Add(directoryInfo.Name);
-            }
-
-            if(assetPacksToBuild.Count <= 0) return null;
-
-            return BuildAssetPack(assetPacksToBuild);
-        }
-
-        public static Task BuildAssetPack(string assetPackName)
-        {
-
-            if (!EAI.m_Setting.UseNewImporters) return null;
-
-            EAI.Logger.Info($"Starting the build of the asset pack {assetPackName}.");
-
-            string path = Path.Combine(EAI.pathModsData, k_AssetPacksFolderName, assetPackName);
-
-            path = PathUtils.Normalize(path);
-
-            // Ignore path that start with "."
-            if (Path.GetDirectoryName(path).StartsWith(".")) return null;
-
-            if (!Directory.Exists(path))
-            {
-                EAI.Logger.Warn($"The asset pack folder {path} doesn't exist.");
-                return null;
-            }
-
-            string databasePath = Path.Combine(AssetDatabase.user.rootPath, "ImportedData");
-
-            EAIDatabase eaiDatabase = EAIDatabaseManager.LoadDatabase(Path.Combine(path, "AssetPackDatabase.json"), databasePath);
-            if (eaiDatabase == null) return null;
-
-            ImporterSettings importerSettings = new ImporterSettings
-            {
-                eaiDatabase = eaiDatabase,
-                dataBase = AssetDatabase.user,
-                savePrefabs = true,
-                isAssetPack = true,
-                //outputFolderOffset = Path.Combine(EAI.pathModsData.Replace(AssetDatabase.user.rootPath + Path.DirectorySeparatorChar, ""), k_CompiledAssetPacksFolderName)
-                outputFolderOffset = databasePath,
-                assetPackName = assetPackName
-            };
-
-
-            foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
-            {
-                importer.AddCustomAssetsFolder(path);
-            }
-
-            return LoadCustomAssetsAsync(importerSettings);
-        }
-
-        public static Task BuildAssetPack(IEnumerable<string> assetPacksName)
-        {
-            if (!EAI.m_Setting.UseNewImporters) return null;
-
-            Task task = null;
-
-            foreach (string assetPackName in assetPacksName)
-            {
-
-                if(task != null)
-                {
-                    task = task.ContinueWith((taskIn) =>
-                    {
-                        BuildAssetPack(assetPackName);
-                    });
-                } else
-                {
-                    task = BuildAssetPack(assetPackName);
-                }
-            }
-            return task;
         }
 
         public static Task LoadCustomAssetsAsync(ImporterSettings importerSettings)
@@ -317,8 +223,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             EAI.Logger.Info($"The loading of importers has finished. Took {importersPerformanceCounter.result.TotalSeconds:F2}s.");
 
-            if (!importerSettings.isAssetPack)
-                EAI.m_Setting.ResetCompatibility();
+            EAI.m_Setting.ResetCompatibility();
 
             importerSettings.eaiDatabase.SaveValidateDatabase(importerSettings);
 
