@@ -4,10 +4,12 @@ using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
+using ExtraLib.ClassExtension;
 using Game.SceneFlow;
 using Game.UI.Menu;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -39,8 +41,14 @@ namespace ExtraAssetsImporter.AssetImporter
         public virtual bool PreImporter { get; } = false;
 
         internal List<string> _FolderToLoadAssets = new();
-        private bool AssetsLoading = false;
-        internal bool AssetsLoaded = false;
+        // Written by the import Task, read by the main thread (settings UI / AreImportersFinished).
+        private volatile bool AssetsLoading = false;
+        internal volatile bool AssetsLoaded = false;
+
+        // Main-thread work queued during the import without blocking on it (AddOrUpdatePrefab, AddSource,
+        // notification updates). MainThreadDispatcher runs them in no guaranteed order, so they are all
+        // awaited before the importer reports itself as loaded — this also surfaces their exceptions.
+        private readonly ConcurrentQueue<Task> _PendingMainThreadTasks = new();
 
         protected int numberOfAssets;
         protected int ammoutOfAssetsloaded;
@@ -88,13 +96,14 @@ namespace ExtraAssetsImporter.AssetImporter
             failedAssets = 0;
             skipedAsset = 0;
 
-            var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotification(
+            // NotificationUISystem uses a plain Dictionary/List, so it must only be touched on the main thread.
+            var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(
                 $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}",
                 title: $"EAI - Importing {ImporterId}.",
                 progressState: ProgressState.Indeterminate,
                 thumbnail: $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/{ImporterId}.svg",
                 progress: 0
-            );
+            ).Result;
 
             foreach (string folder in _FolderToLoadAssets)
             {
@@ -140,16 +149,18 @@ namespace ExtraAssetsImporter.AssetImporter
 
             AfterLoadCustomAssetFolder(importSettings);
 
+            WaitPendingMainThreadTasks();
+
             TimeSpan elapsed = performanceCounter.result;
             double msPerAsset = numberOfAssets > 0 ? elapsed.TotalMilliseconds / numberOfAssets : 0;
 
-            EL.m_NotificationUISystem.RemoveNotification(
+            EL.m_NotificationUISystem.RemoveNotificationOnMainThread(
                 identifier: notificationInfo.id,
                 delay: 5f,
                 text: $"Complete, {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped. Took {elapsed.TotalSeconds:F2}s ({msPerAsset:F1}ms/asset).",
                 progressState: ProgressState.Complete,
                 progress: 100
-            );
+            ).Wait();
 
             EAI.Logger.Info($"The {ImporterId} importer finished loading all its assets. {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped. Took {elapsed.TotalSeconds:F2}s ({msPerAsset:F1}ms/asset).");
 
@@ -161,6 +172,35 @@ namespace ExtraAssetsImporter.AssetImporter
         public virtual void Reset()
         {
             _FolderToLoadAssets.Clear();
+        }
+
+        /// <summary>
+        /// Queues main-thread work without blocking the import on it. Everything queued here is awaited
+        /// before this importer is marked as loaded.
+        /// </summary>
+        protected void TrackMainThreadTask(Task task)
+        {
+            _PendingMainThreadTasks.Enqueue(task);
+        }
+
+        protected void UpdateNotificationOnMainThread(NotificationUISystem.NotificationInfo notificationInfo, string text, int progress)
+        {
+            TrackMainThreadTask(EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(notificationInfo.id, text: text, progressState: ProgressState.Progressing, progress: progress));
+        }
+
+        private void WaitPendingMainThreadTasks()
+        {
+            while (_PendingMainThreadTasks.TryDequeue(out Task task))
+            {
+                try
+                {
+                    task.Wait();
+                }
+                catch (AggregateException e)
+                {
+                    EAI.Logger.Error($"The {ImporterId} importer had a main thread task fail: {e.Flatten().InnerException}");
+                }
+            }
         }
 
         protected virtual void PreLoadCustomAssetFolder(ImporterSettings importSettings) { }

@@ -19,7 +19,6 @@ using System.Threading.Tasks;
 using UnityEngine;
 using static Colossal.IO.AssetDatabase.ImageAsset;
 using Hash128 = Colossal.Hash128;
-using MainThreadDispatcher = Colossal.Core.MainThreadDispatcher;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -143,10 +142,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static bool TryGetCachedPrefab(PrefabID prefabID, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab)
         {
-            PrefabBase existing = MainThreadHelper.RunOnMainThread(() =>
-                EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) ? prefabBase : null ).Result;
-
-            if (existing != null)
+            if (TryGetPrefab(prefabID, out PrefabBase existing))
             {
                 EAI.Logger.Info($"{prefabID} was already loaded and in the prefab system.");
                 prefab = existing;
@@ -231,13 +227,24 @@ namespace ExtraAssetsImporter.AssetImporter
             return renderPrefab;
         }
 
-        public static void SetupLocalisationForPrefab(Dictionary<string, string> localisation)
+        public static Task SetupLocalisationForPrefab(Dictionary<string, string> localisation)
         {
             LocalizationManager localizationManager = GameManager.instance.localizationManager;
 
             string localeID = localizationManager.fallbackLocaleId;
 
-            MainThreadDispatcher.RunOnMainThread( () => localizationManager.AddSource(localeID, new MemorySource(localisation)));
+            return MainThreadHelper.RunOnMainThread(() => localizationManager.AddSource(localeID, new MemorySource(localisation)));
+        }
+
+        /// <summary>
+        /// PrefabSystem's lookup tables are plain Dictionary/List mutated by the main thread, so lookups from
+        /// the import Tasks must go through the main thread too.
+        /// </summary>
+        public static bool TryGetPrefab(PrefabID prefabID, out PrefabBase prefab)
+        {
+            prefab = MainThreadHelper.RunOnMainThread(() =>
+                EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) ? prefabBase : null).Result;
+            return prefab != null;
         }
 
         public static string GetRenderPrefabName(PrefabImportData data)

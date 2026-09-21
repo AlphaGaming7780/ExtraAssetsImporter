@@ -25,7 +25,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-using MainThreadDispatcher = Colossal.Core.MainThreadDispatcher;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -47,7 +46,11 @@ namespace ExtraAssetsImporter.AssetImporter
 
         private static readonly ConcurrentDictionary<(Type baseType, Assembly assembly), List<Type>> s_DerivedTypesCache = new();
 
-        public static bool IsImporting => !AreImportersFinished();
+        // 1 while a new-importers pass is queued or running. Set before Task.Run so a second ReloadDatabase
+        // click can't slip in between the button press and the importers flipping their own flags.
+        private static int s_NewImportersPassRunning;
+
+        public static bool IsImporting => Volatile.Read(ref s_NewImportersPassRunning) != 0 || !AreImportersFinished();
 
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
@@ -142,6 +145,13 @@ namespace ExtraAssetsImporter.AssetImporter
 
         private static void RunImportPass(bool includeOldImporters)
         {
+            bool runNewImporters = EAI.m_Setting.UseNewImporters;
+            if (runNewImporters && Interlocked.CompareExchange(ref s_NewImportersPassRunning, 1, 0) != 0)
+            {
+                EAI.Logger.Warn("An import pass is already running, ignoring this one.");
+                return;
+            }
+
             // Re-distributing to every importer each time (not just once) is cheap and idempotent —
             // ImporterBase.AddCustomAssetsFolder already skips a path already in its own _FolderToLoadAssets.
             foreach (string path in s_RegisteredModPaths)
@@ -162,7 +172,7 @@ namespace ExtraAssetsImporter.AssetImporter
             }
 
             // Load the custom assets with the new importers
-            if (EAI.m_Setting.UseNewImporters)
+            if (runNewImporters)
             {
                 // Auto load custom assets into new importer if they have the correct folder names
                 // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
@@ -171,10 +181,11 @@ namespace ExtraAssetsImporter.AssetImporter
 
                 Task task = AssetsImporterManager.LoadCustomAssetsAsync(importerSettings);
 
-                task.ContinueWith(
-                    t => EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}"),
-                    TaskContinuationOptions.OnlyOnFaulted
-                );
+                task.ContinueWith(t =>
+                {
+                    if (t.IsFaulted) EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}");
+                    Interlocked.Exchange(ref s_NewImportersPassRunning, 0);
+                });
             }
             else if (includeOldImporters)
             {
@@ -253,17 +264,22 @@ namespace ExtraAssetsImporter.AssetImporter
         private static void CreateEAILocalAssetPackPrefab()
         {
             string packName = $"ExtraAssetsImporter {AssetPackImporter.kAssetEndName}";
-            if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(typeof(AssetPackPrefab).Name, packName), out var existingPrefab))
-                return;
 
-            AssetPackPrefab assetPackPrefab = MainThreadHelper.RunOnMainThread<AssetPackPrefab>(() => ScriptableObject.CreateInstance<AssetPackPrefab>()).Result;
-            assetPackPrefab.name = packName;
+            // All in one main-thread call: AddPrefab registers the prefab synchronously, so it can be looked up
+            // as soon as this returns — no frame waiting needed (WaitXFrames isn't thread-safe anyway).
+            MainThreadHelper.RunOnMainThread(() =>
+            {
+                if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(typeof(AssetPackPrefab).Name, packName), out _))
+                    return;
 
-            UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
-            assetPackUI.m_Icon = Icons.GetIcon(assetPackPrefab);
+                AssetPackPrefab assetPackPrefab = ScriptableObject.CreateInstance<AssetPackPrefab>();
+                assetPackPrefab.name = packName;
 
-            MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddPrefab(assetPackPrefab));
-            MainThreadDispatcher.WaitXFrames(2).Wait();
+                UIObject assetPackUI = assetPackPrefab.AddComponent<UIObject>();
+                assetPackUI.m_Icon = Icons.GetIcon(assetPackPrefab);
+
+                EL.m_PrefabSystem.AddPrefab(assetPackPrefab);
+            }).Wait();
         }
 
         public static void ExportImportersTemplate()

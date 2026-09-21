@@ -38,7 +38,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             utilityLane.m_Hanging = utilityLaneJson.Hanging;
             utilityLane.m_Underground = utilityLaneJson.Underground;
 
-            if(utilityLaneJson.LocalConnectionLane != null && EL.m_PrefabSystem.TryGetPrefab(utilityLaneJson.LocalConnectionLane, out PrefabBase prefab1) && prefab1 is NetLanePrefab localConnectionLane)
+            if(utilityLaneJson.LocalConnectionLane != null && ImportersUtils.TryGetPrefab(utilityLaneJson.LocalConnectionLane, out PrefabBase prefab1) && prefab1 is NetLanePrefab localConnectionLane)
             {
                 utilityLane.m_LocalConnectionLane = localConnectionLane;
             }
@@ -47,7 +47,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 EAI.Logger.Warn($"Failed to get the NetLanePrefab for LocalConnectionLane with the name of {utilityLaneJson.LocalConnectionLane} for the {data.FullAssetName} asset.");
             }
 
-            if (utilityLaneJson.LocalConnectionLane2 != null && EL.m_PrefabSystem.TryGetPrefab(utilityLaneJson.LocalConnectionLane2, out PrefabBase prefab2) && prefab2 is NetLanePrefab localConnectionLane2)
+            if (utilityLaneJson.LocalConnectionLane2 != null && ImportersUtils.TryGetPrefab(utilityLaneJson.LocalConnectionLane2, out PrefabBase prefab2) && prefab2 is NetLanePrefab localConnectionLane2)
             {
                 utilityLane.m_LocalConnectionLane2 = localConnectionLane2;
             }
@@ -56,7 +56,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 EAI.Logger.Warn($"Failed to get the NetLanePrefab for LocalConnectionLane2 with the name of {utilityLaneJson.LocalConnectionLane2} for the {data.FullAssetName} asset.");
             }
 
-            if(utilityLaneJson.NodeObject != null && EL.m_PrefabSystem.TryGetPrefab(utilityLaneJson.NodeObject, out PrefabBase prefab3) && prefab3 is ObjectPrefab nodeObject)
+            if(utilityLaneJson.NodeObject != null && ImportersUtils.TryGetPrefab(utilityLaneJson.NodeObject, out PrefabBase prefab3) && prefab3 is ObjectPrefab nodeObject)
             {
                 utilityLane.m_NodeObject = nodeObject;
             }

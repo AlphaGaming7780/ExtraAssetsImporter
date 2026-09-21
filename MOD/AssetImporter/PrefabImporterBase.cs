@@ -70,10 +70,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 foreach (string assetFolder in Directory.GetDirectories(catFolder))
                 {
                     string assetName = new DirectoryInfo(assetFolder).Name;
-                    notificationInfo.progressState = ProgressState.Progressing;
-                    notificationInfo.progress = (int)(ammoutOfAssetsloaded / (float)numberOfAssets * 100);
-                    notificationInfo.text = $"Loading : {assetName}";
-                    EL.m_NotificationUISystem.AddOrUpdateNotification(ref notificationInfo);
+                    UpdateNotificationOnMainThread(notificationInfo, $"Loading : {assetName}", (int)(ammoutOfAssetsloaded / (float)numberOfAssets * 100));
 
                     if (assetName.StartsWith("."))
                     {
@@ -219,7 +216,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         ImportersUtils.SetupUIObject(this, importData, prefab);
 
-                        MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab));
+                        TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab)));
 
                         Dictionary<string, string> localisation = new()
                         {
@@ -227,7 +224,7 @@ namespace ExtraAssetsImporter.AssetImporter
                             { $"Assets.DESCRIPTION[{fullAssetName}]", assetName }
                         };
 
-                        ImportersUtils.SetupLocalisationForPrefab(localisation);
+                        TrackMainThreadTask(ImportersUtils.SetupLocalisationForPrefab(localisation));
 
                         importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
 

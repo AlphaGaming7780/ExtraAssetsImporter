@@ -6,6 +6,7 @@ using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraLib;
 using ExtraLib.ClassExtension;
+using ExtraLib.Helpers;
 using Game.Prefabs;
 using System;
 using System.Collections.Generic;
@@ -85,11 +86,29 @@ namespace ExtraAssetsImporter.Database
             CancellationToken cancellationToken = new();
             ProgressTracker progressTracker = new("EAI_PopulateDatabase", true);
 
-            var notif = EL.m_NotificationUISystem.AddOrUpdateNotification("EAI.PopulatingDatabase", "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
+            const string notifId = "EAI.PopulatingDatabase";
+            EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(notifId, "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
+
+            // The progress callback and the continuation below run on background threads, while the main thread may be
+            // blocked on LoadDatabase().Wait(): notifications are dispatched without waiting on them (waiting would
+            // deadlock). Dispatched actions run in no guaranteed order, so this flag (only touched on the main thread)
+            // stops a late progress update from showing the notification again after it was removed.
+            bool notifRemoved = false;
             void action(ProgressTracker tracker)
             {
-                notif.progress = (int)math.round(tracker.progress * 100);
-                notif.Update();
+                int progress = (int)math.round(tracker.progress * 100);
+                MainThreadHelper.RunOnMainThread(() =>
+                {
+                    if (!notifRemoved) EL.m_NotificationUISystem.AddOrUpdateNotification(notifId, progress: progress);
+                });
+            }
+            void removeNotif(string text, ProgressState progressState)
+            {
+                MainThreadHelper.RunOnMainThread(() =>
+                {
+                    notifRemoved = true;
+                    EL.m_NotificationUISystem.RemoveNotification(notifId, 0.5f, text: text, progressState: progressState, progress: progressState == ProgressState.Complete ? 100 : null);
+                });
             }
             TaskProgress taskProgress = new(action);
 
@@ -98,10 +117,7 @@ namespace ExtraAssetsImporter.Database
                 if (t.IsFaulted)
                 {
                     EAI.Logger.Error($"Failed to register the Extra Assets Importer Asset Database : {t.Exception}");
-                    notif.text = "Failed to register the Extra Assets Importer Asset Database.";
-                    notif.progressState = ProgressState.Failed;
-                    notif.Update();
-                    EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                    removeNotif("Failed to register the Extra Assets Importer Asset Database.", ProgressState.Failed);
                 }
 
                 else
@@ -113,18 +129,11 @@ namespace ExtraAssetsImporter.Database
                     if (task2.IsFaulted)
                     {
                         EAI.Logger.Error($"Failed to populate the Extra Assets Importer Asset Database : {task2.Exception}");
-                        notif.text = "Failed to populate the Extra Assets Importer Asset Database.";
-                        notif.progressState = ProgressState.Failed;
-                        notif.Update();
-                        EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                        removeNotif("Failed to populate the Extra Assets Importer Asset Database.", ProgressState.Failed);
                         return;
                     }
 
-                    notif.text = "Extra Assets Importer Asset Database populated.";
-                    notif.progressState = ProgressState.Complete;
-                    notif.progress = 100;
-                    notif.Update();
-                    EL.m_NotificationUISystem.RemoveNotification(notif, 0.5f);
+                    removeNotif("Extra Assets Importer Asset Database populated.", ProgressState.Complete);
                     return;
                 }
 
@@ -398,25 +407,30 @@ namespace ExtraAssetsImporter.Database
                         IEnumerable<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter)
                             .Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter));
 
-                        foreach (PrefabAsset prefabAsset in prefabAssets)
+                        // SaveValidateDatabase runs at the end of the import Task: loading the prefab (ScriptableObject
+                        // deserialization) and touching the PrefabSystem must happen on the main thread.
+                        MainThreadHelper.RunOnMainThread(() =>
                         {
-                            EAI.Logger.Info($"Removing prefab asset {prefabAsset.name} at {prefabAsset.subPath} from prefab system and unloading it.");
-
-                            PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
-
-                            if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase existingPrefab))
+                            foreach (PrefabAsset prefabAsset in prefabAssets)
                             {
-                                if (EL.m_PrefabSystem.RemovePrefab(existingPrefab)) continue;
-                                EAI.Logger.Warn($"Failed to remove prefab {prefabAsset.name} from prefab system.");
-                            }
-                            else
-                            {
-                                EAI.Logger.Info($"Prefab {prefabAsset.name} was not in the prefab system.");
-                            }
+                                EAI.Logger.Info($"Removing prefab asset {prefabAsset.name} at {prefabAsset.subPath} from prefab system and unloading it.");
 
-                            prefabAsset.Unload();
-                            prefabAsset.database.DeleteAsset(prefabAsset);
-                        }
+                                PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+
+                                if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase existingPrefab))
+                                {
+                                    if (EL.m_PrefabSystem.RemovePrefab(existingPrefab)) continue;
+                                    EAI.Logger.Warn($"Failed to remove prefab {prefabAsset.name} from prefab system.");
+                                }
+                                else
+                                {
+                                    EAI.Logger.Info($"Prefab {prefabAsset.name} was not in the prefab system.");
+                                }
+
+                                prefabAsset.Unload();
+                                prefabAsset.database.DeleteAsset(prefabAsset);
+                            }
+                        }).Wait();
 
                         Directory.Delete(path, true);
                     }

@@ -1,7 +1,7 @@
-﻿using Colossal.Core;
-using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
+using ExtraLib.Helpers;
 using Game.SceneFlow;
 using Game.UI.Menu;
 using System.Collections.Generic;
@@ -42,14 +42,16 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             Dictionary<string, Dictionary<string, string>> local = LoadLocalization(folder);
 
-            LoadedLocales.AddRange(local[GameManager.instance.localizationManager.fallbackLocaleId].Keys);
+            if (local.TryGetValue(localizationManager.fallbackLocaleId, out Dictionary<string, string> fallbackLocale))
+                LoadedLocales.AddRange(fallbackLocale.Keys);
+            else
+                EAI.Logger.Warn($"{modName} has no {localizationManager.fallbackLocaleId} localization file in {folder}.");
 
-            foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
+            foreach (KeyValuePair<string, Dictionary<string, string>> locale in local)
             {
-                if(!local.ContainsKey(localeID)) continue;
-
-                MainThreadDispatcher.RunOnMainThread(() => localizationManager.AddSource(localeID, new MemorySource(local[localeID])));
-                MainThreadDispatcher.WaitXFrames(1).Wait();
+                // Awaited before the pre-import pass ends (ImporterBase), so the strings are registered
+                // before the importers run — no need to wait frames here.
+                TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => localizationManager.AddSource(locale.Key, new MemorySource(locale.Value))));
             }
         }
 

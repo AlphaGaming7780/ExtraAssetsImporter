@@ -1,14 +1,15 @@
-﻿using Colossal.Core;
-using Colossal.IO.AssetDatabase;
+﻿using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.UI;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
+using ExtraLib.Helpers;
 using Game.Prefabs;
 using Game.SceneFlow;
 using Game.UI.Menu;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -27,6 +28,10 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public override bool PreImporter => true;
 
+        // Filled during the pre-import pass so the importers (running on their own Tasks afterwards) can
+        // resolve their mod's pack without a main-thread round trip per asset.
+        private static readonly ConcurrentDictionary<string, AssetPackPrefab> s_AssetPacks = new();
+
         private AssetPackJson LoadJSON(string path)
         {
 
@@ -38,17 +43,25 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return assetPackJson;
         }
 
+        protected override void PreLoadCustomAssetFolder(ImporterSettings importSettings)
+        {
+            // A pack whose mod was removed since the last pass must not be handed out anymore.
+            s_AssetPacks.Clear();
+        }
+
         public static bool TryGetAssetPackPrefab( PrefabImportData data, out AssetPackPrefab assetPackPrefab )
         {
-            assetPackPrefab = null;
+            if (s_AssetPacks.TryGetValue(data.ModName, out assetPackPrefab)) return true;
 
-            if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(AssetPackPrefab), $"{data.ModName} {kAssetEndName}", Colossal.Hash128.CreateGuid($"{data.ModName} {kAssetEndName}")), out var p1)
-                && p1 is AssetPackPrefab assetPack)
+            string fullAssetName = $"{data.ModName} {kAssetEndName}";
+            if (ImportersUtils.TryGetPrefab(new PrefabID(nameof(AssetPackPrefab), fullAssetName, Colossal.Hash128.CreateGuid(fullAssetName)), out PrefabBase prefab)
+                && prefab is AssetPackPrefab assetPack)
             {
-                assetPackPrefab = assetPack;
+                assetPackPrefab = s_AssetPacks.GetOrAdd(data.ModName, assetPack);
                 return true;
             }
 
+            assetPackPrefab = null;
             return false;
 
         }
@@ -86,6 +99,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             if (!needToUpdateAsset && ImportersUtils.TryGetCachedPrefab(importSettings, assetDataPath, fullAssetName, prefabFileName, out AssetPackPrefab cachedAssetPackPrefab))
             {
                 eaiAsset.PrefabID = cachedAssetPackPrefab.GetPrefabID().ToString();
+                s_AssetPacks[modName] = cachedAssetPackPrefab;
                 importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
                 ammoutOfAssetsloaded++;
                 return;
@@ -110,7 +124,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             if(importSettings.savePrefabs) prefabAsset.Save();
 
-            MainThreadDispatcher.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(assetPackPrefab));
+            TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(assetPackPrefab)));
+            s_AssetPacks[modName] = assetPackPrefab;
 
             Dictionary<string, string> localisation = new()
             {
@@ -118,7 +133,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 { $"Assets.DESCRIPTION[{fullAssetName}]", assetPackJson.PackName }
             };
 
-            ImportersUtils.SetupLocalisationForPrefab(localisation);
+            TrackMainThreadTask(ImportersUtils.SetupLocalisationForPrefab(localisation));
 
             importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
             ammoutOfAssetsloaded++;

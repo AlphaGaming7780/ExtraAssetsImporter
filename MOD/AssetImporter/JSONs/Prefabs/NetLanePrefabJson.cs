@@ -11,7 +11,7 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs.Prefabs
         {
             if (m_PathfindPrefab != null)
             {
-                if (EL.m_PrefabSystem.TryGetPrefab(new PrefabID(nameof(PathfindPrefab), m_PathfindPrefab), out PrefabBase prefabBase) && prefabBase is PathfindPrefab pathfindPrefab)
+                if (ImportersUtils.TryGetPrefab(new PrefabID(nameof(PathfindPrefab), m_PathfindPrefab), out PrefabBase prefabBase) && prefabBase is PathfindPrefab pathfindPrefab)
                 {
                     netLanePrefab.m_PathfindPrefab = pathfindPrefab;
                 }
