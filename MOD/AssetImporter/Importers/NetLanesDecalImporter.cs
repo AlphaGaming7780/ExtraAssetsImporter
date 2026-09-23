@@ -49,7 +49,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             base.VersionCompatiblity(prefabBase, data);
 
-            ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponent<ObsoleteIdentifiers>();
+            ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponentOnMainThread<ObsoleteIdentifiers>();
 
             obsoleteIdentifiers.m_PrefabIdentifiers ??= new PrefabIdentifierInfo[0];
 

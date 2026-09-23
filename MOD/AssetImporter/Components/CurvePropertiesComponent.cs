@@ -25,7 +25,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 EAI.Logger.Error($"curveProperties component JSON is null for prefab {prefab.name}.");
                 return;
             }
-            CurveProperties curveProperties = prefab.AddOrGetComponent<CurveProperties>();
+            CurveProperties curveProperties = prefab.AddOrGetComponentOnMainThread<CurveProperties>();
             curveProperties.m_TilingCount = curvePropertiesJson.TilingCount;
             curveProperties.m_OverrideLength = curvePropertiesJson.OverrideLength;
             curveProperties.m_SmoothingDistance = curvePropertiesJson.SmoothingDistance;

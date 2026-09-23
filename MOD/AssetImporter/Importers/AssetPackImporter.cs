@@ -110,7 +110,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             AssetPackPrefab assetPackPrefab = ImportersUtils.GetOrCreatePrefabInstance<AssetPackPrefab>(fullAssetName);
             assetPackPrefab.name = fullAssetName;
 
-            UIObject assetPackUI = assetPackPrefab.AddOrGetComponent<UIObject>();
+            UIObject assetPackUI = assetPackPrefab.AddOrGetComponentOnMainThread<UIObject>();
 
             string svgIconPath = Path.Combine(sourceFolder, $"{modName}.svg");
 

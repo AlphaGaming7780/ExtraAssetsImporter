@@ -6,6 +6,7 @@ using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using UnityEngine;
@@ -96,14 +97,27 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             if (data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset textureAsset))
                 return textureAsset;
 
-            Lazy<TextureAsset> pendingImport = s_PendingImports.GetOrAdd(textureFilePath, _ => new Lazy<TextureAsset>(
-                () => ImportAndSaveTexture(importSettings, data, textureFilePath, textureDataPath, fullAssetTextureName),
+            // Keyed on the destination: TextureJson can map several source files (from other mods) to different
+            // destinations, and the same source to the same destination must only be imported once.
+            string key = $"{textureDataPath.subPath}/{textureDataPath.assetName}{textureDataPath.extension}";
+
+            Lazy<TextureAsset> pendingImport = s_PendingImports.GetOrAdd(key, _ => new Lazy<TextureAsset>(
+                // Checked again inside the Lazy: a thread that missed the database check above may get here after
+                // the previous import finished and its entry was removed.
+                () => data.ImportSettings.dataBase.TryGetOrAddAsset(textureDataPath, out TextureAsset existingAsset)
+                    ? existingAsset
+                    : ImportAndSaveTexture(importSettings, data, textureFilePath, textureDataPath, fullAssetTextureName),
                 LazyThreadSafetyMode.ExecutionAndPublication));
 
-            textureAsset = pendingImport.Value;
-            s_PendingImports.TryRemove(textureFilePath, out _);
-
-            return textureAsset;
+            try
+            {
+                return pendingImport.Value;
+            }
+            finally
+            {
+                // Only remove our own entry (also clears a faulted Lazy so a later call can retry).
+                ((ICollection<KeyValuePair<string, Lazy<TextureAsset>>>)s_PendingImports).Remove(new KeyValuePair<string, Lazy<TextureAsset>>(key, pendingImport));
+            }
         }
 
         private static TextureAsset ImportAndSaveTexture(ImportSettings importSettings, PrefabImportData data, string textureFilePath, AssetDataPath textureDataPath, string fullAssetTextureName)

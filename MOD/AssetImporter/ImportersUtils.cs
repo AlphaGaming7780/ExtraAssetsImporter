@@ -45,6 +45,17 @@ namespace ExtraAssetsImporter.AssetImporter
             EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(assetDataPath, prefab);
         }
 
+        /// <summary>
+        /// PrefabBase.AddComponent calls ScriptableObject.CreateInstance, a main-thread-only Unity API: an existing
+        /// component is returned straight away, a missing one is created on the main thread.
+        /// </summary>
+        public static T AddOrGetComponentOnMainThread<T>(this PrefabBase prefab) where T : ComponentBase
+        {
+            if (prefab.TryGetExactly(out T component)) return component;
+
+            return MainThreadHelper.RunOnMainThread(() => prefab.AddOrGetComponent<T>()).Result;
+        }
+
         public static T GetOrCreatePrefabInstance<T>(string prefabName) where T : PrefabBase
         {
             return MainThreadHelper.RunOnMainThread(() =>
@@ -321,7 +332,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             string iconString = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/{data.AssetName}/icon.png" : Icons.DecalPlaceholder;
 
-            UIObject prefabUI = prefab.AddOrGetComponent<UIObject>();
+            UIObject prefabUI = prefab.AddOrGetComponentOnMainThread<UIObject>();
             prefabUI.m_IsDebugObject = false;
             prefabUI.m_Icon = iconString;
 

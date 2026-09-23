@@ -131,9 +131,16 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void ImportCustomAssets()
         {
-            EAIDatabaseManager.LoadDatabase().Wait();
-
-            RunImportPass(includeOldImporters: true);
+            // Registering + populating the asset database can take a while: don't freeze the main thread on it.
+            // The import pass then goes back to the main thread, since it starts the old importers' coroutines.
+            // IsImporting is already true meanwhile (no importer is marked loaded yet), so ReloadDatabase stays greyed out.
+            EAIDatabaseManager.LoadDatabase()
+                .ContinueWith(_ => MainThreadHelper.RunOnMainThread(() => RunImportPass(includeOldImporters: true)))
+                .Unwrap()
+                .ContinueWith(
+                    t => EAI.Logger.Error($"Error while starting the custom assets import: {t.Exception}"),
+                    TaskContinuationOptions.OnlyOnFaulted
+                );
         }
 
         public static void ReloadCustomAssets()

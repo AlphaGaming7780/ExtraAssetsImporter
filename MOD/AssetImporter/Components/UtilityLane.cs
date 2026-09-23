@@ -31,7 +31,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 EAI.Logger.Error($"UtilityLane component JSON is null for prefab {prefab.name}.");
                 return;
             }
-            UtilityLane utilityLane = prefab.AddOrGetComponent<UtilityLane>();
+            UtilityLane utilityLane = prefab.AddOrGetComponentOnMainThread<UtilityLane>();
             utilityLane.m_UtilityType = utilityLaneJson.UtilityType;
             utilityLane.m_VisualCapacity = utilityLaneJson.VisualCapacity;
             utilityLane.m_Width = utilityLaneJson.Width;

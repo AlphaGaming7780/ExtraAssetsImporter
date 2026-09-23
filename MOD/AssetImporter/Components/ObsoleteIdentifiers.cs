@@ -34,7 +34,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 EAI.Logger.Error($"ObsoleteIdentifiers component JSON is null for prefab {prefab.name}.");
                 return;
             }
-            ObsoleteIdentifiers obsoleteIdentifiers = prefab.AddOrGetComponent<ObsoleteIdentifiers>();
+            ObsoleteIdentifiers obsoleteIdentifiers = prefab.AddOrGetComponentOnMainThread<ObsoleteIdentifiers>();
             obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiersJson.PrefabIdentifiers;
         }
     }

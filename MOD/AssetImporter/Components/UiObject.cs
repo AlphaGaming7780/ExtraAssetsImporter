@@ -28,7 +28,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 EAI.Logger.Error($"UIObject component JSON is null for prefab {prefab.name}.");
                 return;
             }
-            UIObject uiObject = prefab.AddOrGetComponent<UIObject>();
+            UIObject uiObject = prefab.AddOrGetComponentOnMainThread<UIObject>();
             uiObject.m_Priority = uiObjectJson.m_Priority;
             uiObject.m_IsDebugObject = uiObjectJson.m_IsDebugObject;
             uiObject.m_Icon = uiObjectJson.m_Icon ?? uiObject.m_Icon;

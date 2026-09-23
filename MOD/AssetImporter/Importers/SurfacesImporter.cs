@@ -38,7 +38,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         private void SetupRenderedArea(SurfacePrefab surfacePrefab, PrefabImportData data )
         {
-            RenderedArea renderedArea = surfacePrefab.AddOrGetComponent<RenderedArea>();
+            RenderedArea renderedArea = surfacePrefab.AddOrGetComponentOnMainThread<RenderedArea>();
 
             renderedArea.m_BaseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
             renderedArea.m_NormalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data);
@@ -54,7 +54,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             if (materialJson == null) return;
 
-            RenderedArea renderedArea = prefab.AddOrGetComponent<RenderedArea>();
+            RenderedArea renderedArea = prefab.AddOrGetComponentOnMainThread<RenderedArea>();
             renderedArea.m_RendererPriority = (int)materialJson.TryGetValue("_DrawOrder", renderedArea.m_RendererPriority);
             renderedArea.m_BaseColor = materialJson.TryGetValue("_BaseColor", renderedArea.m_BaseColor);
             renderedArea.m_DecalLayerMask = (DecalLayers)materialJson.TryGetValue("colossal_DecalLayerMask", (float)renderedArea.m_DecalLayerMask);

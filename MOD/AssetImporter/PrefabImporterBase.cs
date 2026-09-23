@@ -119,7 +119,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
                         if (!needToUpdateAsset)
                         {
-                            int hash = EAIDatabaseManager.GetAssetHash(fullAssetDataPath);
+                            int hash = EAIDatabaseManager.GetBuildAssetHash(fullAssetDataPath);
                             if (eaiAsset.BuildAssetHash != hash)
                             {
                                 EAI.Logger.Info($"The asset {fullAssetName} built files have changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
@@ -186,12 +186,12 @@ namespace ExtraAssetsImporter.AssetImporter
                             // Should see this prefab has a pre-editor prefab.
                             prefab.version = 0;
 
-                            EditorAssetCategoryOverride categoryOverride = prefab.AddOrGetComponent<EditorAssetCategoryOverride>();
+                            EditorAssetCategoryOverride categoryOverride = prefab.AddOrGetComponentOnMainThread<EditorAssetCategoryOverride>();
                             categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
 
                             if (AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab))
                             {
-                                AssetPackItem assetPackItem = prefab.AddOrGetComponent<AssetPackItem>();
+                                AssetPackItem assetPackItem = prefab.AddOrGetComponentOnMainThread<AssetPackItem>();
                                 assetPackItem.m_Packs = new[] { assetPackPrefab };
                             }
 
@@ -208,7 +208,7 @@ namespace ExtraAssetsImporter.AssetImporter
                             //MainThreadHelper.RunOnMainThread(() => prefabAsset.Save()).Wait();
                             if (importSettings.savePrefabs) lock (PrefabSaveLock) prefabAsset.Save();
 
-                            int buildAssetFolderHash = EAIDatabaseManager.GetAssetHash(fullAssetDataPath);
+                            int buildAssetFolderHash = EAIDatabaseManager.GetBuildAssetHash(fullAssetDataPath);
                             eaiAsset.BuildAssetHash = buildAssetFolderHash;
                         }
 
@@ -257,7 +257,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             if (compatibility == EAINewImportersCompatibility.None) return;
 
-            ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponent<ObsoleteIdentifiers>();
+            ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponentOnMainThread<ObsoleteIdentifiers>();
 
             obsoleteIdentifiers.m_PrefabIdentifiers ??= new PrefabIdentifierInfo[0];
 

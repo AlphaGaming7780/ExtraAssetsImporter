@@ -89,10 +89,10 @@ namespace ExtraAssetsImporter.Database
             const string notifId = "EAI.PopulatingDatabase";
             EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(notifId, "Extra Assets Importer", "Populating Extra Assets Importer Asset Database...", null, ProgressState.Indeterminate);
 
-            // The progress callback and the continuation below run on background threads, while the main thread may be
-            // blocked on LoadDatabase().Wait(): notifications are dispatched without waiting on them (waiting would
-            // deadlock). Dispatched actions run in no guaranteed order, so this flag (only touched on the main thread)
-            // stops a late progress update from showing the notification again after it was removed.
+            // The progress callback and the continuation below run on background threads: notifications are dispatched
+            // without waiting on them (nothing here needs their result, and a caller blocking the main thread on the
+            // returned Task would otherwise deadlock). Dispatched actions run in no guaranteed order, so this flag (only
+            // touched on the main thread) stops a late progress update from showing the notification again after removal.
             bool notifRemoved = false;
             void action(ProgressTracker tracker)
             {
@@ -184,7 +184,21 @@ namespace ExtraAssetsImporter.Database
         }
 
 
+        // Hash of a mod's source asset folder. Includes the last write time so an edit that keeps the file size
+        // (retouched texture, JSON value changed to one of the same length) still triggers a rebuild.
         internal static int GetAssetHash(string assetFolder)
+        {
+            return ComputeFolderHash(assetFolder, includeLastWriteTime: true);
+        }
+
+        // Hash of the files EAI generated in the database. Name + size only: the write time changes every time EAI
+        // itself rebuilds or saves the asset, which would make this hash useless for detecting outside tampering.
+        internal static int GetBuildAssetHash(string assetFolder)
+        {
+            return ComputeFolderHash(assetFolder, includeLastWriteTime: false);
+        }
+
+        private static int ComputeFolderHash(string assetFolder, bool includeLastWriteTime)
         {
             if(!Directory.Exists(assetFolder))
             {
@@ -199,30 +213,16 @@ namespace ExtraAssetsImporter.Database
 
                 hash = unchecked(hash * 31 + file.Name.GetHashCode());
                 hash = unchecked(hash * 31 + file.Length.GetHashCode());
+                if (includeLastWriteTime) hash = unchecked(hash * 31 + file.LastWriteTimeUtc.Ticks.GetHashCode());
             }
             return hash;
         }
 
-        public static void RemoveAllPrefab()
-        {
-            IEnumerable<IAssetData> assetsData = EAIAssetDatabase.AllAssets();
-
-            foreach (IAssetData assetData in assetsData)
-            {
-                if (assetData is not PrefabAsset prefabAsset) continue;
-
-                PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
-
-                if (EL.m_PrefabSystem.RemovePrefab(prefabBase)) continue;
-
-                EAI.Logger.Warn($"Failed to remove prefab {assetData.name} from prefab system.");
-
-            }
-        }
-
         internal static void CheckIfDatabaseNeedToBeRelocated()
         {
-            if (eaiDatabase == null) LoadDatabase();
+            // Nothing loaded yet (e.g. OnDispose before Initialize): LoadDatabase runs this check itself when it does
+            // load, so loading and registering the database here would be wasted work at best.
+            if (eaiDatabase == null) return;
 
             if(string.IsNullOrEmpty(EAI.m_Setting.SavedDatabasePath) || EAI.m_Setting.SavedDatabasePath == eaiDatabase.ActualDatabasePath) return;
 
@@ -404,8 +404,10 @@ namespace ExtraAssetsImporter.Database
                             }
                         });
 
-                        IEnumerable<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter)
-                            .Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter));
+                        // Materialized: DeleteAsset below changes the databases being enumerated.
+                        List<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter)
+                            .Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter))
+                            .ToList();
 
                         // SaveValidateDatabase runs at the end of the import Task: loading the prefab (ScriptableObject
                         // deserialization) and touching the PrefabSystem must happen on the main thread.
@@ -415,18 +417,27 @@ namespace ExtraAssetsImporter.Database
                             {
                                 EAI.Logger.Info($"Removing prefab asset {prefabAsset.name} at {prefabAsset.subPath} from prefab system and unloading it.");
 
-                                PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
-
-                                if (EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase existingPrefab))
+                                try
                                 {
-                                    if (EL.m_PrefabSystem.RemovePrefab(existingPrefab)) continue;
-                                    EAI.Logger.Warn($"Failed to remove prefab {prefabAsset.name} from prefab system.");
+                                    PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
+
+                                    if (prefabBase != null && EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase existingPrefab))
+                                    {
+                                        if (!EL.m_PrefabSystem.RemovePrefab(existingPrefab))
+                                            EAI.Logger.Warn($"Failed to remove prefab {prefabAsset.name} from prefab system.");
+                                    }
+                                    else
+                                    {
+                                        EAI.Logger.Info($"Prefab {prefabAsset.name} was not in the prefab system.");
+                                    }
                                 }
-                                else
+                                catch (Exception ex)
                                 {
-                                    EAI.Logger.Info($"Prefab {prefabAsset.name} was not in the prefab system.");
+                                    EAI.Logger.Warn($"Failed to load prefab asset {prefabAsset.name} before removing it: {ex}");
                                 }
 
+                                // Always drop it from the asset database: its folder is deleted right after, so keeping
+                                // the entry would leave an asset pointing to a file that no longer exists.
                                 prefabAsset.Unload();
                                 prefabAsset.database.DeleteAsset(prefabAsset);
                             }

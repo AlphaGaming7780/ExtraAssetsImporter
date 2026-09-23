@@ -30,7 +30,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 EAI.Logger.Error($"RenderedArea component JSON is null for prefab {prefab.name}.");
                 return;
             }
-            RenderedArea renderedArea = prefab.AddOrGetComponent<RenderedArea>();
+            RenderedArea renderedArea = prefab.AddOrGetComponentOnMainThread<RenderedArea>();
             renderedArea.m_Material = null;
             renderedArea.m_Roundness = componentJson.TryGetValue("Roundness", out Variant variant) ? variant : json.m_Roundness;
             renderedArea.m_LodBias = componentJson.TryGetValue("LodBias", out Variant variant2) ? variant2 : json.m_LodBias;

@@ -35,7 +35,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
                 EAI.Logger.Error($"EnclosedArea component JSON is null for prefab {prefab.name}.");
                 return;
             }
-            EnclosedArea enclosedArea = prefab.AddOrGetComponent<EnclosedArea>();
+            EnclosedArea enclosedArea = prefab.AddOrGetComponentOnMainThread<EnclosedArea>();
             if (json.m_BorderLaneType != null)
             {
                 if(ImportersUtils.TryGetPrefab(json.m_BorderLaneType, out PrefabBase prefab1) && prefab1 is NetLanePrefab localConnectionLane)

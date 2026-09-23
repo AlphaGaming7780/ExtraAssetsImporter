@@ -39,7 +39,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         public static void SetupDecalRenderPrefab(PrefabImportData data, RenderPrefab renderPrefab, SurfaceAsset surface)
         {
             Vector4 TextureArea = surface.vectors.ContainsKey("colossal_TextureArea") ? surface.vectors["colossal_TextureArea"] : new Vector4(0, 0, 1, 1);
-            DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
+            DecalProperties decalProperties = renderPrefab.AddOrGetComponentOnMainThread<DecalProperties>();
             decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
             decalProperties.m_LayerMask = (DecalLayers)surface.floats["colossal_DecalLayerMask"];
             decalProperties.m_RendererPriority = (int)(surface.HasProperty("_DrawOrder") ? surface.floats["_DrawOrder"] : 0);
