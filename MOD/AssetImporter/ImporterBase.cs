@@ -5,6 +5,7 @@ using Colossal.PSI.Common;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
+using ExtraLib.Debugger;
 using Game.SceneFlow;
 using Game.UI.Menu;
 using System;
@@ -50,6 +51,9 @@ namespace ExtraAssetsImporter.AssetImporter
         // awaited before the importer reports itself as loaded — this also surfaces their exceptions.
         private readonly ConcurrentQueue<Task> _PendingMainThreadTasks = new();
 
+        // Profiling of the current/last run, a child of the import pass stats (see AssetsImporterManager).
+        protected PerformanceStats Perf { get; private set; }
+
         protected int numberOfAssets;
         protected int ammoutOfAssetsloaded;
         protected int failedAssets;
@@ -74,7 +78,20 @@ namespace ExtraAssetsImporter.AssetImporter
                 AddCustomAssetsFolder(path);
         }
 
-        internal void LoadCustomAssets(ImporterSettings importSettings)
+        internal void LoadCustomAssets(ImporterSettings importSettings, PerformanceStats passStats = null)
+        {
+            if (AssetsLoading) return;
+
+            Perf = new PerformanceStats($"{ImporterId} importer", passStats);
+
+            // Current on this thread, so MainThreadHelper and the shared helpers (textures, components...) record into it.
+            using (Perf.MakeCurrent())
+                LoadCustomAssets_Impl(importSettings);
+
+            if (!Perf.IsEmpty) EAI.Logger.Info(Perf.BuildReport());
+        }
+
+        private void LoadCustomAssets_Impl(ImporterSettings importSettings)
         {
             if (AssetsLoading) return; // yield break;
 
@@ -97,7 +114,9 @@ namespace ExtraAssetsImporter.AssetImporter
             skipedAsset = 0;
 
             // NotificationUISystem uses a plain Dictionary/List, so it must only be touched on the main thread.
-            var notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(
+            NotificationUISystem.NotificationInfo notificationInfo;
+            using (Perf.Measure("Blocking.Notification"))
+                notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(
                 $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}",
                 title: $"EAI - Importing {ImporterId}.",
                 progressState: ProgressState.Indeterminate,
@@ -105,6 +124,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 progress: 0
             ).Result;
 
+            using (Perf.Measure("Importer.CountAssets"))
             foreach (string folder in _FolderToLoadAssets)
             {
                 if (!Directory.Exists(folder)) continue;
@@ -122,7 +142,8 @@ namespace ExtraAssetsImporter.AssetImporter
                         }
             }
 
-            PreLoadCustomAssetFolder(importSettings);
+            using (Perf.Measure("Importer.PreLoad"))
+                PreLoadCustomAssetFolder(importSettings);
 
             foreach (string importerFolder in _FolderToLoadAssets)
             {
@@ -144,16 +165,20 @@ namespace ExtraAssetsImporter.AssetImporter
 
                 string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(importerFolder).Parent.Name.Split('_')[0];
 
-                LoadCustomAssetFolder(importSettings, importerFolder, modName, notificationInfo);
+                using (Perf.Measure("Importer.LoadFolder"))
+                    LoadCustomAssetFolder(importSettings, importerFolder, modName, notificationInfo);
             }
 
-            AfterLoadCustomAssetFolder(importSettings);
+            using (Perf.Measure("Importer.AfterLoad"))
+                AfterLoadCustomAssetFolder(importSettings);
 
-            WaitPendingMainThreadTasks();
+            using (Perf.Measure("Importer.WaitMainThreadTasks"))
+                WaitPendingMainThreadTasks();
 
             TimeSpan elapsed = performanceCounter.result;
             double msPerAsset = numberOfAssets > 0 ? elapsed.TotalMilliseconds / numberOfAssets : 0;
 
+            using (Perf.Measure("Blocking.Notification"))
             EL.m_NotificationUISystem.RemoveNotificationOnMainThread(
                 identifier: notificationInfo.id,
                 delay: 5f,

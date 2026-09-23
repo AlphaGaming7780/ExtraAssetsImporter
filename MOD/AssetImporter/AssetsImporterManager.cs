@@ -11,6 +11,7 @@ using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.Database;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
+using ExtraLib.Debugger;
 using ExtraLib.Helpers;
 using Game.Prefabs;
 using Game.SceneFlow;
@@ -134,8 +135,14 @@ namespace ExtraAssetsImporter.AssetImporter
             // Registering + populating the asset database can take a while: don't freeze the main thread on it.
             // The import pass then goes back to the main thread, since it starts the old importers' coroutines.
             // IsImporting is already true meanwhile (no importer is marked loaded yet), so ReloadDatabase stays greyed out.
+            PerformanceCounter databaseCounter = new();
+
             EAIDatabaseManager.LoadDatabase()
-                .ContinueWith(_ => MainThreadHelper.RunOnMainThread(() => RunImportPass(includeOldImporters: true)))
+                .ContinueWith(_ =>
+                {
+                    EAI.Logger.Info($"[Perf] EAI asset database loaded (register + populate) in {databaseCounter.result.TotalSeconds:F2}s.");
+                    return MainThreadHelper.RunOnMainThread(() => RunImportPass(includeOldImporters: true));
+                })
                 .Unwrap()
                 .ContinueWith(
                     t => EAI.Logger.Error($"Error while starting the custom assets import: {t.Exception}"),
@@ -209,14 +216,22 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             PerformanceCounter totalPerformanceCounter = new();
 
-            CreateEAILocalAssetPackPrefab();
+            // Aggregates every importer's stats (they are its children), logged at the end of the pass.
+            PerformanceStats passStats = new("Import pass");
+            using PerformanceStats.CurrentScope currentStats = passStats.MakeCurrent();
+
+            // Frames elapsed during the pass: each blocking main-thread call costs up to one frame.
+            int startFrame = MainThreadHelper.RunOnMainThread(() => Time.frameCount).Result;
+
+            using (passStats.Measure("Pass.CreateLocalAssetPack"))
+                CreateEAILocalAssetPackPrefab();
 
             EAI.Logger.Info("Starting the loading of pre importers.");
 
             PerformanceCounter preImportersPerformanceCounter = new();
 
             var tasks = s_PreImporters.Values
-                .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings)))
+                .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings, passStats)))
                 .ToArray();
 
             Task.WaitAll(tasks);
@@ -227,7 +242,7 @@ namespace ExtraAssetsImporter.AssetImporter
             PerformanceCounter importersPerformanceCounter = new();
 
             tasks = s_Importers.Values
-                .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings)))
+                .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings, passStats)))
                 .ToArray();
 
             Task.WaitAll(tasks);
@@ -243,9 +258,14 @@ namespace ExtraAssetsImporter.AssetImporter
 
             EAI.m_Setting.ResetCompatibility();
 
-            importerSettings.eaiDatabase.SaveValidateDatabase(importerSettings);
+            using (passStats.Measure("Pass.SaveDatabase"))
+                importerSettings.eaiDatabase.SaveValidateDatabase(importerSettings);
 
-            EAI.Logger.Info($"All custom assets have been loaded. Took {totalPerformanceCounter.result.TotalSeconds:F2}s.");
+            int frames = MainThreadHelper.RunOnMainThread(() => Time.frameCount).Result - startFrame;
+            double seconds = totalPerformanceCounter.result.TotalSeconds;
+
+            EAI.Logger.Info($"All custom assets have been loaded. Took {seconds:F2}s, {frames} frames ({(seconds > 0 ? frames / seconds : 0):F1} fps), savePrefabs={importerSettings.savePrefabs}.");
+            EAI.Logger.Info(passStats.BuildReport());
 
         }
 

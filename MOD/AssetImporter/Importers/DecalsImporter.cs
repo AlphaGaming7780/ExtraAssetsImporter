@@ -4,6 +4,7 @@ using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
+using ExtraLib.Debugger;
 using Game.Prefabs;
 using Game.Rendering;
 using System.IO;
@@ -57,7 +58,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             Task<Mesh> task = ImportersUtils.CreateBoxMeshAsyncOnMainThread(MeshSize);
 
-            task.Wait();
+            using (PerformanceStats.MeasureCurrent("Blocking.CreateBoxMesh"))
+                task.Wait();
 
             Mesh mesh = task.Result;
             return new[] { mesh };

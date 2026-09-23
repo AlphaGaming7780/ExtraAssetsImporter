@@ -4,6 +4,7 @@ using Colossal.AssetPipeline.Native;
 using Colossal.IO.AssetDatabase;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
+using ExtraLib.Debugger;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -122,10 +123,13 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
 
         private static TextureAsset ImportAndSaveTexture(ImportSettings importSettings, PrefabImportData data, string textureFilePath, AssetDataPath textureDataPath, string fullAssetTextureName)
         {
+            PerformanceStats.Scope importScope = PerformanceStats.MeasureCurrent("Texture.Import");
             var texture = defaultTextureImporter.Import(importSettings, textureFilePath);
+            importScope.Dispose();
 
             TextureAsset textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
-            textureAsset.Save();
+            using (PerformanceStats.MeasureCurrent("Texture.Save"))
+                textureAsset.Save();
             textureAsset.Unload();
             texture.Dispose();
 

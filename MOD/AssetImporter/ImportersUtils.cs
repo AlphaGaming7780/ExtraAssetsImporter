@@ -8,6 +8,7 @@ using Colossal.UI;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
+using ExtraLib.Debugger;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
@@ -53,11 +54,13 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             if (prefab.TryGetExactly(out T component)) return component;
 
-            return MainThreadHelper.RunOnMainThread(() => prefab.AddOrGetComponent<T>()).Result;
+            using (PerformanceStats.MeasureCurrent("Blocking.AddComponent"))
+                return MainThreadHelper.RunOnMainThread(() => prefab.AddOrGetComponent<T>()).Result;
         }
 
         public static T GetOrCreatePrefabInstance<T>(string prefabName) where T : PrefabBase
         {
+            using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.GetOrCreatePrefabInstance");
             return MainThreadHelper.RunOnMainThread(() =>
             {
                 PrefabID prefabID = new PrefabID(typeof(T).Name, prefabName, Hash128.CreateGuid(prefabName));
@@ -168,6 +171,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     EAI.Logger.Info($"Cached data for {prefabID}, loading the cache.");
 
                     PrefabBase loaded = prefab;
+                    using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.AddCachedPrefab");
                     MainThreadHelper.RunOnMainThread(() =>
                     {
                         if (!EL.m_PrefabSystem.TryGetPrefab(loaded.GetPrefabID(), out _))
@@ -253,8 +257,9 @@ namespace ExtraAssetsImporter.AssetImporter
         /// </summary>
         public static bool TryGetPrefab(PrefabID prefabID, out PrefabBase prefab)
         {
-            prefab = MainThreadHelper.RunOnMainThread(() =>
-                EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) ? prefabBase : null).Result;
+            using (PerformanceStats.MeasureCurrent("Blocking.TryGetPrefab"))
+                prefab = MainThreadHelper.RunOnMainThread(() =>
+                    EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) ? prefabBase : null).Result;
             return prefab != null;
         }
 
@@ -322,7 +327,8 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             Task taskTexture = ProcessIconOnMainThread(data);
 
-            taskTexture.Wait();
+            using (PerformanceStats.MeasureCurrent("Blocking.ProcessIcon"))
+                taskTexture.Wait();
 
             if (taskTexture.IsFaulted) return;
 
@@ -336,6 +342,7 @@ namespace ExtraAssetsImporter.AssetImporter
             prefabUI.m_IsDebugObject = false;
             prefabUI.m_Icon = iconString;
 
+            using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.ChildCategory");
             UIAssetChildCategoryPrefab categoryPrefab = MainThreadHelper.RunOnMainThread(() =>
             {
                 UIAssetChildCategoryPrefab child = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null);
