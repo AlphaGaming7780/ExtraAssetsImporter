@@ -14,6 +14,7 @@ using ExtraLib.Prefabs;
 using Game.Prefabs;
 using Game.SceneFlow;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -58,17 +59,40 @@ namespace ExtraAssetsImporter.AssetImporter
                 return MainThreadHelper.RunOnMainThread(() => prefab.AddOrGetComponent<T>()).Result;
         }
 
-        public static T GetOrCreatePrefabInstance<T>(string prefabName) where T : PrefabBase
+        /// <summary>
+        /// Batched <see cref="AddOrGetComponentOnMainThread"/>: every missing component is created in a single
+        /// main-thread round-trip (none when they all exist).
+        /// </summary>
+        public static void AddOrGetComponentsOnMainThread(this PrefabBase prefab, IEnumerable<Type> componentTypes)
+        {
+            List<Type> missing = new();
+            foreach (Type type in componentTypes)
+                if (!missing.Contains(type) && !prefab.TryGetExactly(type, out _)) missing.Add(type);
+
+            if (missing.Count == 0) return;
+
+            using (PerformanceStats.MeasureCurrent("Blocking.AddComponents"))
+                MainThreadHelper.RunOnMainThread(() =>
+                {
+                    foreach (Type type in missing) prefab.AddOrGetComponent(type);
+                }).Wait();
+        }
+
+        /// <param name="components">Components added (if missing) in the same main-thread round-trip.</param>
+        public static T GetOrCreatePrefabInstance<T>(string prefabName, params Type[] components) where T : PrefabBase
         {
             using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.GetOrCreatePrefabInstance");
             return MainThreadHelper.RunOnMainThread(() =>
             {
                 PrefabID prefabID = new PrefabID(typeof(T).Name, prefabName, Hash128.CreateGuid(prefabName));
 
-                if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is T existing)
-                    return existing;
+                T prefab = EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is T existing
+                    ? existing
+                    : (T)ScriptableObject.CreateInstance(typeof(T));
 
-                return (T)ScriptableObject.CreateInstance(typeof(T));
+                foreach (Type component in components) prefab.AddOrGetComponent(component);
+
+                return prefab;
             }).Result;
         }
 
@@ -131,9 +155,12 @@ namespace ExtraAssetsImporter.AssetImporter
             return found && prefab != null;
         }
 
+        // The asset's main prefab isn't added to the prefab system here: PrefabImporterBase adds it with
+        // AddOrUpdatePrefab once it's set up. Adding it here too made that AddOrUpdatePrefab an UpdatePrefab, which
+        // replaces the entity, possibly in the very frame it was created (crash in AreaInitializeSystem).
         public static bool TryGetCachedPrefab(PrefabImportData data, out PrefabBase prefab)
         {
-            if (TryParsePrefabID(data.EAIAsset.PrefabID, out PrefabID prefabID) && TryGetCachedPrefab(prefabID, data.NeedToUpdateAsset, data.ImportSettings, data.AssetDataPath, GetPrefabFileName(data), out prefab))
+            if (TryParsePrefabID(data.EAIAsset.PrefabID, out PrefabID prefabID) && TryGetCachedPrefab(prefabID, data.NeedToUpdateAsset, data.ImportSettings, data.AssetDataPath, GetPrefabFileName(data), out prefab, addToPrefabSystem: false))
             {
                 return true;
             }
@@ -141,7 +168,7 @@ namespace ExtraAssetsImporter.AssetImporter
             return false;
         }
 
-        public static bool TryGetCachedPrefab(PrefabID prefabID, bool needToUpdateAsset, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab)
+        public static bool TryGetCachedPrefab(PrefabID prefabID, bool needToUpdateAsset, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab, bool addToPrefabSystem = true)
         {
             if (needToUpdateAsset)
             {
@@ -151,33 +178,40 @@ namespace ExtraAssetsImporter.AssetImporter
                 return false;
             }
 
-            return TryGetCachedPrefab(prefabID, importerSettings, assetDataPath, fileName, out prefab);
+            return TryGetCachedPrefab(prefabID, importerSettings, assetDataPath, fileName, out prefab, addToPrefabSystem);
         }
 
-        public static bool TryGetCachedPrefab(PrefabID prefabID, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab)
+        // A single main-thread round-trip: the cached asset is loaded off-thread first, then the prefab system is
+        // checked and, if the prefab isn't there yet, the loaded instance is added in the same call (when
+        // addToPrefabSystem is set).
+        public static bool TryGetCachedPrefab(PrefabID prefabID, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab, bool addToPrefabSystem = true)
         {
-            if (TryGetPrefab(prefabID, out PrefabBase existing))
-            {
-                EAI.Logger.Info($"{prefabID} was already loaded and in the prefab system.");
-                prefab = existing;
-                return true;
-            }
-
             try
             {
                 AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, fileName, true, EscapeStrategy.None);
-                if (importerSettings.dataBase.TryLoadPrefab(prefabAssetPath, out prefab))
+                if (!importerSettings.dataBase.TryGetOrAddAsset(prefabAssetPath, out PrefabAsset prefabAsset))
                 {
-                    EAI.Logger.Info($"Cached data for {prefabID}, loading the cache.");
+                    EAI.Logger.Info($"No cached data for {prefabID}.");
+                    return TryGetPrefab(prefabID, out prefab);
+                }
 
-                    PrefabBase loaded = prefab;
-                    using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.AddCachedPrefab");
-                    MainThreadHelper.RunOnMainThread(() =>
-                    {
-                        if (!EL.m_PrefabSystem.TryGetPrefab(loaded.GetPrefabID(), out _))
-                            EL.m_PrefabSystem.AddPrefab(loaded);
-                    }).Wait();
+                // Already loaded (e.g. database reload): reuse the instance without taking another reference on it.
+                PrefabBase loaded = prefabAsset.state == LoadState.Object ? prefabAsset.GetInstance<PrefabBase>() : prefabAsset.Load() as PrefabBase;
 
+                using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.CachedPrefab");
+                prefab = MainThreadHelper.RunOnMainThread(() =>
+                {
+                    if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase existing)) return existing;
+                    if (loaded == null) return null;
+                    if (EL.m_PrefabSystem.TryGetPrefab(loaded.GetPrefabID(), out existing)) return existing;
+
+                    if (addToPrefabSystem) EL.m_PrefabSystem.AddPrefab(loaded);
+                    return loaded;
+                }).Result;
+
+                if (prefab != null)
+                {
+                    EAI.Logger.Info(prefab == loaded ? $"Cached data for {prefabID}, loading the cache." : $"{prefabID} was already loaded and in the prefab system.");
                     return true;
                 }
 
@@ -197,7 +231,8 @@ namespace ExtraAssetsImporter.AssetImporter
             return $"{data.AssetName}{PrefabAsset.kExtension}";
         }
 
-        public static RenderPrefab CreateRenderPrefab(PrefabImportData data, SurfaceAsset surfaceAsset, Mesh[] meshes, Action<PrefabImportData, RenderPrefab, SurfaceAsset> setupRenderPrefab)
+        /// <param name="components">Components setupRenderPrefab needs, created with the render prefab in one main-thread round-trip.</param>
+        public static RenderPrefab CreateRenderPrefab(PrefabImportData data, SurfaceAsset surfaceAsset, Mesh[] meshes, Action<PrefabImportData, RenderPrefab, SurfaceAsset> setupRenderPrefab, params Type[] components)
         {
             EAI.Logger.Info($"Creating RenderPrefab for {data.FullAssetName}.");
             surfaceAsset.Save(false);
@@ -217,7 +252,7 @@ namespace ExtraAssetsImporter.AssetImporter
             geometryAsset.SetData(meshes);
             geometryAsset.Save(false);
 
-            RenderPrefab renderPrefab = GetOrCreatePrefabInstance<RenderPrefab>(GetRenderPrefabName(data));
+            RenderPrefab renderPrefab = GetOrCreatePrefabInstance<RenderPrefab>(GetRenderPrefabName(data), components);
 
             renderPrefab.name = GetRenderPrefabName(data);
             renderPrefab.geometryAsset = geometryAsset;
@@ -283,18 +318,6 @@ namespace ExtraAssetsImporter.AssetImporter
             return Decoder.Decode(File.ReadAllText(path));
         }
 
-        public static Task ProcessIconOnMainThread(PrefabImportData data)
-        {
-            Task task = MainThreadHelper.RunOnMainThread(() => ProcessIcon(data));
-
-            task.ContinueWith(
-                t => EAI.Logger.Warn($"Failed to process icon.\nException:{t.Exception?.GetBaseException()}."),
-                TaskContinuationOptions.OnlyOnFaulted
-            );
-
-            return task;
-        }
-
         public static void ProcessIcon(PrefabImportData data)
         {
             string iconPath = Path.Combine(data.FolderPath, "icon.png");
@@ -323,32 +346,94 @@ namespace ExtraAssetsImporter.AssetImporter
             }
         }
 
+        // Child categories are shared by every asset of a category folder: created once per import pass.
+        private static readonly ConcurrentDictionary<string, UIAssetChildCategoryPrefab> s_ChildCategories = new();
+
+        /// <summary>
+        /// Clears the per-pass caches, called at the start of each import pass (the prefabs they hold may have been
+        /// removed since the previous one).
+        /// </summary>
+        public static void ClearCaches()
+        {
+            s_ChildCategories.Clear();
+        }
+
+        // ProcessIcon only does something when the icon must be (re)generated: icon.png missing (made from
+        // _BaseColorMap.png) or bigger than 128px. Reads the PNG header, so it can run off the main thread.
+        private static bool IconNeedsProcessing(PrefabImportData data)
+        {
+            string iconPath = Path.Combine(data.FolderPath, "icon.png");
+            if (!File.Exists(iconPath)) return File.Exists(Path.Combine(data.FolderPath, "_BaseColorMap.png"));
+
+            try
+            {
+                // PNG signature (8 bytes), IHDR length + type (8 bytes), then width and height as big-endian ints.
+                byte[] header = new byte[24];
+                using (FileStream stream = File.OpenRead(iconPath))
+                    if (stream.Read(header, 0, header.Length) < header.Length) return true;
+
+                int width = header[16] << 24 | header[17] << 16 | header[18] << 8 | header[19];
+                int height = header[20] << 24 | header[21] << 16 | header[22] << 8 | header[23];
+                return width > 128 || height > 128;
+            }
+            catch (Exception)
+            {
+                return true;
+            }
+        }
+
+        // Icon, UIObject and child category need the main thread: everything still missing is done in one round-trip.
         public static void SetupUIObject( FolderImporter importer, PrefabImportData data, PrefabBase prefab)
         {
-            Task taskTexture = ProcessIconOnMainThread(data);
-
-            using (PerformanceStats.MeasureCurrent("Blocking.ProcessIcon"))
-                taskTexture.Wait();
-
-            if (taskTexture.IsFaulted) return;
-
             string iconPath = Path.Combine(data.FolderPath, "icon.png");
 
             string catIconPath = Path.Combine(Directory.GetParent(data.FolderPath).FullName, "icon.svg");
+            string catIcon = File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null;
+            string childCategoryName = $"{data.CatName} {data.AssetCat.name}";
+            string childCategoryKey = $"{data.AssetCat.name}|{childCategoryName}|{catIcon}";
 
-            string iconString = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/{data.AssetName}/icon.png" : Icons.DecalPlaceholder;
+            bool processIcon = IconNeedsProcessing(data);
+            prefab.TryGetExactly(out UIObject prefabUI);
+            s_ChildCategories.TryGetValue(childCategoryKey, out UIAssetChildCategoryPrefab categoryPrefab);
 
-            UIObject prefabUI = prefab.AddOrGetComponentOnMainThread<UIObject>();
-            prefabUI.m_IsDebugObject = false;
-            prefabUI.m_Icon = iconString;
-
-            using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.ChildCategory");
-            UIAssetChildCategoryPrefab categoryPrefab = MainThreadHelper.RunOnMainThread(() =>
+            if (processIcon || prefabUI == null || categoryPrefab == null)
             {
-                UIAssetChildCategoryPrefab child = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, $"{data.CatName} {data.AssetCat.name}", File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null);
-                EnsurePrefabHasAsset(child);
-                return child;
-            }).Result;
+                using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.SetupUIObject");
+                bool success = MainThreadHelper.RunOnMainThread(() =>
+                {
+                    if (processIcon)
+                    {
+                        try
+                        {
+                            ProcessIcon(data);
+                        }
+                        catch (Exception e)
+                        {
+                            EAI.Logger.Warn($"Failed to process icon for {data.FullAssetName}, skipping its UI setup.\nException:{e}.");
+                            return false;
+                        }
+                    }
+
+                    prefabUI ??= prefab.AddOrGetComponent<UIObject>();
+
+                    if (categoryPrefab == null)
+                    {
+                        categoryPrefab = s_ChildCategories.GetOrAdd(childCategoryKey, _ =>
+                        {
+                            UIAssetChildCategoryPrefab child = PrefabsHelper.GetOrCreateUIAssetChildCategoryPrefab(data.AssetCat, childCategoryName, catIcon);
+                            EnsurePrefabHasAsset(child);
+                            return child;
+                        });
+                    }
+
+                    return true;
+                }).Result;
+
+                if (!success) return;
+            }
+
+            prefabUI.m_IsDebugObject = false;
+            prefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/{data.AssetName}/icon.png" : Icons.DecalPlaceholder;
             prefabUI.m_Group = categoryPrefab;
         }
 

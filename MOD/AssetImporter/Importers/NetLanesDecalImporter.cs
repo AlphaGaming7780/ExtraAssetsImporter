@@ -37,7 +37,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 SurfaceAsset surfaceAsset = DecalsImporterNew.CreateSurface(data, k_DefaultMaterialName);
                 Mesh[] meshes = DecalsImporterNew.CreateMeshes(surfaceAsset);
 
-                renderPrefab = ImportersUtils.CreateRenderPrefab(data, surfaceAsset, meshes, DecalsImporterNew.SetupDecalRenderPrefab);
+                renderPrefab = ImportersUtils.CreateRenderPrefab(data, surfaceAsset, meshes, DecalsImporterNew.SetupDecalRenderPrefab, typeof(DecalProperties));
             }
 
             netLanesPrefab.AddNetLaneMeshInfo(renderPrefab);

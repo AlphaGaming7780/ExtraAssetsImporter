@@ -22,7 +22,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         protected override PrefabBase Import(PrefabImportData data)
         {
-            SurfacePrefab surfacePrefab = ImportersUtils.GetOrCreatePrefabInstance<SurfacePrefab>(data.FullAssetName);
+            SurfacePrefab surfacePrefab = ImportersUtils.GetOrCreatePrefabInstance<SurfacePrefab>(data.FullAssetName, typeof(RenderedArea));
             surfacePrefab.m_Color = new(255f, 255f, 255f, 0.05f);
 
             if (data.PrefabJson != null)

@@ -107,7 +107,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             AssetPackJson assetPackJson = LoadJSON(folder);
 
-            AssetPackPrefab assetPackPrefab = ImportersUtils.GetOrCreatePrefabInstance<AssetPackPrefab>(fullAssetName);
+            AssetPackPrefab assetPackPrefab = ImportersUtils.GetOrCreatePrefabInstance<AssetPackPrefab>(fullAssetName, typeof(UIObject));
             assetPackPrefab.name = fullAssetName;
 
             UIObject assetPackUI = assetPackPrefab.AddOrGetComponentOnMainThread<UIObject>();

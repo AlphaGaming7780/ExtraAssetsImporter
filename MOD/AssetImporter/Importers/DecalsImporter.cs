@@ -29,7 +29,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 SurfaceAsset surface = CreateSurface(data);
                 Mesh[] meshes = CreateMeshes(surface);
 
-                renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, SetupDecalRenderPrefab);
+                renderPrefab = ImportersUtils.CreateRenderPrefab(data, surface, meshes, SetupDecalRenderPrefab, typeof(DecalProperties));
             }
 
             decalPrefab.AddObjectMeshInfo(renderPrefab);

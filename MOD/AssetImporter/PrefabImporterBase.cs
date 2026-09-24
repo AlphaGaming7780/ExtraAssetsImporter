@@ -206,10 +206,17 @@ namespace ExtraAssetsImporter.AssetImporter
                             // Should see this prefab has a pre-editor prefab.
                             prefab.version = 0;
 
+                            // Every component added below is created in one main-thread round-trip.
+                            bool hasAssetPack = AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab);
+                            List<Type> componentTypes = new() { typeof(EditorAssetCategoryOverride) };
+                            if (hasAssetPack) componentTypes.Add(typeof(AssetPackItem));
+                            componentTypes.AddRange(AssetsImporterManager.GetComponentTypesToProcess(importData.PrefabJson, prefab));
+                            prefab.AddOrGetComponentsOnMainThread(componentTypes);
+
                             EditorAssetCategoryOverride categoryOverride = prefab.AddOrGetComponentOnMainThread<EditorAssetCategoryOverride>();
                             categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
 
-                            if (AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab))
+                            if (hasAssetPack)
                             {
                                 AssetPackItem assetPackItem = prefab.AddOrGetComponentOnMainThread<AssetPackItem>();
                                 assetPackItem.m_Packs = new[] { assetPackPrefab };

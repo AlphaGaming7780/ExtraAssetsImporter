@@ -100,6 +100,23 @@ namespace ExtraAssetsImporter.AssetImporter
             return importers;
         }
 
+        /// <summary>
+        /// Component types ProcessComponentImporters will add to prefabBase, so they can be created up front in a
+        /// single main-thread round-trip.
+        /// </summary>
+        internal static IEnumerable<Type> GetComponentTypesToProcess(Variant prefabJson, PrefabBase prefabBase)
+        {
+            Variant componentsVariant = prefabJson?.TryGet(nameof(PrefabJson.Components));
+            if (componentsVariant == null) yield break;
+
+            foreach (ComponentImporter importer in s_ComponentImporters.Values)
+            {
+                if (componentsVariant.TryGetValue(importer.ComponentType.FullName, out _)
+                    && (importer.PrefabType == prefabBase.GetType() || GetOrCacheDerivedTypes(importer.PrefabType).Contains(prefabBase.GetType())))
+                    yield return importer.ComponentType;
+            }
+        }
+
         internal static void ProcessComponentImporters(PrefabImportData data, Variant prefabJson, PrefabBase prefabBase)
         {
             if(prefabJson == null)
@@ -219,6 +236,8 @@ namespace ExtraAssetsImporter.AssetImporter
             // Aggregates every importer's stats (they are its children), logged at the end of the pass.
             PerformanceStats passStats = new("Import pass");
             using PerformanceStats.CurrentScope currentStats = passStats.MakeCurrent();
+
+            ImportersUtils.ClearCaches();
 
             // Frames elapsed during the pass: each blocking main-thread call costs up to one frame.
             int startFrame = MainThreadHelper.RunOnMainThread(() => Time.frameCount).Result;
