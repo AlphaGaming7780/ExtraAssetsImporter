@@ -40,9 +40,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
         {
             RenderedArea renderedArea = surfacePrefab.AddOrGetComponentOnMainThread<RenderedArea>();
 
-            renderedArea.m_BaseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
-            renderedArea.m_NormalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data);
-            renderedArea.m_MaskMap = TextureAssetImporterUtils.ImportTexture_MaskMap(data);
+            (renderedArea.m_BaseColorMap, renderedArea.m_NormalMap, renderedArea.m_MaskMap) = TextureAssetImporterUtils.ImportSurfaceTextures(data);
 
             ProcessMaterialJSON(surfacePrefab, data);
 

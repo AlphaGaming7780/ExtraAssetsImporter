@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
 using Hash128 = Colossal.Hash128;
@@ -28,6 +29,42 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         public const string MaskMapName = "_MaskMap.png";
 
         private static readonly ConcurrentDictionary<string, Lazy<TextureAsset>> s_PendingImports = new();
+
+        /// <summary>
+        /// Imports the base color, normal and mask maps at the same time: each import (decode, mips, BC compression)
+        /// is CPU-bound and independent — the game's AssetImportPipeline imports textures in parallel too.
+        /// </summary>
+        public static (TextureAsset baseColorMap, TextureAsset normalMap, TextureAsset maskMap) ImportSurfaceTextures(PrefabImportData data)
+        {
+            Task<TextureAsset> normalMapTask = RunWithCurrentStats(() => ImportTexture_NormalMap(data));
+            Task<TextureAsset> maskMapTask = RunWithCurrentStats(() => ImportTexture_MaskMap(data));
+
+            // The base color map is imported on this thread rather than waiting idle.
+            TextureAsset baseColorMap;
+            try
+            {
+                baseColorMap = ImportTexture_BaseColorMap(data);
+            }
+            finally
+            {
+                // Don't leave imports running in the background when the base color map fails.
+                Task.WaitAny(Task.WhenAll(normalMapTask, maskMapTask));
+            }
+
+            // GetResult rethrows the import's own exception instead of an AggregateException.
+            return (baseColorMap, normalMapTask.GetAwaiter().GetResult(), maskMapTask.GetAwaiter().GetResult());
+        }
+
+        // PerformanceStats.Current is per thread: carry it over so Texture.Import/Save are still recorded.
+        private static Task<T> RunWithCurrentStats<T>(Func<T> func)
+        {
+            PerformanceStats stats = PerformanceStats.Current;
+            return Task.Run(() =>
+            {
+                if (stats == null) return func();
+                using (stats.MakeCurrent()) return func();
+            });
+        }
 
         public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data)
         {

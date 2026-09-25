@@ -56,13 +56,10 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             {
                 EAI.Logger.Info($"Importing textures for surface asset {surfaceAssetDataPath}");
 
-                var baseColorMap = TextureAssetImporterUtils.ImportTexture_BaseColorMap(data);
+                var (baseColorMap, normalMap, maskMap) = TextureAssetImporterUtils.ImportSurfaceTextures(data);
+
                 if (baseColorMap != null) surfaceAsset.UpdateTexture(BaseColorMap, baseColorMap);
-
-                var normalMap = TextureAssetImporterUtils.ImportTexture_NormalMap(data);
                 if (normalMap != null) surfaceAsset.UpdateTexture(NormalMap, normalMap);
-
-                var maskMap = TextureAssetImporterUtils.ImportTexture_MaskMap(data);
                 if (maskMap != null) surfaceAsset.UpdateTexture(MaskMap, maskMap);
             }
 
