@@ -56,14 +56,16 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         }
 
         // PerformanceStats.Current is per thread: carry it over so Texture.Import/Save are still recorded.
+        // LongRunning gives each import its own thread: the callers already run on pool threads that block on these
+        // tasks (several assets at once), queuing them on the pool too could starve it.
         private static Task<T> RunWithCurrentStats<T>(Func<T> func)
         {
             PerformanceStats stats = PerformanceStats.Current;
-            return Task.Run(() =>
+            return Task.Factory.StartNew(() =>
             {
                 if (stats == null) return func();
                 using (stats.MakeCurrent()) return func();
-            });
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         public static TextureAsset ImportTexture_BaseColorMap(PrefabImportData data)
@@ -164,6 +166,8 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             var texture = defaultTextureImporter.Import(importSettings, textureFilePath);
             importScope.Dispose();
 
+            // TextureJson can save into another asset's folder, not created by PrefabImporterBase.
+            ImportersUtils.EnsureAssetDirectory(data.ImportSettings.dataBase, textureDataPath.subPath);
             TextureAsset textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
             using (PerformanceStats.MeasureCurrent("Texture.Save"))
                 textureAsset.Save();

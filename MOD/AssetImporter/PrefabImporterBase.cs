@@ -1,4 +1,4 @@
-﻿using Colossal.Core;
+using Colossal.Core;
 using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
@@ -15,9 +15,11 @@ using Game.Prefabs;
 using Game.SceneFlow;
 using Game.UI.Menu;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -33,6 +35,8 @@ namespace ExtraAssetsImporter.AssetImporter
         // own lock — protecting nothing, since the race is precisely between those 3 threads. Has to be one
         // lock shared by all of them.
         private static readonly object PrefabSaveLock = new object();
+        // Each asset also imports its 3 textures in parallel (see TextureAssetImporterUtils.ImportSurfaceTextures).
+        private const int k_MaxConcurrentAssets = 4;
         public const string PrefabJsonName = "Prefab.json";
         private UIAssetParentCategoryPrefab assetCat = null;
 
@@ -58,230 +62,256 @@ namespace ExtraAssetsImporter.AssetImporter
             if (string.Equals(sourceModPath, EAI.pathModsData, StringComparison.OrdinalIgnoreCase))
                 sourceModPath = null;
 
+            List<(string catName, string assetFolder)> assetFolders = new();
             foreach (string catFolder in Directory.GetDirectories(importerFolder))
             {
                 string catName = new DirectoryInfo(catFolder).Name;
                 if (catName.StartsWith("."))
                 {
                     int num = Directory.GetDirectories(catFolder).Length;
-                    skipedAsset += num;
-                    ammoutOfAssetsloaded += num;
+                    Interlocked.Add(ref skipedAsset, num);
+                    Interlocked.Add(ref ammoutOfAssetsloaded, num);
                     continue;
                 }
 
                 foreach (string assetFolder in Directory.GetDirectories(catFolder))
+                    assetFolders.Add((catName, assetFolder));
+            }
+
+            // Assets are independent and mostly bound by texture imports (CPU) and main-thread round-trips (waiting),
+            // so several are imported at once. NoBuffering hands out one asset at a time: import times vary a lot.
+            PerformanceStats perf = Perf;
+            Parallel.ForEach(
+                Partitioner.Create(assetFolders, EnumerablePartitionerOptions.NoBuffering),
+                new ParallelOptions { MaxDegreeOfParallelism = k_MaxConcurrentAssets },
+                asset =>
                 {
-                    using PerformanceStats.Scope assetScope = Perf.Measure("Asset.Total");
-
-                    string assetName = new DirectoryInfo(assetFolder).Name;
-                    UpdateNotificationOnMainThread(notificationInfo, $"Loading : {assetName}", (int)(ammoutOfAssetsloaded / (float)numberOfAssets * 100));
-
-                    if (assetName.StartsWith("."))
+                    using (perf.MakeCurrent())
                     {
-                        skipedAsset++;
-                        ammoutOfAssetsloaded++;
-                        continue;
+                        try
+                        {
+                            ImportAsset(importSettings, asset.catName, asset.assetFolder, modName, sourceModPath, notificationInfo);
+                        }
+                        catch (Exception e)
+                        {
+                            ImportFailed(asset.assetFolder, Path.Combine(FolderName, modName, asset.catName, new DirectoryInfo(asset.assetFolder).Name), e);
+                        }
+                    }
+                });
+        }
+
+        private void ImportAsset(ImporterSettings importSettings, string catName, string assetFolder, string modName, string sourceModPath, NotificationUISystem.NotificationInfo notificationInfo)
+        {
+            using PerformanceStats.Scope assetScope = Perf.Measure("Asset.Total");
+
+            string assetName = new DirectoryInfo(assetFolder).Name;
+            UpdateNotificationOnMainThread(notificationInfo, $"Loading : {assetName}", (int)(ammoutOfAssetsloaded / (float)numberOfAssets * 100));
+
+            if (assetName.StartsWith("."))
+            {
+                Interlocked.Increment(ref skipedAsset);
+                Interlocked.Increment(ref ammoutOfAssetsloaded);
+                return;
+            }
+
+            string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
+
+            string assetDataPath = Path.Combine(FolderName, modName, catName, assetName);
+
+            string fullAssetDataPath = Path.Combine(importSettings.dataBase.rootPath, assetDataPath);
+
+            string prefabJsonPath = Path.Combine(assetFolder, PrefabJsonName);
+            Variant prefabJson = null;
+            if (File.Exists(prefabJsonPath))
+                using (Perf.Measure("Asset.ReadPrefabJson"))
+                    prefabJson = ImportersUtils.LoadJson(prefabJsonPath);
+
+            int sourceAssetFolderHash;
+            using (Perf.Measure("Asset.SourceHash"))
+                sourceAssetFolderHash = EAIDatabaseManager.GetAssetHash(assetFolder);
+            bool needToUpdateAsset = false;
+
+            if (importSettings.eaiDatabase.TryGetEAIAsset(fullAssetName, out EAIAsset eaiAsset))
+            {
+                eaiAsset.SourceModPath = sourceModPath;
+
+                if(eaiAsset.AssetPath != assetDataPath)
+                {
+                    EAI.Logger.Warn($"EAI asset {eaiAsset.AssetID} doesn't have the right path, old path {eaiAsset.AssetPath}, new path {assetDataPath}");
+
+                    string fullPath = Path.Combine(importSettings.dataBase.rootPath, eaiAsset.AssetPath);
+                    if (Directory.Exists(fullPath))
+                    {
+                        Directory.Delete(fullPath, true);
                     }
 
-                    string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
+                    needToUpdateAsset = true;
+                    eaiAsset.AssetPath = assetDataPath;
+                }
 
-                    string assetDataPath = Path.Combine(FolderName, modName, catName, assetName);
+                if (eaiAsset.SourceAssetHash != sourceAssetFolderHash)
+                {
+                    EAI.Logger.Info($"The asset {fullAssetName} source files have changed, updating it. Old hash {eaiAsset.SourceAssetHash}, new hash {sourceAssetFolderHash}.");
+                    needToUpdateAsset = true;
+                    eaiAsset.SourceAssetHash = sourceAssetFolderHash;
+                }
 
-                    string fullAssetDataPath = Path.Combine(importSettings.dataBase.rootPath, assetDataPath);
-
-                    string prefabJsonPath = Path.Combine(assetFolder, PrefabJsonName);
-                    Variant prefabJson = null;
-                    if (File.Exists(prefabJsonPath))
-                        using (Perf.Measure("Asset.ReadPrefabJson"))
-                            prefabJson = ImportersUtils.LoadJson(prefabJsonPath);
-
-                    int sourceAssetFolderHash;
-                    using (Perf.Measure("Asset.SourceHash"))
-                        sourceAssetFolderHash = EAIDatabaseManager.GetAssetHash(assetFolder);
-                    bool needToUpdateAsset = false;
-
-                    if (importSettings.eaiDatabase.TryGetEAIAsset(fullAssetName, out EAIAsset eaiAsset))
+                if (!needToUpdateAsset)
+                {
+                    int hash;
+                    using (Perf.Measure("Asset.BuildHashCheck"))
+                        hash = EAIDatabaseManager.GetBuildAssetHash(fullAssetDataPath);
+                    if (eaiAsset.BuildAssetHash != hash)
                     {
-                        eaiAsset.SourceModPath = sourceModPath;
-
-                        if(eaiAsset.AssetPath != assetDataPath)
-                        {
-                            EAI.Logger.Warn($"EAI asset {eaiAsset.AssetID} doesn't have the right path, old path {eaiAsset.AssetPath}, new path {assetDataPath}");
-
-                            string fullPath = Path.Combine(importSettings.dataBase.rootPath, eaiAsset.AssetPath);
-                            if (Directory.Exists(fullPath))
-                            {
-                                Directory.Delete(fullPath, true);
-                            }
-
-                            needToUpdateAsset = true;
-                            eaiAsset.AssetPath = assetDataPath;
-                        }
-
-                        if (eaiAsset.SourceAssetHash != sourceAssetFolderHash)
-                        {
-                            EAI.Logger.Info($"The asset {fullAssetName} source files have changed, updating it. Old hash {eaiAsset.SourceAssetHash}, new hash {sourceAssetFolderHash}.");
-                            needToUpdateAsset = true;
-                            eaiAsset.SourceAssetHash = sourceAssetFolderHash;
-                        }
-
-                        if (!needToUpdateAsset)
-                        {
-                            int hash;
-                            using (Perf.Measure("Asset.BuildHashCheck"))
-                                hash = EAIDatabaseManager.GetBuildAssetHash(fullAssetDataPath);
-                            if (eaiAsset.BuildAssetHash != hash)
-                            {
-                                EAI.Logger.Info($"The asset {fullAssetName} built files have changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
-                                needToUpdateAsset = true;
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        EAI.Logger.Info($"The asset {fullAssetName} is new, adding it.");
-                        eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath, sourceModPath: sourceModPath);
+                        EAI.Logger.Info($"The asset {fullAssetName} built files have changed, updating it. old hash: {eaiAsset.BuildAssetHash}, new hash: {hash}");
                         needToUpdateAsset = true;
                     }
-
-                    if (needToUpdateAsset && Directory.Exists(fullAssetDataPath))
-                    {
-                        using (Perf.Measure("Asset.DeleteOldBuild"))
-                            Directory.Delete(fullAssetDataPath, true);
-                    }
-
-                    PrefabImportData importData = new(
-                        importSettings,
-                        eaiAsset,
-                        needToUpdateAsset,
-                        assetFolder,
-                        assetName,
-                        catName,
-                        modName,
-                        fullAssetName,
-                        assetDataPath,
-                        prefabJson,
-                        assetCat
-                    );
-
-
-                    PrefabBase prefab;
-                    bool cachedPrefab = true;
-                    try
-                    {
-                        bool foundInCache;
-                        using (Perf.Measure("Asset.CacheLookup"))
-                            foundInCache = ImportersUtils.TryGetCachedPrefab(importData, out prefab);
-
-                        if (!foundInCache)
-                        {
-                            using (Perf.Measure("Asset.Import"))
-                                prefab = Import(importData);
-                            cachedPrefab = false;
-                        }
-
-                        Perf.Increment(cachedPrefab ? "Assets.FromCache" : "Assets.Built");
-                    }
-                    catch (Exception e)
-                    {
-                        ImportFailed(assetFolder, assetDataPath, e);
-                        continue;
-                    }
-
-                    if (prefab == null)
-                    {
-                        ImportFailed(assetFolder, assetDataPath, new NullReferenceException("Importer return prefab is null."));
-                        continue;
-                    }
-
-                    try
-                    {
-                        if(!cachedPrefab)
-                        {
-                            PerformanceStats.Scope setupScope = Perf.Measure("Asset.Setup");
-
-                            prefab.name = importData.FullAssetName;
-
-                            // Should see this prefab has a pre-editor prefab.
-                            prefab.version = 0;
-
-                            // Every component added below is created in one main-thread round-trip.
-                            bool hasAssetPack = AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab);
-                            List<Type> componentTypes = new() { typeof(EditorAssetCategoryOverride) };
-                            if (hasAssetPack) componentTypes.Add(typeof(AssetPackItem));
-                            componentTypes.AddRange(AssetsImporterManager.GetComponentTypesToProcess(importData.PrefabJson, prefab));
-                            prefab.AddOrGetComponentsOnMainThread(componentTypes);
-
-                            EditorAssetCategoryOverride categoryOverride = prefab.AddOrGetComponentOnMainThread<EditorAssetCategoryOverride>();
-                            categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
-
-                            if (hasAssetPack)
-                            {
-                                AssetPackItem assetPackItem = prefab.AddOrGetComponentOnMainThread<AssetPackItem>();
-                                assetPackItem.m_Packs = new[] { assetPackPrefab };
-                            }
-
-                            AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
-
-                            setupScope.Dispose();
-
-                            AssetDataPath prefabAssetPath = importSettings.savePrefabs
-                                ? AssetDataPath.Create(importData.AssetDataPath, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None)
-                                : AssetDataPath.Create(EAI.kTempFolderName, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None);
-
-                            PrefabAsset prefabAsset;
-                            using (Perf.Measure("Asset.AddToDatabase"))
-                                prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, Hash128.CreateGuid(importData.FullAssetName));
-
-                            eaiAsset.PrefabID = prefab.GetPrefabID().ToString();
-
-                            //MainThreadHelper.RunOnMainThread(() => prefabAsset.Save()).Wait();
-                            // Includes the wait on PrefabSaveLock (shared by the importers running in parallel).
-                            if (importSettings.savePrefabs)
-                                using (Perf.Measure("Asset.SavePrefab"))
-                                    lock (PrefabSaveLock) prefabAsset.Save();
-
-                            using (Perf.Measure("Asset.BuildHashAfterSave"))
-                                eaiAsset.BuildAssetHash = EAIDatabaseManager.GetBuildAssetHash(fullAssetDataPath);
-                        }
-
-                        using (Perf.Measure("Asset.VersionCompatibility"))
-                            VersionCompatiblity(prefab, importData);
-
-                        using (Perf.Measure("Asset.SetupUIObject"))
-                            ImportersUtils.SetupUIObject(this, importData, prefab);
-
-                        TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab)));
-
-                        Dictionary<string, string> localisation = new()
-                        {
-                            { $"Assets.NAME[{fullAssetName}]", assetName },
-                            { $"Assets.DESCRIPTION[{fullAssetName}]", assetName }
-                        };
-
-                        TrackMainThreadTask(ImportersUtils.SetupLocalisationForPrefab(localisation));
-
-                        using (Perf.Measure("Asset.RegisterInEAIDatabase"))
-                            importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
-
-                    }
-                    catch (Exception e)
-                    {
-                        ImportFailed(assetFolder, assetDataPath, e);
-                        continue;
-                    }
-
-                    ammoutOfAssetsloaded++;
                 }
+
             }
+            else
+            {
+                EAI.Logger.Info($"The asset {fullAssetName} is new, adding it.");
+                eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath, sourceModPath: sourceModPath);
+                needToUpdateAsset = true;
+            }
+
+            if (needToUpdateAsset && Directory.Exists(fullAssetDataPath))
+            {
+                using (Perf.Measure("Asset.DeleteOldBuild"))
+                    Directory.Delete(fullAssetDataPath, true);
+            }
+
+            PrefabImportData importData = new(
+                importSettings,
+                eaiAsset,
+                needToUpdateAsset,
+                assetFolder,
+                assetName,
+                catName,
+                modName,
+                fullAssetName,
+                assetDataPath,
+                prefabJson,
+                assetCat
+            );
+
+
+            PrefabBase prefab;
+            bool cachedPrefab = true;
+            try
+            {
+                bool foundInCache;
+                using (Perf.Measure("Asset.CacheLookup"))
+                    foundInCache = ImportersUtils.TryGetCachedPrefab(importData, out prefab);
+
+                if (!foundInCache)
+                {
+                    ImportersUtils.EnsureAssetDirectory(importSettings.dataBase, assetDataPath);
+                    using (Perf.Measure("Asset.Import"))
+                        prefab = Import(importData);
+                    cachedPrefab = false;
+                }
+
+                Perf.Increment(cachedPrefab ? "Assets.FromCache" : "Assets.Built");
+            }
+            catch (Exception e)
+            {
+                ImportFailed(assetFolder, assetDataPath, e);
+                return;
+            }
+
+            if (prefab == null)
+            {
+                ImportFailed(assetFolder, assetDataPath, new NullReferenceException("Importer return prefab is null."));
+                return;
+            }
+
+            try
+            {
+                if(!cachedPrefab)
+                {
+                    PerformanceStats.Scope setupScope = Perf.Measure("Asset.Setup");
+
+                    prefab.name = importData.FullAssetName;
+
+                    // Should see this prefab has a pre-editor prefab.
+                    prefab.version = 0;
+
+                    // Every component added below is created in one main-thread round-trip.
+                    bool hasAssetPack = AssetPackImporter.TryGetAssetPackPrefab(importData, out AssetPackPrefab assetPackPrefab);
+                    List<Type> componentTypes = new() { typeof(EditorAssetCategoryOverride) };
+                    if (hasAssetPack) componentTypes.Add(typeof(AssetPackItem));
+                    componentTypes.AddRange(AssetsImporterManager.GetComponentTypesToProcess(importData.PrefabJson, prefab));
+                    prefab.AddOrGetComponentsOnMainThread(componentTypes);
+
+                    EditorAssetCategoryOverride categoryOverride = prefab.AddOrGetComponentOnMainThread<EditorAssetCategoryOverride>();
+                    categoryOverride.m_IncludeCategories = new[] { $"EAI/{ImporterId}/{importData.ModName}/{importData.CatName}" };
+
+                    if (hasAssetPack)
+                    {
+                        AssetPackItem assetPackItem = prefab.AddOrGetComponentOnMainThread<AssetPackItem>();
+                        assetPackItem.m_Packs = new[] { assetPackPrefab };
+                    }
+
+                    AssetsImporterManager.ProcessComponentImporters(importData, importData.PrefabJson, prefab);
+
+                    setupScope.Dispose();
+
+                    AssetDataPath prefabAssetPath = importSettings.savePrefabs
+                        ? AssetDataPath.Create(importData.AssetDataPath, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None)
+                        : AssetDataPath.Create(EAI.kTempFolderName, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None);
+
+                    PrefabAsset prefabAsset;
+                    using (Perf.Measure("Asset.AddToDatabase"))
+                        prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, Hash128.CreateGuid(importData.FullAssetName));
+
+                    eaiAsset.PrefabID = prefab.GetPrefabID().ToString();
+
+                    //MainThreadHelper.RunOnMainThread(() => prefabAsset.Save()).Wait();
+                    // Includes the wait on PrefabSaveLock (shared by the importers running in parallel).
+                    if (importSettings.savePrefabs)
+                        using (Perf.Measure("Asset.SavePrefab"))
+                            lock (PrefabSaveLock) prefabAsset.Save();
+
+                    using (Perf.Measure("Asset.BuildHashAfterSave"))
+                        eaiAsset.BuildAssetHash = EAIDatabaseManager.GetBuildAssetHash(fullAssetDataPath);
+                }
+
+                using (Perf.Measure("Asset.VersionCompatibility"))
+                    VersionCompatiblity(prefab, importData);
+
+                using (Perf.Measure("Asset.SetupUIObject"))
+                    ImportersUtils.SetupUIObject(this, importData, prefab);
+
+                TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab)));
+
+                Dictionary<string, string> localisation = new()
+                {
+                    { $"Assets.NAME[{fullAssetName}]", assetName },
+                    { $"Assets.DESCRIPTION[{fullAssetName}]", assetName }
+                };
+
+                TrackMainThreadTask(ImportersUtils.SetupLocalisationForPrefab(localisation));
+
+                using (Perf.Measure("Asset.RegisterInEAIDatabase"))
+                    importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
+
+            }
+            catch (Exception e)
+            {
+                ImportFailed(assetFolder, assetDataPath, e);
+                return;
+            }
+
+            Interlocked.Increment(ref ammoutOfAssetsloaded);
         }
         protected abstract PrefabBase Import(PrefabImportData data);
 
         internal void ImportFailed(string assetFolder, string assetDataPath, Exception e)
         {
-            failedAssets++;
-            ammoutOfAssetsloaded++;
+            Interlocked.Increment(ref failedAssets);
+            Interlocked.Increment(ref ammoutOfAssetsloaded);
             EAI.Logger.Error($"Failed to load the custom asset at {assetFolder} | ERROR : {e}");
             string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
             if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);

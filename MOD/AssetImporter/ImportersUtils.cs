@@ -26,6 +26,22 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     static class ImportersUtils
     {
+        private static readonly object s_CreateDirectoryLock = new();
+
+        /// <summary>
+        /// Creates <paramref name="assetDataPath"/> in the database before anything is saved in it. Every asset Save
+        /// goes through LongDirectory.CreateDirectory, which throws when another thread creates one of the missing
+        /// parent folders at the same time (it only tolerates "already exists" on the last folder) — assets of the
+        /// same category imported concurrently share their parent folder.
+        /// </summary>
+        internal static void EnsureAssetDirectory(ILocalAssetDatabase database, string assetDataPath)
+        {
+            string path = Path.Combine(database.rootPath, assetDataPath);
+            if (LongDirectory.Exists(path)) return;
+            lock (s_CreateDirectoryLock)
+                if (!LongDirectory.Exists(path)) LongDirectory.CreateDirectory(path);
+        }
+
 
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
