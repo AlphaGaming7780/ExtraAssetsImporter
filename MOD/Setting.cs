@@ -3,7 +3,11 @@ using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.Database;
 using Game.Modding;
 using Game.Settings;
+using Game.UI.Localization;
+using Game.UI.Widgets;
+using System;
 using System.IO;
+using UnityEngine;
 
 namespace ExtraAssetsImporter
 {
@@ -13,7 +17,13 @@ namespace ExtraAssetsImporter
     [SettingsUIShowGroupName(kNewImportersGroup, kOldImportersGroup, kMPHGroup)]
     public class Setting : ModSetting
     {
-        public Setting(IMod mod) : base(mod) { }
+        public Setting(IMod mod) : base(mod)
+        {
+            // Read here, on the main thread, for the Auto value of MaxConcurrentAssets.
+            s_SystemMemoryMB = SystemInfo.systemMemorySize;
+        }
+
+        private static int s_SystemMemoryMB;
 
         public const string kMainSection = "Main";
         public const string kDataBaseSection = "DataBase";
@@ -38,6 +48,54 @@ namespace ExtraAssetsImporter
         public bool SavePrefabs { get; set; } = false;
         public bool DisableCondition_SavePrefabs => DisableCondition_UseNewImporters || !EAIDatabaseManager.IsDatabaseInDatabaseFolder;
         internal bool CanSavePrefabs => SavePrefabs && !DisableCondition_SavePrefabs;
+
+        // 0 = Auto, see GetMaxConcurrentAssets.
+        [SettingsUISection(kMainSection, kNewImportersGroup)]
+        [SettingsUIDropdown(typeof(Setting), nameof(GetMaxConcurrentAssetsValues))]
+        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_UseNewImporters))]
+        public int MaxConcurrentAssets { get; set; } = 0;
+
+        public const int kMaxConcurrentAssetsLimit = 8;
+
+        public static DropdownItem<int>[] GetMaxConcurrentAssetsValues()
+        {
+            DropdownItem<int>[] items = new DropdownItem<int>[kMaxConcurrentAssetsLimit + 1];
+            items[0] = new DropdownItem<int> { value = 0, displayName = LocalizedString.Value($"Auto ({GetAutoMaxConcurrentAssets(out _)})") };
+            for (int i = 1; i <= kMaxConcurrentAssetsLimit; i++)
+                items[i] = new DropdownItem<int> { value = i, displayName = LocalizedString.Value(i.ToString()) };
+            return items;
+        }
+
+        /// <summary>
+        /// How many assets each importer imports at once. <paramref name="reason"/> explains the value, for the log.
+        /// </summary>
+        internal int GetMaxConcurrentAssets(out string reason)
+        {
+            if (MaxConcurrentAssets > 0)
+            {
+                reason = "set by the user";
+                return Math.Min(MaxConcurrentAssets, kMaxConcurrentAssetsLimit);
+            }
+            return GetAutoMaxConcurrentAssets(out reason);
+        }
+
+        // Each asset imports up to 3 textures at once (CPU bound), hence a third of the logical cores. Every texture
+        // being imported holds its decoded image and compression buffers in memory, so the RAM caps it.
+        private static int GetAutoMaxConcurrentAssets(out string reason)
+        {
+            int cores = Environment.ProcessorCount;
+            int value = Math.Max(1, Math.Min(kMaxConcurrentAssetsLimit, cores / 3));
+
+            int ramCap = s_SystemMemoryMB <= 0 ? kMaxConcurrentAssetsLimit
+                : s_SystemMemoryMB < 12 * 1024 ? 1
+                : s_SystemMemoryMB < 20 * 1024 ? 2
+                : s_SystemMemoryMB < 28 * 1024 ? 4
+                : kMaxConcurrentAssetsLimit;
+            value = Math.Min(value, ramCap);
+
+            reason = $"auto: {cores} logical cores, {s_SystemMemoryMB / 1024f:F1} GB RAM";
+            return value;
+        }
 
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         public bool ExportDefaultJson { set { AssetsImporterManager.ExportImportersTemplate(); } }
@@ -93,6 +151,7 @@ namespace ExtraAssetsImporter
         {
             UseNewImporters = true;
             SavePrefabs = false;
+            MaxConcurrentAssets = 0;
             UseOldImporters = true;
             DeleteNotLoadedAssets = true;
             Decals = true;

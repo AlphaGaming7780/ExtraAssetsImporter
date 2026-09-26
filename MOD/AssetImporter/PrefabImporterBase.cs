@@ -35,8 +35,6 @@ namespace ExtraAssetsImporter.AssetImporter
         // own lock — protecting nothing, since the race is precisely between those 3 threads. Has to be one
         // lock shared by all of them.
         private static readonly object PrefabSaveLock = new object();
-        // Each asset also imports its 3 textures in parallel (see TextureAssetImporterUtils.ImportSurfaceTextures).
-        private const int k_MaxConcurrentAssets = 4;
         public const string PrefabJsonName = "Prefab.json";
         private UIAssetParentCategoryPrefab assetCat = null;
 
@@ -83,7 +81,8 @@ namespace ExtraAssetsImporter.AssetImporter
             PerformanceStats perf = Perf;
             Parallel.ForEach(
                 Partitioner.Create(assetFolders, EnumerablePartitionerOptions.NoBuffering),
-                new ParallelOptions { MaxDegreeOfParallelism = k_MaxConcurrentAssets },
+                // Each asset also imports its 3 textures in parallel (see TextureAssetImporterUtils.ImportSurfaceTextures).
+                new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, importSettings.maxConcurrentAssets) },
                 asset =>
                 {
                     using (perf.MakeCurrent())

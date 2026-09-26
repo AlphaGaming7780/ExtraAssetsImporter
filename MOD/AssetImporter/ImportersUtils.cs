@@ -265,7 +265,10 @@ namespace ExtraAssetsImporter.AssetImporter
                 database = data.ImportSettings.dataBase
             };
             geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
-            geometryAsset.SetData(meshes);
+            // SetData reads the meshes with Mesh.AcquireReadOnlyMeshData, main thread only: called from several import
+            // threads at once, it livelocks Unity (main thread included).
+            using (PerformanceStats.MeasureCurrent("Blocking.GeometrySetData"))
+                MainThreadHelper.RunOnMainThread(() => geometryAsset.SetData(meshes)).Wait();
             geometryAsset.Save(false);
 
             RenderPrefab renderPrefab = GetOrCreatePrefabInstance<RenderPrefab>(GetRenderPrefabName(data), components);

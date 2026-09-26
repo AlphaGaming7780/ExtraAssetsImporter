@@ -8,6 +8,7 @@ using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
@@ -236,6 +237,7 @@ namespace ExtraAssetsImporter.AssetImporter
             // Aggregates every importer's stats (they are its children), logged at the end of the pass.
             PerformanceStats passStats = new("Import pass");
             using PerformanceStats.CurrentScope currentStats = passStats.MakeCurrent();
+            using MemorySampler passMemory = new();
 
             ImportersUtils.ClearCaches();
 
@@ -244,6 +246,9 @@ namespace ExtraAssetsImporter.AssetImporter
 
             using (passStats.Measure("Pass.CreateLocalAssetPack"))
                 CreateEAILocalAssetPackPrefab();
+
+            EAI.m_Setting.GetMaxConcurrentAssets(out string concurrencyReason);
+            EAI.Logger.Info($"Importing up to {importerSettings.maxConcurrentAssets} assets at once per importer ({concurrencyReason}).");
 
             EAI.Logger.Info("Starting the loading of pre importers.");
 
@@ -284,7 +289,7 @@ namespace ExtraAssetsImporter.AssetImporter
             double seconds = totalPerformanceCounter.result.TotalSeconds;
 
             EAI.Logger.Info($"All custom assets have been loaded. Took {seconds:F2}s, {frames} frames ({(seconds > 0 ? frames / seconds : 0):F1} fps), savePrefabs={importerSettings.savePrefabs}.");
-            EAI.Logger.Info(passStats.BuildReport());
+            EAI.Logger.Info($"{passStats.BuildReport()}\n{passMemory.Stop()}");
 
         }
 

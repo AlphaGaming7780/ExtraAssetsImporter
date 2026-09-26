@@ -2,6 +2,7 @@
 using Colossal.IO.AssetDatabase;
 using Colossal.Localization;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
@@ -23,6 +24,8 @@ namespace ExtraAssetsImporter.AssetImporter
         internal EAIDatabase eaiDatabase;
         public ILocalAssetDatabase dataBase;
         public bool savePrefabs;
+        // Assets imported at once by each importer (see Setting.GetMaxConcurrentAssets).
+        public int maxConcurrentAssets;
 
         public static ImporterSettings GetDefault()
         {
@@ -30,6 +33,7 @@ namespace ExtraAssetsImporter.AssetImporter
             result.eaiDatabase = EAIDatabaseManager.eaiDatabase;
             result.dataBase = EAIDatabaseManager.EAIAssetDatabase;
             result.savePrefabs = EAI.m_Setting.CanSavePrefabs;
+            result.maxConcurrentAssets = EAI.m_Setting.GetMaxConcurrentAssets(out _);
             return result;
         }
     }
@@ -84,11 +88,16 @@ namespace ExtraAssetsImporter.AssetImporter
 
             Perf = new PerformanceStats($"{ImporterId} importer", passStats);
 
-            // Current on this thread, so MainThreadHelper and the shared helpers (textures, components...) record into it.
-            using (Perf.MakeCurrent())
-                LoadCustomAssets_Impl(importSettings);
+            string memoryReport;
+            using (MemorySampler memory = new())
+            {
+                // Current on this thread, so MainThreadHelper and the shared helpers (textures, components...) record into it.
+                using (Perf.MakeCurrent())
+                    LoadCustomAssets_Impl(importSettings);
+                memoryReport = memory.Stop();
+            }
 
-            if (!Perf.IsEmpty) EAI.Logger.Info(Perf.BuildReport());
+            if (!Perf.IsEmpty) EAI.Logger.Info($"{Perf.BuildReport()}\n{memoryReport}");
         }
 
         private void LoadCustomAssets_Impl(ImporterSettings importSettings)
