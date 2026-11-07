@@ -4,6 +4,7 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
@@ -101,7 +102,7 @@ namespace ExtraAssetsImporter.OldImporters
                         if(Directory.GetFiles(decalsFolder).Length > 0)
                             numberOfDecals++;
                         else
-                            Directory.Delete(decalsFolder, false);
+                            ImportersUtils.TryDeleteDirectory(decalsFolder, recursive: false);
             }
 
             UIAssetParentCategoryPrefab assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab("Decals");
@@ -191,8 +192,16 @@ namespace ExtraAssetsImporter.OldImporters
                             failedDecals++;
                             EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
                             string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
-                            if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
-                            else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
+
+                            try
+                            {
+                                if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+                                else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
+                            }
+                            catch (Exception deleteError)
+                            {
+                                EAI.Logger.Warn($"Failed to delete {pathToAssetInDatabase}: {deleteError}");
+                            }
                         }
                         ammoutOfDecalsloaded++;
                         yield return null;

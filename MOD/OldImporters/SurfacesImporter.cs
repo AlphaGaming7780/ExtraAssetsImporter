@@ -2,6 +2,7 @@
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.Helpers;
@@ -82,7 +83,7 @@ namespace ExtraAssetsImporter.OldImporters
                         if (Directory.GetFiles(surfaceFolder).Length > 0)
                             numberOfSurfaces++;
                         else
-                            Directory.Delete(surfaceFolder, false);
+                            ImportersUtils.TryDeleteDirectory(surfaceFolder, recursive: false);
             }
 
 

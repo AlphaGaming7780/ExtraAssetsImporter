@@ -2,6 +2,7 @@
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.Helpers;
@@ -97,7 +98,7 @@ namespace ExtraAssetsImporter.OldImporters
                         if (Directory.GetFiles(netLanesFolder).Length > 0)
                             numberOfNetLanes++;
                         else
-                            Directory.Delete(netLanesFolder, false);
+                            ImportersUtils.TryDeleteDirectory(netLanesFolder, recursive: false);
             }
 
 
@@ -189,8 +190,16 @@ namespace ExtraAssetsImporter.OldImporters
                             failedNetLanes++;
                             EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
                             string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
-                            if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
-                            else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
+
+                            try
+                            {
+                                if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+                                else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
+                            }
+                            catch (Exception deleteError)
+                            {
+                                EAI.Logger.Warn($"Failed to delete {pathToAssetInDatabase}: {deleteError}");
+                            }
                         }
                         ammoutOfNetLanesloaded++;
                         yield return null;

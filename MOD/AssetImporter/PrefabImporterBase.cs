@@ -307,8 +307,7 @@ namespace ExtraAssetsImporter.AssetImporter
             Interlocked.Increment(ref failedAssets);
             Interlocked.Increment(ref ammoutOfAssetsloaded);
             EAI.Logger.Error($"Failed to load the custom asset at {assetFolder} | ERROR : {e}");
-            string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
-            if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+            ImportersUtils.TryDeleteDirectory(Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath));
         }
 
         protected virtual void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)

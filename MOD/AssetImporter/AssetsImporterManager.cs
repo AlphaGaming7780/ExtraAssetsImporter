@@ -53,6 +53,17 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static bool IsImporting => Volatile.Read(ref s_NewImportersPassRunning) != 0 || !AreImportersFinished();
 
+        // Set for the rest of the session once an importer, a folder or a pass start fails.
+        // The assets of what failed weren't validated, so the database cleanup deletes nothing.
+        private static volatile bool s_ImportFailed;
+
+        internal static bool ImportFailed => s_ImportFailed;
+
+        internal static void MarkImportFailed()
+        {
+            s_ImportFailed = true;
+        }
+
         public static bool AddImporter<T>() where T : ImporterBase, new()
         {
             if (s_Importers.ContainsKey(typeof(T))) return false;
@@ -183,6 +194,22 @@ namespace ExtraAssetsImporter.AssetImporter
                 return;
             }
 
+            // A pass that fails before its task starts must still end, or IsImporting stays true
+            // and no later pass or Reload can run.
+            try
+            {
+                StartImportPass(includeOldImporters, runNewImporters);
+            }
+            catch (Exception e)
+            {
+                MarkImportFailed();
+                EAI.Logger.Error($"The import pass failed to start.\n{e}");
+                if (runNewImporters) Interlocked.Exchange(ref s_NewImportersPassRunning, 0);
+            }
+        }
+
+        private static void StartImportPass(bool includeOldImporters, bool runNewImporters)
+        {
             // Re-distributing to every importer each time (not just once) is cheap and idempotent —
             // ImporterBase.AddCustomAssetsFolder already skips a path already in its own _FolderToLoadAssets.
             foreach (string path in s_RegisteredModPaths)

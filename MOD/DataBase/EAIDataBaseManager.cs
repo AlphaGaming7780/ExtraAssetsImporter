@@ -315,7 +315,8 @@ namespace ExtraAssetsImporter.Database
         {
             lock (_lock)
             {
-                if (!EAI.m_Setting.DeleteNotLoadedAssets)
+                // After a failure, the assets of what failed weren't validated: keep them all.
+                if (!EAI.m_Setting.DeleteNotLoadedAssets || AssetsImporterManager.ImportFailed)
                 {
                     foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase.ToList()) _ValidateAssetsDatabase[entry.Key] = entry.Value;
                     AssetsDatabase.Clear();

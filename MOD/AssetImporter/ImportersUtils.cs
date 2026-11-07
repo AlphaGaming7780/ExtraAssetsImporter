@@ -47,6 +47,19 @@ namespace ExtraAssetsImporter.AssetImporter
                 if (!LongDirectory.Exists(path)) LongDirectory.CreateDirectory(path);
         }
 
+        // Deletes a folder, or with recursive off only an empty one. A throw here would stop the
+        // importer, so a failure only warns.
+        internal static void TryDeleteDirectory(string path, bool recursive = true)
+        {
+            try
+            {
+                if (Directory.Exists(path)) Directory.Delete(path, recursive);
+            }
+            catch (Exception ex)
+            {
+                EAI.Logger.Warn($"Failed to delete {path}: {ex}");
+            }
+        }
 
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
