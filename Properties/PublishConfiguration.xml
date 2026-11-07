@@ -1,8 +1,8 @@
 ﻿<Publish>
 	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
-	<ModId Value="80529" />
+	<ModId Value="166638" />
 	<!--Name of the mod to display to players-->
-	<DisplayName Value="ExtraAssetsImporter" />
+	<DisplayName Value="[BETA] ExtraAssetsImporter" />
 	<!--Short description of the mod-->
 	<ShortDescription Value="This mod let you import custom surfaces and custom decals." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
@@ -74,7 +74,7 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.7.6" />
+	<ModVersion Value="1.8.0.0" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -82,10 +82,24 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<!--<ChangeLog Value="" />-->
 	<ChangeLog>
-### Optimizations and fixes
-- Various optimizations and fixes to the asset importer.
-- Fixed a rare stability issue during import.
-- Minor wording fixes in log messages.
+### New Features
+- New "Simultaneous asset imports" setting: the new importers can now import several assets at the same time. **Auto** (default) picks a value from your CPU cores and RAM; lower it if the game lags or crashes while importing.
+- New "Save prefabs (BETA)" setting: saves the imported prefabs to the database so the next launch reloads them instead of rebuilding them from the source files.
+- New "Reload database (BETA)" button: reloads all the custom assets handled by the new importers without restarting the game.
+- The new EAI importers are no longer in BETA.
+
+### Improvements
+- Much faster asset loading with the new importers: textures and assets are imported in parallel.
+- Reduced RAM usage when importing surfaces with the old importers.
+- Assets from disabled or removed mods are now unloaded without deleting their valid database entries.
+- Detailed import timings are now written in the log.
+
+### Fixes
+- Fixed a game freeze that could happen while importing assets.
+- Fixed edited assets not always being detected and rebuilt.
+- Fixed the database relocation when its saved path was reset but the database still exists on disk.
+- Fixed the new importers settings being greyed out in the wrong state.
+- Fixed various stability issues during import.
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
 	<ExternalLink Type="youtube" Url="https://youtu.be/aALkRFdWOhM?si=nd_caJkElHPi6thE" />
@@ -93,4 +107,6 @@ You can see the trailer video made by Sully in the "MORE ABOUT THIS MOD" section
 	<ExternalLink Type="discord" Url="https://discord.gg/HTav7ARPs2" />
 	<ExternalLink Type="github" Url="https://github.com/AlphaGaming7780/ExtraAssetsImporter" />
 	<ExternalLink Type="paypal" Url="https://www.paypal.com/paypalme/TritonSupreme" />
+	<!--Supported values Public, Private, Unlisted-->
+	<AccessLevel Value="Unlisted" />
 </Publish>
