@@ -401,7 +401,15 @@ namespace ExtraAssetsImporter.AssetImporter
                 m_Type = prefabBase.GetType().Name
             };
 
-            obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo).ToArray();
+            AddObsoleteIdentifier(obsoleteIdentifiers, prefabIdentifierInfo);
+        }
+
+        // A reload sets up the live prefab again, which already holds the names of earlier passes.
+        protected static void AddObsoleteIdentifier(ObsoleteIdentifiers obsoleteIdentifiers, PrefabIdentifierInfo identifier)
+        {
+            if (obsoleteIdentifiers.m_PrefabIdentifiers.Any(info => info.m_Name == identifier.m_Name && info.m_Type == identifier.m_Type)) return;
+
+            obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(identifier).ToArray();
         }
     }
     public struct PrefabImportData
