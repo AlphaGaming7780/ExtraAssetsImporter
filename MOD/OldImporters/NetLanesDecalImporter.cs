@@ -225,6 +225,11 @@ namespace ExtraAssetsImporter.OldImporters
             );
 
             //LoadLocalization();
+
+            // The coroutine went through every folder, so the quit cleanup deletes the assets they
+            // no longer hold.
+            foreach (string folder in folders) EAIDatabaseManager.eaiDatabase.AddScannedFolder(folder);
+
             FolderToLoadNetLanes.RemoveAll(folders.Contains);
 
             NetLanesLoaded = true;

@@ -43,6 +43,12 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return assetPackJson;
         }
 
+        // A pack's AssetPath starts with ImporterId, and its mod's folder holds AssetPack.json.
+        protected override string GetScannedFolder(string importerFolder)
+        {
+            return Path.Combine(Path.GetDirectoryName(importerFolder), ImporterId);
+        }
+
         protected override void PreLoadCustomAssetFolder(ImporterSettings importSettings)
         {
             // A pack whose mod was removed since the last pass must not be handed out anymore.
@@ -87,10 +93,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 needToUpdateAsset = eaiAsset.SourceAssetHash != sourceAssetFolderHash || eaiAsset.AssetPath != assetDataPath;
                 eaiAsset.SourceAssetHash = sourceAssetFolderHash;
                 eaiAsset.AssetPath = assetDataPath;
+                eaiAsset.SourceModPath = sourceFolder;
             }
             else
             {
-                eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath);
+                eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath, sourceModPath: sourceFolder);
                 needToUpdateAsset = true;
             }
 

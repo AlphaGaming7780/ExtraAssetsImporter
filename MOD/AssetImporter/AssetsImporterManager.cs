@@ -58,6 +58,9 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static bool IsImporting => IsPassRunning || s_LatePassPending;
 
+        // Every import of the session so far has ended, late passes included.
+        internal static bool IsImportFinished => s_ImportStarted && !IsImporting;
+
         private static bool IsPassRunning => Volatile.Read(ref s_NewImportersPassRunning) != 0 || !AreImportersFinished();
 
         // A compatibility a pass takes holds for every later pass of the session, late ones
@@ -65,11 +68,11 @@ namespace ExtraAssetsImporter.AssetImporter
         internal static EAIOldImportersCompatibility OldImportersCompatibility { get; private set; }
         internal static EAINewImportersCompatibility NewImportersCompatibility { get; private set; }
 
-        // Set for the rest of the session once an importer, a folder or a pass start fails.
-        // The assets of what failed weren't validated, so the database cleanup deletes nothing.
+        // Set for the rest of the session once an importer or a pass fails. What failed never
+        // validated its assets, so the quit cleanup deletes nothing.
         private static volatile bool s_ImportFailed;
 
-        internal static bool ImportFailed => s_ImportFailed;
+        internal static bool HasImportFailed => s_ImportFailed;
 
         internal static void MarkImportFailed()
         {
@@ -274,6 +277,12 @@ namespace ExtraAssetsImporter.AssetImporter
                 {
                     importer.AddCustomAssetsFolder(path);
                 }
+
+                // A mod without one of these folders no longer holds any of that old importer's
+                // assets, so the quit cleanup deletes their cache whichever importers run.
+                // The old surfaces cache none.
+                if (!Directory.Exists(Path.Combine(path, "CustomDecals"))) EAIDatabaseManager.eaiDatabase.AddScannedFolder(Path.Combine(path, "CustomDecals"));
+                if (!Directory.Exists(Path.Combine(path, "CustomNetLanes"))) EAIDatabaseManager.eaiDatabase.AddScannedFolder(Path.Combine(path, "CustomNetLanes"));
             }
 
             s_PendingModPaths.Clear();
@@ -294,22 +303,23 @@ namespace ExtraAssetsImporter.AssetImporter
                 // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
                 //AutoImportCustomAssets();
                 ImporterSettings importerSettings = ImporterSettings.GetDefault();
-                importerSettings.isLatePass = isLatePass;
 
                 Task task = AssetsImporterManager.LoadCustomAssetsAsync(importerSettings);
 
                 task.ContinueWith(t =>
                 {
-                    if (t.IsFaulted) EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}");
+                    if (t.IsFaulted)
+                    {
+                        MarkImportFailed();
+                        EAI.Logger.Error($"Error while loading custom assets with new importers: {t.Exception}");
+                    }
+
                     Interlocked.Exchange(ref s_NewImportersPassRunning, 0);
                 });
             }
             else if (includeOldImporters)
             {
-                ImporterSettings importerSettings = ImporterSettings.GetDefault();
-                importerSettings.isLatePass = isLatePass;
-
-                GameManager.instance.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(importerSettings));
+                GameManager.instance.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
             }
         }
 

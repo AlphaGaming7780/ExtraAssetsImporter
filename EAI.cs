@@ -174,6 +174,17 @@ namespace ExtraAssetsImporter
 		public void OnDispose()
 		{
 			Logger.Info(nameof(OnDispose));
+
+			// Each step runs even if the one before it fails.
+			try
+			{
+				if (AssetsImporterManager.IsImportFinished && !AssetsImporterManager.HasImportFailed && EAIDatabaseManager.IsPlaysetLoaded()) EAIDatabaseManager.eaiDatabase.ClearNotImportedAssets();
+			}
+			catch (Exception e)
+			{
+				Logger.Error($"Failed to remove the assets no import saw from the database.\n{e}");
+			}
+
 			EAIDatabaseManager.CheckIfDatabaseNeedToBeRelocated();
             ClearData();
 		}

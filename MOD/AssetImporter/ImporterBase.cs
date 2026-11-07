@@ -25,9 +25,6 @@ namespace ExtraAssetsImporter.AssetImporter
         public bool savePrefabs;
         // Assets imported at once by each importer (see Setting.GetMaxConcurrentAssets).
         public int maxConcurrentAssets;
-        // A late pass imports only the folders registered since the last pass, so the database
-        // cleanup would delete the assets of the others.
-        internal bool isLatePass;
 
         public static ImporterSettings GetDefault()
         {
@@ -207,15 +204,16 @@ namespace ExtraAssetsImporter.AssetImporter
                 string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(importerFolder).Parent.Name.Split('_')[0];
 
                 // One folder failing, on a malformed file for example, leaves the others loading.
+                // A failed folder stays off the scanned list, so its assets keep their cache.
                 try
                 {
                     using (Perf.Measure("Importer.LoadFolder"))
                         LoadCustomAssetFolder(importSettings, importerFolder, modName, notificationInfo);
+
+                    importSettings.eaiDatabase.AddScannedFolder(GetScannedFolder(importerFolder));
                 }
                 catch (Exception e)
                 {
-                    AssetsImporterManager.MarkImportFailed();
-
                     failedFolders++;
 
                     EAI.Logger.Error($"The {ImporterId} importer failed to load {importerFolder}.\n{e}");
@@ -276,6 +274,13 @@ namespace ExtraAssetsImporter.AssetImporter
                     EAI.Logger.Error($"The {ImporterId} importer had a main thread task fail: {e.Flatten().InnerException}");
                 }
             }
+        }
+
+        // The folder an asset of this importer names: its SourceModPath joined with the first
+        // segment of its AssetPath.
+        protected virtual string GetScannedFolder(string importerFolder)
+        {
+            return importerFolder;
         }
 
         protected virtual void PreLoadCustomAssetFolder(ImporterSettings importSettings) { }

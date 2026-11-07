@@ -52,9 +52,6 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             string sourceModPath = Directory.GetParent(importerFolder)?.FullName;
 
-            if (string.Equals(sourceModPath, EAI.pathModsData, StringComparison.OrdinalIgnoreCase))
-                sourceModPath = null;
-
             List<(string catName, string assetFolder)> assetFolders = new();
             foreach (string catFolder in Directory.GetDirectories(importerFolder))
             {
