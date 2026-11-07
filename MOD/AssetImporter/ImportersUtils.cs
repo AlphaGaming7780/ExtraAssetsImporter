@@ -29,6 +29,10 @@ namespace ExtraAssetsImporter.AssetImporter
     {
         private static readonly object s_CreateDirectoryLock = new();
 
+        private static readonly object s_PendingLocalisationLock = new();
+        private static Dictionary<string, string> s_PendingLocalisation;
+        private static Task s_PendingLocalisationTask;
+
         /// <summary>
         /// Creates <paramref name="assetDataPath"/> in the database before anything is saved in it. Every asset Save
         /// goes through LongDirectory.CreateDirectory, which throws when another thread creates one of the missing
@@ -308,20 +312,46 @@ namespace ExtraAssetsImporter.AssetImporter
             return renderPrefab;
         }
 
+        /// <summary>
+        /// Adds default strings to the fallback locale.
+        /// The game refreshes every localized string for each source added to the active locale,
+        /// which costs far more than the strings themselves, so the strings of all the assets
+        /// imported before the main thread gets to them go in one source.
+        /// </summary>
         public static Task SetupLocalisationForPrefab(Dictionary<string, string> localisation)
         {
-            LocalizationManager localizationManager = GameManager.instance.localizationManager;
-
-            string localeID = localizationManager.fallbackLocaleId;
-
-            return MainThreadHelper.RunOnMainThread(() =>
+            lock (s_PendingLocalisationLock)
             {
-                // Sources added later win, and the packs' own strings come first.
-                foreach (string key in LocalizationImporter.PackFallbackKeys)
-                    localisation.Remove(key);
+                bool isAddQueued = s_PendingLocalisation != null;
+                s_PendingLocalisation ??= new();
 
-                localizationManager.AddSource(localeID, new MemorySource(localisation));
-            });
+                foreach (KeyValuePair<string, string> entry in localisation)
+                    s_PendingLocalisation[entry.Key] = entry.Value;
+
+                // Queued after the strings: on the main thread, RunOnMainThread runs it right away.
+                if (!isAddQueued)
+                    s_PendingLocalisationTask = MainThreadHelper.RunOnMainThread(AddPendingLocalisation);
+
+                return s_PendingLocalisationTask;
+            }
+        }
+
+        private static void AddPendingLocalisation()
+        {
+            Dictionary<string, string> localisation;
+
+            lock (s_PendingLocalisationLock)
+            {
+                localisation = s_PendingLocalisation;
+                s_PendingLocalisation = null;
+            }
+
+            // Sources added later win, and the packs' own strings come first.
+            foreach (string key in LocalizationImporter.PackFallbackKeys)
+                localisation.Remove(key);
+
+            LocalizationManager localizationManager = GameManager.instance.localizationManager;
+            localizationManager.AddSource(localizationManager.fallbackLocaleId, new MemorySource(localisation));
         }
 
         /// <summary>
