@@ -108,6 +108,10 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 // A prefab ID holds the prefab's name, which only the main thread may read.
                 eaiAsset.PrefabID = MainThreadHelper.RunOnMainThread(() => cachedAssetPackPrefab.GetPrefabID().ToString()).Result;
                 s_AssetPacks[modName] = cachedAssetPackPrefab;
+
+                // The game's locale keeps no string from one session to the next.
+                AddLocalisation(fullAssetName, LoadJSON(folder));
+
                 importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
                 ammoutOfAssetsloaded++;
                 return;
@@ -136,6 +140,17 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(assetPackPrefab)));
             s_AssetPacks[modName] = assetPackPrefab;
 
+            AddLocalisation(fullAssetName, assetPackJson);
+
+            importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
+            ammoutOfAssetsloaded++;
+        }
+
+        private void AddLocalisation(string fullAssetName, AssetPackJson assetPackJson)
+        {
+            // The game drops the whole batched source over one null, other assets' names with it.
+            if (assetPackJson.PackName == null) return;
+
             Dictionary<string, string> localisation = new()
             {
                 { $"Assets.NAME[{fullAssetName}]", assetPackJson.PackName },
@@ -143,9 +158,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             };
 
             TrackMainThreadTask(ImportersUtils.SetupLocalisationForPrefab(localisation));
-
-            importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
-            ammoutOfAssetsloaded++;
         }
 
         public override void ExportTemplate(string path)
