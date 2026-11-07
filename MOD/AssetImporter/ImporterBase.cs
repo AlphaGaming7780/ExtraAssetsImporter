@@ -261,7 +261,7 @@ namespace ExtraAssetsImporter.AssetImporter
             TrackMainThreadTask(EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(notificationInfo.id, text: text, progressState: ProgressState.Progressing, progress: progress));
         }
 
-        private void WaitPendingMainThreadTasks()
+        protected void WaitPendingMainThreadTasks()
         {
             while (_PendingMainThreadTasks.TryDequeue(out Task task))
             {

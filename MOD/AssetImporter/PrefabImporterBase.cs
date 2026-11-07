@@ -5,6 +5,7 @@ using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
@@ -71,38 +72,81 @@ namespace ExtraAssetsImporter.AssetImporter
             // Assets are independent and mostly bound by texture imports (CPU) and main-thread round-trips (waiting),
             // so several are imported at once. NoBuffering hands out one asset at a time: import times vary a lot.
             PerformanceStats perf = Perf;
-            Parallel.ForEach(
-                Partitioner.Create(assetFolders, EnumerablePartitionerOptions.NoBuffering),
-                // Each asset also imports its 3 textures in parallel (see TextureAssetImporterUtils.ImportSurfaceTextures).
-                new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, importSettings.maxConcurrentAssets) },
-                asset =>
+            // Each asset also imports its 3 textures in parallel (see
+            // TextureAssetImporterUtils.ImportSurfaceTextures).
+            ParallelOptions options = new() { MaxDegreeOfParallelism = Math.Max(1, importSettings.maxConcurrentAssets) };
+
+            // A rebuilt asset deletes its old cache folder, and another asset can import a shared
+            // texture (a texture .json file) into that folder, so all deletions happen before any
+            // import starts.
+            PrefabImportData?[] prepared = new PrefabImportData?[assetFolders.Count];
+            Parallel.ForEach(Partitioner.Create(assetFolders, EnumerablePartitionerOptions.NoBuffering), options, (asset, _, i) =>
+            {
+                using (perf.MakeCurrent())
                 {
-                    using (perf.MakeCurrent())
+                    try
                     {
-                        try
-                        {
-                            ImportAsset(importSettings, asset.catName, asset.assetFolder, modName, sourceModPath, notificationInfo);
-                        }
-                        catch (Exception e)
-                        {
-                            ImportFailed(asset.assetFolder, Path.Combine(FolderName, modName, asset.catName, new DirectoryInfo(asset.assetFolder).Name), e);
-                        }
+                        prepared[i] = PrepareAsset(importSettings, asset.catName, asset.assetFolder, modName, sourceModPath);
                     }
-                });
+                    catch (Exception e)
+                    {
+                        ImportFailed(asset.assetFolder, Path.Combine(FolderName, modName, asset.catName, new DirectoryInfo(asset.assetFolder).Name), e);
+                    }
+                }
+            });
+
+            List<PrefabImportData> toImport = new();
+            List<PrefabImportData> lastToImport = new();
+            foreach (PrefabImportData? data in prepared)
+            {
+                if (data is PrefabImportData value) (LooksUpOtherNetLanes(value.PrefabJson) ? lastToImport : toImport).Add(value);
+            }
+
+            Parallel.ForEach(Partitioner.Create(toImport, EnumerablePartitionerOptions.NoBuffering), options, data =>
+            {
+                using (perf.MakeCurrent()) ImportEntry(data);
+            });
+
+            if (lastToImport.Count == 0) return;
+
+            // An asset that looks up another net lane by name imports last, in folder order, once
+            // the queued main-thread calls have added the others to the prefab system.
+            WaitPendingMainThreadTasks();
+            foreach (PrefabImportData data in lastToImport) ImportEntry(data);
+
+            void ImportEntry(PrefabImportData data)
+            {
+                try
+                {
+                    ImportPreparedAsset(data, notificationInfo);
+                }
+                catch (Exception e)
+                {
+                    ImportFailed(data.FolderPath, data.AssetDataPath, e);
+                }
+            }
         }
 
-        private void ImportAsset(ImporterSettings importSettings, string catName, string assetFolder, string modName, string sourceModPath, NotificationUISystem.NotificationInfo notificationInfo)
+        private static bool LooksUpOtherNetLanes(Variant prefabJson)
         {
-            using PerformanceStats.Scope assetScope = Perf.Measure("Asset.Total");
+            Variant components = prefabJson?.TryGet(nameof(PrefabJson.Components));
+            return components != null
+                && (components.TryGetValue(typeof(UtilityLane).FullName, out _) || components.TryGetValue(typeof(EnclosedArea).FullName, out _));
+        }
+
+        // Compares an asset with its cache entry, deletes its cache when it must be rebuilt, and
+        // returns what its import needs, or null for a skipped asset.
+        private PrefabImportData? PrepareAsset(ImporterSettings importSettings, string catName, string assetFolder, string modName, string sourceModPath)
+        {
+            using PerformanceStats.Scope prepareScope = Perf.Measure("Asset.Prepare");
 
             string assetName = new DirectoryInfo(assetFolder).Name;
-            UpdateNotificationOnMainThread(notificationInfo, $"Loading : {assetName}", (int)(ammoutOfAssetsloaded / (float)numberOfAssets * 100));
 
             if (assetName.StartsWith("."))
             {
                 Interlocked.Increment(ref skipedAsset);
                 Interlocked.Increment(ref ammoutOfAssetsloaded);
-                return;
+                return null;
             }
 
             string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
@@ -173,7 +217,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     Directory.Delete(fullAssetDataPath, true);
             }
 
-            PrefabImportData importData = new(
+            return new PrefabImportData(
                 importSettings,
                 eaiAsset,
                 needToUpdateAsset,
@@ -187,7 +231,20 @@ namespace ExtraAssetsImporter.AssetImporter
                 assetCat,
                 assetCatName
             );
+        }
 
+        private void ImportPreparedAsset(PrefabImportData importData, NotificationUISystem.NotificationInfo notificationInfo)
+        {
+            using PerformanceStats.Scope assetScope = Perf.Measure("Asset.Total");
+
+            ImporterSettings importSettings = importData.ImportSettings;
+            EAIAsset eaiAsset = importData.EAIAsset;
+            string assetFolder = importData.FolderPath;
+            string assetName = importData.AssetName;
+            string fullAssetName = importData.FullAssetName;
+            string assetDataPath = importData.AssetDataPath;
+            string fullAssetDataPath = Path.Combine(importSettings.dataBase.rootPath, assetDataPath);
+            UpdateNotificationOnMainThread(notificationInfo, $"Loading : {assetName}", (int)(ammoutOfAssetsloaded / (float)numberOfAssets * 100));
 
             PrefabBase prefab;
             bool cachedPrefab = true;
