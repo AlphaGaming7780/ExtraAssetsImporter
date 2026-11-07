@@ -211,7 +211,8 @@ namespace ExtraAssetsImporter.OldImporters
 
             fileData = File.ReadAllBytes(baseColorMapPath);
             Texture2D texture2D_BaseColorMap = new(1, 1);
-            if (!texture2D_BaseColorMap.LoadImage(fileData))
+            // markNonReadable: the textures are only used by the material, Unity can free their RAM copy once on the GPU.
+            if (!texture2D_BaseColorMap.LoadImage(fileData, true))
             {
                 EAI.Logger.Error($"Failed to Load the BaseColorMap image for the {surfacePrefab.name} surface.");
                 UnityEngine.Object.Destroy(texture2D_BaseColorMap);
@@ -227,7 +228,7 @@ namespace ExtraAssetsImporter.OldImporters
             {
                 fileData = File.ReadAllBytes(normalMapPath);
                 Texture2D texture2D_NormalMap = new(1, 1);
-                if (texture2D_NormalMap.LoadImage(fileData))
+                if (texture2D_NormalMap.LoadImage(fileData, true))
                 {
                     newMaterial.SetTexture(ShaderPropertiesIDs.NormalMap, texture2D_NormalMap);
                 }
@@ -243,7 +244,7 @@ namespace ExtraAssetsImporter.OldImporters
             {
                 fileData = File.ReadAllBytes(maskMapPath);
                 Texture2D texture2D_MaskMap = new(1, 1);
-                if (texture2D_MaskMap.LoadImage(fileData))
+                if (texture2D_MaskMap.LoadImage(fileData, true))
                 {
                     newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture2D_MaskMap);
                 }
