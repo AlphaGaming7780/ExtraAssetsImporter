@@ -49,11 +49,12 @@ namespace ExtraAssetsImporter
         public bool DisableCondition_SavePrefabs => DisableCondition_UseNewImporters || !EAIDatabaseManager.IsDatabaseInDatabaseFolder;
         internal bool CanSavePrefabs => SavePrefabs && !DisableCondition_SavePrefabs;
 
-        // 0 = Auto, see GetMaxConcurrentAssets.
+        // 0 = Auto, see GetMaxConcurrentAssets. The old importers follow it too.
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         [SettingsUIDropdown(typeof(Setting), nameof(GetMaxConcurrentAssetsValues))]
-        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_UseNewImporters))]
+        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_MaxConcurrentAssets))]
         public int MaxConcurrentAssets { get; set; } = 0;
+        public bool DisableCondition_MaxConcurrentAssets => !UseNewImporters && !UseOldImporters;
 
         public const int kMaxConcurrentAssetsLimit = 8;
 

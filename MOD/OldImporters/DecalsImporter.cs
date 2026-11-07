@@ -18,6 +18,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Unity.Mathematics;
 using UnityEngine;
 using static Colossal.AssetPipeline.Importers.DefaultTextureImporter;
@@ -37,6 +38,14 @@ namespace ExtraAssetsImporter.OldImporters
         internal static List<string> FolderToLoadDecals = new();
         private static bool DecalsLoading = false;
         internal static bool DecalsLoaded = false;
+
+        // An old importer goes on to the next asset until it has spent this much of a frame, so
+        // cached assets don't take a frame each.
+        internal const int FrameBudgetMs = 10;
+
+        // How many assets of one old importer import their textures at once, the same limit as the
+        // new importers. Each holds its textures in memory until the main thread finishes it.
+        internal static int MaxPendingAssets => EAI.m_Setting.GetMaxConcurrentAssets(out _);
 
         //private static readonly List<string> validName = ["_BaseColorMap.png", "_NormalMap.png", "_MaskMap.png"];
 
@@ -113,6 +122,9 @@ namespace ExtraAssetsImporter.OldImporters
 
             Dictionary<string, string> csLocalisation = new();
 
+            List<(Task<Surface> SurfaceTask, Action<Task<Surface>> Finish)> pending = new();
+            System.Diagnostics.Stopwatch frameTimer = System.Diagnostics.Stopwatch.StartNew();
+
             foreach (string folder in folders)
             {
                 if (!Directory.Exists(folder)) continue;
@@ -148,14 +160,17 @@ namespace ExtraAssetsImporter.OldImporters
                         string fullDecalName = $"{modName} {catName} {decalName} Decal";
                         string assetDataPath = Path.Combine("CustomDecals", modName, catName, decalName);
 
+                        RenderPrefab renderPrefab = null;
+                        EAIAsset asset = EAIAsset.Null;
+                        Task<Surface> surfaceTask = null;
+                        bool failed = false;
+
                         try
                         {
-                            RenderPrefab renderPrefab = null;
-
-                            if (!EAIDatabaseManager.TryGetEAIAsset(fullDecalName, out EAIAsset asset) || asset.SourceAssetHash != EAIDatabaseManager.GetAssetHash(decalsFolder))
+                            if (!EAIDatabaseManager.TryGetEAIAsset(fullDecalName, out asset) || asset.SourceAssetHash != EAIDatabaseManager.GetAssetHash(decalsFolder))
                             {
                                 EAI.Logger.Info($"No cached data for {fullDecalName}, creating the cache.");
-                                renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
+                                surfaceTask = CreateDecalSurfaceAsync(decalsFolder, decalName);
                                 asset = new(fullDecalName, EAIDatabaseManager.GetAssetHash(decalsFolder), assetDataPath);
                             }
                             else
@@ -175,42 +190,88 @@ namespace ExtraAssetsImporter.OldImporters
                                 if (renderPrefab == null)
                                 {
                                     //EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
-                                    renderPrefab = CreateRenderPrefab(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath);
+                                    surfaceTask = CreateDecalSurfaceAsync(decalsFolder, decalName);
                                     asset = new(fullDecalName, EAIDatabaseManager.GetAssetHash(decalsFolder), assetDataPath);
                                 }
                             }
-
-                            PrefabBase prefab = CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
-
-                            asset.PrefabID = prefab.GetPrefabID().ToString();
-                            asset.SourceModPath = sourceModPath;
-
-                            if (!csLocalisation.ContainsKey($"Assets.NAME[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullDecalName}]")) csLocalisation.Add($"Assets.NAME[{fullDecalName}]", decalName);
-                            if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullDecalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullDecalName}]", decalName);
-
-                            EAIDatabaseManager.AddOrValidateAsset(asset);
-
                         }
                         catch (Exception e)
                         {
-                            failedDecals++;
-                            EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
-                            string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
+                            failed = true;
+                            DecalFailed(decalsFolder, assetDataPath, e);
+                        }
 
+                        if (failed)
+                        {
+                            ammoutOfDecalsloaded++;
+
+                            if (frameTimer.ElapsedMilliseconds >= DecalsImporter.FrameBudgetMs)
+                            {
+                                yield return null;
+                                frameTimer.Restart();
+                            }
+
+                            continue;
+                        }
+
+                        // Finishes the import once the asset's textures are ready, or at once for a
+                        // cached asset.
+                        Action<Task<Surface>> finish = completedSurfaceTask =>
+                        {
                             try
                             {
-                                if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
-                                else EAI.Logger.Warn($"Failed to delete the folder at {pathToAssetInDatabase} because it doesn't exist.");
+                                if (completedSurfaceTask != null) renderPrefab = CreateRenderPrefab(completedSurfaceTask.Result, decalName, fullDecalName, assetDataPath);
+
+                                PrefabBase prefab = CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
+
+                                asset.PrefabID = prefab.GetPrefabID().ToString();
+                                asset.SourceModPath = sourceModPath;
+
+                                if (!csLocalisation.ContainsKey($"Assets.NAME[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullDecalName}]")) csLocalisation.Add($"Assets.NAME[{fullDecalName}]", decalName);
+                                if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullDecalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullDecalName}]", decalName);
+
+                                EAIDatabaseManager.AddOrValidateAsset(asset);
                             }
-                            catch (Exception deleteError)
+                            catch (Exception e)
                             {
-                                EAI.Logger.Warn($"Failed to delete {pathToAssetInDatabase}: {deleteError}");
+                                DecalFailed(decalsFolder, assetDataPath, e);
                             }
+
+                            ammoutOfDecalsloaded++;
+                        };
+
+                        if (surfaceTask == null)
+                        {
+                            finish(null);
+
+                            if (frameTimer.ElapsedMilliseconds >= DecalsImporter.FrameBudgetMs)
+                            {
+                                yield return null;
+                                frameTimer.Restart();
+                            }
+
+                            continue;
                         }
-                        ammoutOfDecalsloaded++;
-                        yield return null;
+
+                        // Texture import is the slow part, so several run at once on worker
+                        // threads, and each asset finishes on the main thread once its textures are
+                        // ready.
+                        pending.Add((surfaceTask, finish));
+                        while (pending.Count >= MaxPendingAssets)
+                        {
+                            yield return null;
+                            frameTimer.Restart();
+                            FinishCompleted(pending);
+                        }
                     }
                 }
+            }
+
+            while (pending.Count > 0)
+            {
+                yield return null;
+                frameTimer.Restart();
+                FinishCompleted(pending);
             }
 
             foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
@@ -236,6 +297,13 @@ namespace ExtraAssetsImporter.OldImporters
 
             DecalsLoaded = true;
             DecalsLoading = false;
+
+            void DecalFailed(string decalsFolder, string assetDataPath, Exception e)
+            {
+                failedDecals++;
+                EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
+                ImportersUtils.TryDeleteDirectory(Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath));
+            }
         }
 
         private static PrefabBase CreateCustomDecal(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, UIAssetParentCategoryPrefab assetCat, RenderPrefab renderPrefab)
@@ -323,11 +391,38 @@ namespace ExtraAssetsImporter.OldImporters
             return decalPrefab;
         }
 
-        internal static RenderPrefab CreateRenderPrefab(string folderPath, string decalName, string catName, string modName, string fullDecalName, string assetDataPath, string materialName = "DefaultDecal")
+        // Finishes, on the main thread, each pending asset whose textures are ready.
+        internal static void FinishCompleted<T>(List<(Task<T> Work, Action<Task<T>> Finish)> pending)
         {
-            string fullAssetDataPath = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
-            if (Directory.Exists(fullAssetDataPath)) { Directory.Delete(fullAssetDataPath, true); }
+            for (int i = pending.Count - 1; i >= 0; i--)
+            {
+                if (!pending[i].Work.IsCompleted) continue;
 
+                // A failure here must not stop the importer's coroutine: the coroutine would never
+                // mark the importer loaded, and the pass waits for that.
+                try
+                {
+                    pending[i].Finish(pending[i].Work);
+                }
+                catch (Exception e)
+                {
+                    EAI.Logger.Error($"Failed to finish an import.\n{e}");
+                }
+
+                pending.RemoveAt(i);
+            }
+        }
+
+        // Builds the decal's surface and imports its textures, the slow part of a decal. None of
+        // this touches a Unity object, so it runs on a worker thread while the importer's coroutine
+        // yields.
+        internal static Task<Surface> CreateDecalSurfaceAsync(string folderPath, string decalName, string materialName = "DefaultDecal")
+        {
+            return Task.Run(() => CreateDecalSurface(folderPath, decalName, materialName));
+        }
+
+        private static Surface CreateDecalSurface(string folderPath, string decalName, string materialName)
+        {
             Surface decalSurface = new(decalName, materialName);
             decalSurface.AddProperty("colossal_DecalLayerMask", 1);
 
@@ -374,6 +469,14 @@ namespace ExtraAssetsImporter.OldImporters
                 TextureImporter.Texture textureImporterMaskMap = defaultTextureImporter.Import(importSettings, maskMapPath);
                 decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
             }
+
+            return decalSurface;
+        }
+
+        internal static RenderPrefab CreateRenderPrefab(Surface decalSurface, string decalName, string fullDecalName, string assetDataPath)
+        {
+            string fullAssetDataPath = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
+            if (Directory.Exists(fullAssetDataPath)) { Directory.Delete(fullAssetDataPath, true); }
 
             AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(assetDataPath, $"{decalName}_SurfaceAsset", EscapeStrategy.None);
             SurfaceAsset surfaceAsset = new()
