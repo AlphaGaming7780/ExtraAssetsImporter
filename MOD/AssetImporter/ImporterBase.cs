@@ -2,7 +2,6 @@
 using Colossal.IO.AssetDatabase;
 using Colossal.Localization;
 using Colossal.PSI.Common;
-using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
