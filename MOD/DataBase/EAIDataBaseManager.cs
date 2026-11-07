@@ -368,6 +368,7 @@ namespace ExtraAssetsImporter.Database
         // The importer folders an import went through this session, or found missing, as
         // ComparablePath gives them.
         private readonly HashSet<string> _ScannedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private DateTime _LastProgressSave = DateTime.UtcNow;
         internal string _DatabasePath = null;
 
         private readonly object _lock = new object();
@@ -396,10 +397,10 @@ namespace ExtraAssetsImporter.Database
             lock (_lock)
             {
                 DatabaseVersion = EAIDatabaseManager.DatabaseVersion;
-                EAI.Logger.Info($"Saving the database at {_DatabasePath}, saving {AssetsDatabase.Count} assets.");
+                EAI.Logger.Info($"Saving the database at {_DatabasePath}, saving {_ValidateAssetsDatabase.Count + AssetsDatabase.Count} assets.");
                 string directoryPath = Path.GetDirectoryName(_DatabasePath);
                 if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
-                File.WriteAllText(_DatabasePath, Encoder.Encode(this, EncodeOptions.None));
+                Write();
             }
         }
 
@@ -484,7 +485,47 @@ namespace ExtraAssetsImporter.Database
 
                 _ValidateAssetsDatabase[asset.AssetID] = asset;
                 _ImportedAssetIDs.Add(asset.AssetID);
+
+                if (DateTime.UtcNow - _LastProgressSave > TimeSpan.FromSeconds(30)) SaveProgress();
             }
+        }
+
+        // Saves what the import validated so far plus what it hasn't reached yet, so a session cut
+        // short by a crash or a quit during the import keeps the assets already built.
+        // A failed write only warns: the import already built the asset that triggered it, and the
+        // save at the end of the pass tries again.
+        private void SaveProgress()
+        {
+            _LastProgressSave = DateTime.UtcNow;
+
+            try
+            {
+                Write();
+            }
+            catch (Exception e)
+            {
+                EAI.Logger.Warn($"Failed to save the database's progress: {e}");
+            }
+        }
+
+        // Saves the assets the running import validated along with the others, through a temporary
+        // file, so a crash mid-write leaves the previous file intact.
+        private void Write()
+        {
+            Dictionary<string, EAIAsset> assets = new(AssetsDatabase);
+            foreach (KeyValuePair<string, EAIAsset> entry in _ValidateAssetsDatabase) assets[entry.Key] = entry.Value;
+
+            EAIDatabase snapshot = new()
+            {
+                ActualDatabasePath = ActualDatabasePath,
+                AssetsDatabase = assets
+            };
+
+            string tempPath = $"{_DatabasePath}.tmp";
+            File.WriteAllText(tempPath, Encoder.Encode(snapshot, EncodeOptions.None));
+
+            if (File.Exists(_DatabasePath)) File.Replace(tempPath, _DatabasePath, null);
+            else File.Move(tempPath, _DatabasePath);
         }
 
         internal EAIAsset GetEAIAsset(string AssetID)
