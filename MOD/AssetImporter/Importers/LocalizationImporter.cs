@@ -17,7 +17,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
         public override bool PreImporter => true;
 
-        private readonly List<string> LoadedLocales = new();
+        /// <summary>
+        /// Keys of the packs' own fallback-locale files: the importers' default strings skip them.
+        /// Only the main thread reads or writes it.
+        /// </summary>
+        internal static readonly HashSet<string> PackFallbackKeys = new();
 
         public override void ExportTemplate(string path)
         {
@@ -42,23 +46,21 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             Dictionary<string, Dictionary<string, string>> local = LoadLocalization(folder);
 
-            if (local.TryGetValue(localizationManager.fallbackLocaleId, out Dictionary<string, string> fallbackLocale))
-                LoadedLocales.AddRange(fallbackLocale.Keys);
-            else
+            if (!local.ContainsKey(localizationManager.fallbackLocaleId))
                 EAI.Logger.Warn($"{modName} has no {localizationManager.fallbackLocaleId} localization file in {folder}.");
 
             foreach (KeyValuePair<string, Dictionary<string, string>> locale in local)
             {
                 // Awaited before the pre-import pass ends (ImporterBase), so the strings are registered
                 // before the importers run — no need to wait frames here.
-                TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => localizationManager.AddSource(locale.Key, new MemorySource(locale.Value))));
-            }
-        }
+                TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() =>
+                {
+                    if (locale.Key == localizationManager.fallbackLocaleId)
+                        PackFallbackKeys.UnionWith(locale.Value.Keys);
 
-        public override void Reset()
-        {
-            base.Reset();
-            LoadedLocales.Clear();
+                    localizationManager.AddSource(locale.Key, new MemorySource(locale.Value));
+                }));
+            }
         }
 
         private Dictionary<string, Dictionary<string, string>> LoadLocalization(string folder)

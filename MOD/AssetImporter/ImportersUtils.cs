@@ -5,6 +5,7 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.UI;
+using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
@@ -313,7 +314,14 @@ namespace ExtraAssetsImporter.AssetImporter
 
             string localeID = localizationManager.fallbackLocaleId;
 
-            return MainThreadHelper.RunOnMainThread(() => localizationManager.AddSource(localeID, new MemorySource(localisation)));
+            return MainThreadHelper.RunOnMainThread(() =>
+            {
+                // Sources added later win, and the packs' own strings come first.
+                foreach (string key in LocalizationImporter.PackFallbackKeys)
+                    localisation.Remove(key);
+
+                localizationManager.AddSource(localeID, new MemorySource(localisation));
+            });
         }
 
         /// <summary>

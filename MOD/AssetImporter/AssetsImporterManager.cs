@@ -253,25 +253,26 @@ namespace ExtraAssetsImporter.AssetImporter
 
             PerformanceCounter preImportersPerformanceCounter = new();
 
-            var tasks = s_PreImporters.Values
-                .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings, passStats)))
-                .ToArray();
-
-            Task.WaitAll(tasks);
+            // In registration order and one at a time, so that the packs' localization files fill
+            // PackFallbackKeys before the asset packs' default names check it.
+            // An importer returns only after its main-thread calls have run.
+            foreach (ImporterBase importer in s_PreImporters.Values)
+                importer.LoadCustomAssets(importerSettings, passStats);
 
             EAI.Logger.Info($"The loading of pre importers has finished. Took {preImportersPerformanceCounter.result.TotalSeconds:F2}s.");
             EAI.Logger.Info("Starting the loading of importers.");
 
             PerformanceCounter importersPerformanceCounter = new();
 
-            tasks = s_Importers.Values
+            var tasks = s_Importers.Values
                 .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings, passStats)))
                 .ToArray();
 
             Task.WaitAll(tasks);
 
-            // At this point every pre-importer/importer Task above has already completed, so this only
-            // waits on the legacy (old importers) coroutines, which have no completion event to await.
+            // At this point the pre-importers above have returned and every importer Task has
+            // completed, so this only waits on the legacy (old importers) coroutines, which have no
+            // completion event to await.
             while (!AreImportersFinished())
             {
                 Thread.Sleep(50);
