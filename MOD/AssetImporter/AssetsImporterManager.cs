@@ -34,10 +34,12 @@ namespace ExtraAssetsImporter.AssetImporter
         private static readonly Dictionary<Type, ImporterBase> s_PreImporters = new();
         private static readonly Dictionary<Type, ImporterBase> s_Importers = new();
         private static readonly Dictionary<Type, ComponentImporter> s_ComponentImporters = new();
-        // Every mod path ever registered via AddAssetFolder, kept for the lifetime of the session. RunImportPass
-        // reads straight from this (not a separate staging list that gets cleared) so ReloadCustomAssets can
-        // re-run a full import pass over every known mod path without needing a mod's OnLoad to run again.
+        // Every mod path ever registered via AddAssetFolder, kept for the lifetime of the session.
+        // RunImportPass reads straight from this so ReloadCustomAssets can re-run a full import
+        // pass over every known mod path without needing a mod's OnLoad to run again.
         private static readonly HashSet<string> s_RegisteredModPaths = new();
+        // The mod paths registered since the last pass started, which a late pass imports.
+        private static readonly List<string> s_PendingModPaths = new();
 
         public static IReadOnlyDictionary<Type, ImporterBase> PreImporters => s_PreImporters;
         public static IReadOnlyDictionary<Type, ImporterBase> Importers => s_Importers;
@@ -51,7 +53,17 @@ namespace ExtraAssetsImporter.AssetImporter
         // click can't slip in between the button press and the importers flipping their own flags.
         private static int s_NewImportersPassRunning;
 
-        public static bool IsImporting => Volatile.Read(ref s_NewImportersPassRunning) != 0 || !AreImportersFinished();
+        private static bool s_ImportStarted;
+        private static bool s_LatePassPending;
+
+        public static bool IsImporting => IsPassRunning || s_LatePassPending;
+
+        private static bool IsPassRunning => Volatile.Read(ref s_NewImportersPassRunning) != 0 || !AreImportersFinished();
+
+        // A compatibility a pass takes holds for every later pass of the session, late ones
+        // included, until a pass takes another. The setting goes back to None once a pass takes it.
+        internal static EAIOldImportersCompatibility OldImportersCompatibility { get; private set; }
+        internal static EAINewImportersCompatibility NewImportersCompatibility { get; private set; }
 
         // Set for the rest of the session once an importer, a folder or a pass start fails.
         // The assets of what failed weren't validated, so the database cleanup deletes nothing.
@@ -90,7 +102,39 @@ namespace ExtraAssetsImporter.AssetImporter
             // Ignore path that start with "."
             if (Path.GetDirectoryName(path).StartsWith(".")) return false;
 
-            return s_RegisteredModPaths.Add(path);
+            if (!s_RegisteredModPaths.Add(path)) return false;
+
+            s_PendingModPaths.Add(path);
+
+            // The pack of a mod that loads after the import started (deferred mod loading).
+            if (s_ImportStarted) ScheduleLatePass();
+
+            return true;
+        }
+
+        private static void ScheduleLatePass()
+        {
+            if (s_LatePassPending) return;
+
+            s_LatePassPending = true;
+            GameManager.instance.StartCoroutine(RunLatePass());
+        }
+
+        // Starts a frame later, so that the packs of mods loading together share it, and once the
+        // running pass ends, since the importers read their folder lists while a pass runs.
+        private static IEnumerator RunLatePass()
+        {
+            yield return null;
+
+            while (IsPassRunning) yield return null;
+
+            s_LatePassPending = false;
+
+            // The pass that just ended may have taken them.
+            if (s_PendingModPaths.Count == 0) yield break;
+
+            EAI.Logger.Info($"Importing the {s_PendingModPaths.Count} mod folders registered since the last pass.");
+            RunImportPass(includeOldImporters: true, isLatePass: true);
         }
 
         public static List<ComponentImporter> GetComponentImportersForPrefab<T>()
@@ -160,6 +204,8 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static void ImportCustomAssets()
         {
+            s_ImportStarted = true;
+
             // Registering + populating the asset database can take a while: don't freeze the main thread on it.
             // The import pass then goes back to the main thread, since it starts the old importers' coroutines.
             // IsImporting is already true meanwhile (no importer is marked loaded yet), so ReloadDatabase stays greyed out.
@@ -169,7 +215,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 .ContinueWith(_ =>
                 {
                     EAI.Logger.Info($"[Perf] EAI asset database loaded (register + populate) in {databaseCounter.result.TotalSeconds:F2}s.");
-                    return MainThreadHelper.RunOnMainThread(() => RunImportPass(includeOldImporters: true));
+                    return MainThreadHelper.RunOnMainThread(() => RunImportPass(includeOldImporters: true, isLatePass: false));
                 })
                 .Unwrap()
                 .ContinueWith(
@@ -182,10 +228,10 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             EAI.Logger.Info("Reloading all custom assets (new importers only).");
 
-            RunImportPass(includeOldImporters: false);
+            RunImportPass(includeOldImporters: false, isLatePass: false);
         }
 
-        private static void RunImportPass(bool includeOldImporters)
+        private static void RunImportPass(bool includeOldImporters, bool isLatePass)
         {
             bool runNewImporters = EAI.m_Setting.UseNewImporters;
             if (runNewImporters && Interlocked.CompareExchange(ref s_NewImportersPassRunning, 1, 0) != 0)
@@ -198,7 +244,7 @@ namespace ExtraAssetsImporter.AssetImporter
             // and no later pass or Reload can run.
             try
             {
-                StartImportPass(includeOldImporters, runNewImporters);
+                StartImportPass(includeOldImporters, isLatePass, runNewImporters);
             }
             catch (Exception e)
             {
@@ -208,11 +254,21 @@ namespace ExtraAssetsImporter.AssetImporter
             }
         }
 
-        private static void StartImportPass(bool includeOldImporters, bool runNewImporters)
+        private static void StartImportPass(bool includeOldImporters, bool isLatePass, bool runNewImporters)
         {
-            // Re-distributing to every importer each time (not just once) is cheap and idempotent —
-            // ImporterBase.AddCustomAssetsFolder already skips a path already in its own _FolderToLoadAssets.
-            foreach (string path in s_RegisteredModPaths)
+            bool runOldImporters = includeOldImporters && EAI.m_Setting.UseOldImporters;
+
+            // A choice still pending in the settings replaces the stored one, for the importers the
+            // pass runs. A late pass imports only the late mods, so it leaves both choices for a
+            // pass over every mod: the next boot, or a Reload for the new pick.
+            if (runOldImporters && !isLatePass && EAI.m_Setting.OldImportersCompatibilityDropDown != EAIOldImportersCompatibility.None) OldImportersCompatibility = EAI.m_Setting.OldImportersCompatibilityDropDown;
+            if (runNewImporters && !isLatePass && EAI.m_Setting.NewImportersCompatibilityDropDown != EAINewImportersCompatibility.None) NewImportersCompatibility = EAI.m_Setting.NewImportersCompatibilityDropDown;
+
+            // A late pass takes only the folders registered since the last pass started.
+            // AddCustomAssetsFolder skips a path an importer already has.
+            IEnumerable<string> paths = isLatePass ? s_PendingModPaths : s_RegisteredModPaths;
+
+            foreach (string path in paths)
             {
                 foreach (ImporterBase importer in s_PreImporters.Values.Concat(s_Importers.Values))
                 {
@@ -220,9 +276,11 @@ namespace ExtraAssetsImporter.AssetImporter
                 }
             }
 
+            s_PendingModPaths.Clear();
+
             EAI.Logger.Info("Start loading custom stuff.");
 
-            if (includeOldImporters && EAI.m_Setting.UseOldImporters)
+            if (runOldImporters)
             {
                 if (EAI.m_Setting.Decals) GameManager.instance.StartCoroutine(DecalsImporter.CreateCustomDecals());
                 if (EAI.m_Setting.Surfaces) GameManager.instance.StartCoroutine(SurfacesImporter.CreateCustomSurfaces());
@@ -236,6 +294,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 // !!!!!!!!!!!!!!! Have to rework that, it laoding all Localization in any mod, if there is a Localization folder !!!!!!!!!!!!!!!
                 //AutoImportCustomAssets();
                 ImporterSettings importerSettings = ImporterSettings.GetDefault();
+                importerSettings.isLatePass = isLatePass;
 
                 Task task = AssetsImporterManager.LoadCustomAssetsAsync(importerSettings);
 
@@ -247,7 +306,10 @@ namespace ExtraAssetsImporter.AssetImporter
             }
             else if (includeOldImporters)
             {
-                GameManager.instance.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(ImporterSettings.GetDefault()));
+                ImporterSettings importerSettings = ImporterSettings.GetDefault();
+                importerSettings.isLatePass = isLatePass;
+
+                GameManager.instance.StartCoroutine(AssetsImporterManager.WaitForOldImportersOnlyToFinish(importerSettings));
             }
         }
 
@@ -307,7 +369,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             EAI.Logger.Info($"The loading of importers has finished. Took {importersPerformanceCounter.result.TotalSeconds:F2}s.");
 
-            EAI.m_Setting.ResetCompatibility();
+            EAI.m_Setting.ResetCompatibility(OldImportersCompatibility, NewImportersCompatibility);
 
             using (passStats.Measure("Pass.SaveDatabase"))
                 importerSettings.eaiDatabase.SaveValidateDatabase(importerSettings);
@@ -333,7 +395,7 @@ namespace ExtraAssetsImporter.AssetImporter
             }
 
             EAI.Logger.Info("The loading of the old importers has finished.");
-            EAI.m_Setting.ResetCompatibility();
+            EAI.m_Setting.ResetCompatibility(OldImportersCompatibility, NewImportersCompatibility);
             EAIDatabaseManager.eaiDatabase.SaveValidateDatabase(importerSettings);
 
             yield break;

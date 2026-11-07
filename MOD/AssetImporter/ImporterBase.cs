@@ -25,6 +25,9 @@ namespace ExtraAssetsImporter.AssetImporter
         public bool savePrefabs;
         // Assets imported at once by each importer (see Setting.GetMaxConcurrentAssets).
         public int maxConcurrentAssets;
+        // A late pass imports only the folders registered since the last pass, so the database
+        // cleanup would delete the assets of the others.
+        internal bool isLatePass;
 
         public static ImporterSettings GetDefault()
         {

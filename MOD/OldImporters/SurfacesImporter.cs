@@ -62,6 +62,10 @@ namespace ExtraAssetsImporter.OldImporters
             SurfacesIsLoading = true;
             SurfacesIsLoaded = false;
 
+            // A pack can register its folder while this runs (deferred mod loading). That folder
+            // waits for the next pass, which starts when this one ends.
+            List<string> folders = new(FolderToLoadSurface);
+
             int numberOfSurfaces = 0;
             int ammoutOfSurfacesloaded = 0;
             int failedSurfaces = 0;
@@ -75,7 +79,7 @@ namespace ExtraAssetsImporter.OldImporters
                 progress: 0
             );
 
-            foreach (string folder in FolderToLoadSurface)
+            foreach (string folder in folders)
             {
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
@@ -91,7 +95,7 @@ namespace ExtraAssetsImporter.OldImporters
 
             Dictionary<string, string> csLocalisation = new();
 
-            foreach (string folder in FolderToLoadSurface)
+            foreach (string folder in folders)
             {
                 if (!Directory.Exists(folder)) continue;
                 foreach (string surfacesCat in Directory.GetDirectories(folder))
@@ -155,6 +159,8 @@ namespace ExtraAssetsImporter.OldImporters
             );
 
             //LoadLocalization();
+            FolderToLoadSurface.RemoveAll(folders.Contains);
+
             SurfacesIsLoaded = true;
             SurfacesIsLoading = false;
         }
@@ -343,7 +349,7 @@ namespace ExtraAssetsImporter.OldImporters
 
         private static void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName, string fullSurfaceName)
         {
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.LocalAsset)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.LocalAsset)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -352,7 +358,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.ELT2)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.ELT2)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -361,7 +367,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.ELT3)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.ELT3)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -370,7 +376,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.PreEditor)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.PreEditor)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {

@@ -313,7 +313,7 @@ namespace ExtraAssetsImporter.AssetImporter
         protected virtual void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)
         {
 
-            EAINewImportersCompatibility compatibility = EAI.m_Setting.NewImportersCompatibilityDropDown;
+            EAINewImportersCompatibility compatibility = AssetsImporterManager.NewImportersCompatibility;
 
             if (compatibility == EAINewImportersCompatibility.None) return;
 

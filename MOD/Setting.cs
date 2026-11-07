@@ -161,10 +161,11 @@ namespace ExtraAssetsImporter
             NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
         }
 
-        internal void ResetCompatibility()
+        // A pick that differs from the held value stays for a later pass to take.
+        internal void ResetCompatibility(EAIOldImportersCompatibility appliedOld, EAINewImportersCompatibility appliedNew)
         {
-            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
-            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
+            if (OldImportersCompatibilityDropDown == appliedOld) OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
+            if (NewImportersCompatibilityDropDown == appliedNew) NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
             Apply();
         }
     }

@@ -77,6 +77,10 @@ namespace ExtraAssetsImporter.OldImporters
             NetLanesLoading = true;
             NetLanesLoaded = false;
 
+            // A pack can register its folder while this runs (deferred mod loading). That folder
+            // waits for the next pass, which starts when this one ends.
+            List<string> folders = new(FolderToLoadNetLanes);
+
             int numberOfNetLanes = 0;
             int ammoutOfNetLanesloaded = 0;
             int failedNetLanes = 0;
@@ -90,7 +94,7 @@ namespace ExtraAssetsImporter.OldImporters
                 progress: 0
             );
 
-            foreach (string folder in FolderToLoadNetLanes)
+            foreach (string folder in folders)
             {
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
@@ -106,7 +110,7 @@ namespace ExtraAssetsImporter.OldImporters
 
             Dictionary<string, string> csLocalisation = new();
 
-            foreach (string folder in FolderToLoadNetLanes)
+            foreach (string folder in folders)
             {
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
@@ -221,6 +225,8 @@ namespace ExtraAssetsImporter.OldImporters
             );
 
             //LoadLocalization();
+            FolderToLoadNetLanes.RemoveAll(folders.Contains);
+
             NetLanesLoaded = true;
             NetLanesLoading = false;
         }
@@ -343,7 +349,7 @@ namespace ExtraAssetsImporter.OldImporters
 
         private static void VersionCompatiblity(JsonNetLanes jSONNetLanesMaterail, string catName, string netLanesName, string fullNetLaneName)
         {
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.LocalAsset)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.LocalAsset)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -352,7 +358,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.ELT3)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.ELT3)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -361,7 +367,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONNetLanesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.PreEditor)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.PreEditor)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
