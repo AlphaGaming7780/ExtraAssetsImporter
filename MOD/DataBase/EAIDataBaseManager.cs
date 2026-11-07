@@ -26,6 +26,7 @@ namespace ExtraAssetsImporter.Database
         internal static readonly string defaultDatabasePath = Path.GetFullPath(Path.Combine(EAI.pathModsData, databaseFolderName));
         public static EAIDatabase eaiDatabase;
         public static AssetDatabase<EAIAssetDatabaseDescriptor> EAIAssetDatabase => AssetDatabase<EAIAssetDatabaseDescriptor>.instance;
+        private static string LegacyDatabasePath => Path.GetFullPath(Path.Combine(EAI.pathModsData, "Database"));
 
         // True when the database lives in a folder named ".Database" (the default layout, also used by relocation).
         internal static bool IsDatabaseInDatabaseFolder
@@ -227,9 +228,10 @@ namespace ExtraAssetsImporter.Database
 
             if(string.IsNullOrEmpty(EAI.m_Setting.SavedDatabasePath) || EAI.m_Setting.SavedDatabasePath == eaiDatabase.ActualDatabasePath) return;
 
+            // The settings file syncs between computers, so this path can come from another one.
             if(!Directory.Exists(EAI.m_Setting.SavedDatabasePath))
             {
-                EAI.Logger.Error($"The selected directory for database relocation doesn't exist: {EAI.m_Setting.SavedDatabasePath}");
+                EAI.Logger.Warn($"The selected directory for database relocation doesn't exist on this computer, keeping the database where it is: {EAI.m_Setting.SavedDatabasePath}");
                 return;
             }
 
@@ -255,6 +257,44 @@ namespace ExtraAssetsImporter.Database
         internal static string ComparablePath(string path)
         {
             return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        // EAI.pathModsData mixes '/' and '\': Path.Combine adds '\' to EnvPath.kUserDataPath,
+        // Unity's persistentDataPath, which uses '/'. A legacy path saved from it does too, so
+        // only normalized paths can match.
+        private static bool IsLegacyDatabasePath(string path)
+        {
+            return !string.IsNullOrEmpty(path) && string.Equals(ComparablePath(path), LegacyDatabasePath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Before 1.7.4 the database folder was "Database". The game scans that folder at boot as
+        // user content and loads every cached prefab a second time.
+        internal static void MoveLegacyDatabaseFolder()
+        {
+            if (eaiDatabase == null) return;
+
+            string legacyPath = LegacyDatabasePath;
+
+            if (!IsLegacyDatabasePath(eaiDatabase.ActualDatabasePath)) return;
+
+            if (!RelocateAssetDatabase(defaultDatabasePath)) return;
+
+            EAI.Logger.Info($"Moved the database from {legacyPath} to {defaultDatabasePath}.");
+
+            if (IsLegacyDatabasePath(EAI.m_Setting.SavedDatabasePath))
+            {
+                EAI.m_Setting.SavedDatabasePath = defaultDatabasePath;
+                EAI.m_Setting.Apply();
+            }
+        }
+
+        // At quit, the game saves the settings before the mods dispose, so this quit doesn't save
+        // the change the move makes to the setting. Once the legacy folder is gone, the next load
+        // makes the change again, and that session's quit saves it.
+        internal static void ForgetMovedLegacyDatabasePath()
+        {
+            if (IsLegacyDatabasePath(EAI.m_Setting.SavedDatabasePath) && !Directory.Exists(LegacyDatabasePath))
+                EAI.m_Setting.SavedDatabasePath = defaultDatabasePath;
         }
 
         public static bool RelocateAssetDatabase(string newDirectory)
@@ -316,6 +356,11 @@ namespace ExtraAssetsImporter.Database
         public EAIDatabase() {}
 
         public int DatabaseVersion = EAIDatabaseManager.DatabaseVersion;
+        // Databases saved before version 4 name this key ActualDataBasePath. Reading it keeps their
+        // location, which the legacy folder move and the relocation start from. Their other keys
+        // stay unread: their assets were stored in another shape and hashed another way, so they
+        // rebuild anyway.
+        [DecodeAlias("ActualDataBasePath")]
         public string ActualDatabasePath = EAIDatabaseManager.defaultDatabasePath;
         public Dictionary<string, EAIAsset> AssetsDatabase = new Dictionary<string, EAIAsset>();
         private readonly Dictionary<string, EAIAsset> _ValidateAssetsDatabase = new Dictionary<string, EAIAsset>();

@@ -97,6 +97,7 @@ namespace ExtraAssetsImporter
                 m_Setting = new Setting(this);
                 m_Setting.RegisterInOptionsUI();
                 AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
+                EAIDatabaseManager.ForgetMovedLegacyDatabasePath();
 
                 // MOVE DATABASE OUT OF THE GAME FOLDER
                 oldModsPath = Path.Combine(EnvPath.kContentPath, "Mods");
@@ -185,7 +186,20 @@ namespace ExtraAssetsImporter
 				Logger.Error($"Failed to remove the assets no import saw from the database.\n{e}");
 			}
 
-			EAIDatabaseManager.CheckIfDatabaseNeedToBeRelocated();
+			// A running pass writes into the database folder, so the folder must not move under it.
+			if (!AssetsImporterManager.IsImporting)
+			{
+				try
+				{
+					EAIDatabaseManager.MoveLegacyDatabaseFolder();
+					EAIDatabaseManager.CheckIfDatabaseNeedToBeRelocated();
+				}
+				catch (Exception e)
+				{
+					Logger.Error($"Failed to move the database.\n{e}");
+				}
+			}
+
             ClearData();
 		}
 
