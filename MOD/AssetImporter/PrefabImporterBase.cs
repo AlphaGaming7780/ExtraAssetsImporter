@@ -305,9 +305,11 @@ namespace ExtraAssetsImporter.AssetImporter
 
                     setupScope.Dispose();
 
+                    // Assets of different mods or categories can share a folder name, so a path in
+                    // the shared temporary folder takes the full name.
                     AssetDataPath prefabAssetPath = importSettings.savePrefabs
                         ? AssetDataPath.Create(importData.AssetDataPath, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None)
-                        : AssetDataPath.Create(EAI.kTempFolderName, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None);
+                        : AssetDataPath.Create(EAI.kTempFolderName, $"{importData.FullAssetName}{PrefabAsset.kExtension}", true, EscapeStrategy.None);
 
                     PrefabAsset prefabAsset;
                     using (Perf.Measure("Asset.AddToDatabase"))
