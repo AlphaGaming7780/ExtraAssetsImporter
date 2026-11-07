@@ -20,6 +20,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace ExtraAssetsImporter.AssetImporter
     abstract class PrefabImporterBase : FolderImporter
     {
         public const string PrefabJsonName = "Prefab.json";
+        private static readonly FieldInfo PrefabIndices = typeof(PrefabSystem).GetField("m_PrefabIndices", BindingFlags.NonPublic | BindingFlags.Instance);
         private UIAssetParentCategoryPrefab assetCat = null;
         private string assetCatName = null;
 
@@ -334,7 +336,12 @@ namespace ExtraAssetsImporter.AssetImporter
                 using (Perf.Measure("Asset.SetupUIObject"))
                     ImportersUtils.SetupUIObject(this, importData, prefab);
 
-                TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab)));
+                TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() =>
+                {
+                    if (EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out PrefabBase registered) && registered == prefab) IndexObsoleteNames(prefab);
+
+                    EL.m_PrefabSystem.AddOrUpdatePrefab(prefab);
+                }));
 
                 Dictionary<string, string> localisation = new()
                 {
@@ -402,6 +409,24 @@ namespace ExtraAssetsImporter.AssetImporter
             };
 
             AddObsoleteIdentifier(obsoleteIdentifiers, prefabIdentifierInfo);
+        }
+
+        // The game indexes a prefab's old names only when it adds the prefab, and a prefab already
+        // in the prefab system, as at a reload, gets its old names later. This indexes them as
+        // AddPrefab does, so an old save finds the prefab. Removing the prefab and adding it again
+        // breaks the game's prefab setup while the pass runs.
+        private static void IndexObsoleteNames(PrefabBase prefab)
+        {
+            if (PrefabIndices == null || !prefab.TryGet(out ObsoleteIdentifiers names) || names.m_PrefabIdentifiers == null) return;
+
+            Dictionary<PrefabID, int> indices = (Dictionary<PrefabID, int>)PrefabIndices.GetValue(EL.m_PrefabSystem);
+            int index = EL.m_PrefabSystem.EntityManager.GetComponentData<PrefabData>(EL.m_PrefabSystem.GetEntity(prefab)).m_Index;
+
+            foreach (PrefabIdentifierInfo name in names.m_PrefabIdentifiers)
+            {
+                PrefabID id = name.GetPrefabID();
+                if (!indices.ContainsKey(id)) indices.Add(id, index);
+            }
         }
 
         // A reload sets up the live prefab again, which already holds the names of earlier passes.
