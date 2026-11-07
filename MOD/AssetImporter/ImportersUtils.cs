@@ -227,7 +227,8 @@ namespace ExtraAssetsImporter.AssetImporter
                 AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, fileName, true, EscapeStrategy.None);
                 if (!importerSettings.dataBase.TryGetOrAddAsset(prefabAssetPath, out PrefabAsset prefabAsset))
                 {
-                    EAI.Logger.Info($"No cached data for {prefabID}.");
+                    // Without saved prefabs, every asset misses.
+                    if (importerSettings.savePrefabs) EAI.Logger.Info($"No cached data for {prefabID}.");
                     return TryGetPrefab(prefabID, out prefab);
                 }
 
