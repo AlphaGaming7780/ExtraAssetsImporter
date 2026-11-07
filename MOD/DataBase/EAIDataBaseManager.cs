@@ -355,11 +355,12 @@ namespace ExtraAssetsImporter.Database
 
         public EAIDatabase() {}
 
+        // Databases saved before version 4 name this key DataBaseVersion. Reading it lets the
+        // version check reset them.
+        [DecodeAlias("DataBaseVersion")]
         public int DatabaseVersion = EAIDatabaseManager.DatabaseVersion;
         // Databases saved before version 4 name this key ActualDataBasePath. Reading it keeps their
-        // location, which the legacy folder move and the relocation start from. Their other keys
-        // stay unread: their assets were stored in another shape and hashed another way, so they
-        // rebuild anyway.
+        // location, which the reset, the legacy folder move, and the relocation start from.
         [DecodeAlias("ActualDataBasePath")]
         public string ActualDatabasePath = EAIDatabaseManager.defaultDatabasePath;
         public Dictionary<string, EAIAsset> AssetsDatabase = new Dictionary<string, EAIAsset>();
@@ -520,7 +521,12 @@ namespace ExtraAssetsImporter.Database
                 _ValidateAssetsDatabase.Clear();
                 AssetsDatabase.Clear();
                 SaveDatabase();
-                Directory.Delete(ActualDatabasePath, true);
+
+                // A database saved before version 4 can point at a folder the player picked or at
+                // the legacy Database folder, so EAI deletes only a folder named .Database.
+                if (!EAIDatabaseManager.IsDatabaseInDatabaseFolder)
+                    EAI.Logger.Warn($"Keeping the files at {ActualDatabasePath}: EAI deletes only a folder named {EAIDatabaseManager.databaseFolderName}.");
+                else if (Directory.Exists(ActualDatabasePath)) Directory.Delete(ActualDatabasePath, true);
             }
         }
 
