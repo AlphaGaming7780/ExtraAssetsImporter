@@ -98,7 +98,8 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             if (!needToUpdateAsset && ImportersUtils.TryGetCachedPrefab(importSettings, assetDataPath, fullAssetName, prefabFileName, out AssetPackPrefab cachedAssetPackPrefab))
             {
-                eaiAsset.PrefabID = cachedAssetPackPrefab.GetPrefabID().ToString();
+                // A prefab ID holds the prefab's name, which only the main thread may read.
+                eaiAsset.PrefabID = MainThreadHelper.RunOnMainThread(() => cachedAssetPackPrefab.GetPrefabID().ToString()).Result;
                 s_AssetPacks[modName] = cachedAssetPackPrefab;
                 importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
                 ammoutOfAssetsloaded++;
@@ -108,21 +109,22 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             AssetPackJson assetPackJson = LoadJSON(folder);
 
             AssetPackPrefab assetPackPrefab = ImportersUtils.GetOrCreatePrefabInstance<AssetPackPrefab>(fullAssetName, typeof(UIObject));
-            assetPackPrefab.name = fullAssetName;
 
             UIObject assetPackUI = assetPackPrefab.AddOrGetComponentOnMainThread<UIObject>();
 
             string svgIconPath = Path.Combine(sourceFolder, $"{modName}.svg");
 
-            assetPackUI.m_Icon = File.Exists(svgIconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
-
-
             AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, prefabFileName, true, EscapeStrategy.None);
             PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, assetPackPrefab, Colossal.Hash128.CreateGuid(fullAssetName));
 
-            eaiAsset.PrefabID = assetPackPrefab.GetPrefabID().ToString();
-
-            if(importSettings.savePrefabs) prefabAsset.Save();
+            // The default icon, the save, and the prefab ID read the prefab's name, which only the
+            // main thread may read.
+            eaiAsset.PrefabID = MainThreadHelper.RunOnMainThread(() =>
+            {
+                assetPackUI.m_Icon = File.Exists(svgIconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
+                if (importSettings.savePrefabs) prefabAsset.Save();
+                return assetPackPrefab.GetPrefabID().ToString();
+            }).Result;
 
             TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(assetPackPrefab)));
             s_AssetPacks[modName] = assetPackPrefab;

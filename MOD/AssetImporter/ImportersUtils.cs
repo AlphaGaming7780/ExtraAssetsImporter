@@ -49,12 +49,10 @@ namespace ExtraAssetsImporter.AssetImporter
             return renderPrefab;
         }
 
-        // Gives prefab an explicit .asset if it doesn't have one yet, so a later PrefabAsset.Save() elsewhere
-        // in the reference graph can't trigger PrefabReferenceResolver's auto-create fallback for it
-        // (prefabBase.asset ?? m_Database.AddAsset(...)) — that fallback runs inline on whatever background
-        // thread happens to Save() first, with no synchronization, so two importers racing to auto-create
-        // the SAME shared prefab (e.g. the UI category/menu chain, shared across every importer) can collide
-        // writing the same .cid file. Must be called from the main thread — same requirement as AddAsset.
+        // Gives prefab an explicit .asset if it doesn't have one yet, so a later PrefabAsset.Save()
+        // elsewhere in the reference graph can't trigger PrefabReferenceResolver's auto-create
+        // fallback for it (prefabBase.asset ?? m_Database.AddAsset(...)).
+        // Only the main thread may call it, as for AddAsset.
         public static void EnsurePrefabHasAsset(PrefabBase prefab)
         {
             if (prefab == null || prefab.asset != null) return;
@@ -105,6 +103,9 @@ namespace ExtraAssetsImporter.AssetImporter
                 T prefab = EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is T existing
                     ? existing
                     : (T)ScriptableObject.CreateInstance(typeof(T));
+
+                // Only the main thread may set a Unity object's name.
+                prefab.name = prefabName;
 
                 foreach (Type component in components) prefab.AddOrGetComponent(component);
 
@@ -197,9 +198,10 @@ namespace ExtraAssetsImporter.AssetImporter
             return TryGetCachedPrefab(prefabID, importerSettings, assetDataPath, fileName, out prefab, addToPrefabSystem);
         }
 
-        // A single main-thread round-trip: the cached asset is loaded off-thread first, then the prefab system is
-        // checked and, if the prefab isn't there yet, the loaded instance is added in the same call (when
-        // addToPrefabSystem is set).
+        // A single main-thread round-trip checks the prefab system, then loads the cached asset
+        // and, if the prefab isn't there yet, adds the loaded instance in the same call (when
+        // addToPrefabSystem is set). Loading creates the prefab and its components, which are Unity
+        // objects.
         public static bool TryGetCachedPrefab(PrefabID prefabID, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab, bool addToPrefabSystem = true)
         {
             try
@@ -211,13 +213,16 @@ namespace ExtraAssetsImporter.AssetImporter
                     return TryGetPrefab(prefabID, out prefab);
                 }
 
-                // Already loaded (e.g. database reload): reuse the instance without taking another reference on it.
-                PrefabBase loaded = prefabAsset.state == LoadState.Object ? prefabAsset.GetInstance<PrefabBase>() : prefabAsset.Load() as PrefabBase;
+                PrefabBase loaded = null;
 
                 using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.CachedPrefab");
                 prefab = MainThreadHelper.RunOnMainThread(() =>
                 {
                     if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase existing)) return existing;
+
+                    // Already loaded (e.g. database reload): reuse the instance without taking
+                    // another reference on it.
+                    loaded = prefabAsset.state == LoadState.Object ? prefabAsset.GetInstance<PrefabBase>() : prefabAsset.Load() as PrefabBase;
                     if (loaded == null) return null;
                     if (EL.m_PrefabSystem.TryGetPrefab(loaded.GetPrefabID(), out existing)) return existing;
 
@@ -273,7 +278,6 @@ namespace ExtraAssetsImporter.AssetImporter
 
             RenderPrefab renderPrefab = GetOrCreatePrefabInstance<RenderPrefab>(GetRenderPrefabName(data), components);
 
-            renderPrefab.name = GetRenderPrefabName(data);
             renderPrefab.geometryAsset = geometryAsset;
             renderPrefab.surfaceAssets = new[] { surfaceAsset };
             renderPrefab.bounds = new(new(-MeshSize.x * 0.5f, -MeshSize.y * 0.5f, -MeshSize.z * 0.5f), new(MeshSize.x * 0.5f, MeshSize.y * 0.5f, MeshSize.z * 0.5f));
@@ -287,11 +291,18 @@ namespace ExtraAssetsImporter.AssetImporter
             if(renderPrefabVariant != null) AssetsImporterManager.ProcessComponentImporters(data, renderPrefabVariant, renderPrefab);
 
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
-            PrefabAsset renderPrefabAsset = data.ImportSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Hash128.CreateGuid(renderPrefab.name));
-            renderPrefabAsset.Save(); // No UIObject on the render prefab — can't reach the shared UI chain, see PrefabImporterBase.PrefabSaveLock.
+            PrefabAsset renderPrefabAsset = data.ImportSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Hash128.CreateGuid(GetRenderPrefabName(data)));
 
-            geometryAsset.Unload();
-            surfaceAsset.Unload();
+            // Saving serializes the render prefab's name, and unloading destroys the meshes and the
+            // material: only the main thread may do either. A destroy from another thread corrupts
+            // the engine's list of pending destroys, and the game then hangs for good.
+            using (PerformanceStats.MeasureCurrent("Blocking.SaveRenderPrefab"))
+                MainThreadHelper.RunOnMainThread(() =>
+                {
+                    renderPrefabAsset.Save();
+                    geometryAsset.Unload();
+                    surfaceAsset.Unload();
+                }).Wait();
 
             return renderPrefab;
         }
@@ -408,8 +419,8 @@ namespace ExtraAssetsImporter.AssetImporter
 
             string catIconPath = Path.Combine(Directory.GetParent(data.FolderPath).FullName, "icon.svg");
             string catIcon = File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null;
-            string childCategoryName = $"{data.CatName} {data.AssetCat.name}";
-            string childCategoryKey = $"{data.AssetCat.name}|{childCategoryName}|{catIcon}";
+            string childCategoryName = $"{data.CatName} {data.AssetCatName}";
+            string childCategoryKey = $"{data.AssetCatName}|{childCategoryName}|{catIcon}";
 
             bool processIcon = IconNeedsProcessing(data);
             prefab.TryGetExactly(out UIObject prefabUI);

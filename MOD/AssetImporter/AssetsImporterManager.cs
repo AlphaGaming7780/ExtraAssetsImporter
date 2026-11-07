@@ -129,7 +129,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
             if(componentsVariant == null)
             {
-                EAI.Logger.Info($"The prefab {prefabBase.name} doesn't have any components to process.");
+                EAI.Logger.Info($"The {prefabBase.GetType().Name} of {data.FullAssetName} doesn't have any components to process.");
                 return;
             }
 
@@ -139,7 +139,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 {
                     if (importer.PrefabType != prefabBase.GetType() && !GetOrCacheDerivedTypes(importer.PrefabType).Contains(prefabBase.GetType()))
                     {
-                        EAI.Logger.Warn($"The component importer {importer.ComponentType.FullName} is not compatible with the prefab type {prefabBase.GetType().FullName} for the asset {prefabBase.name}.");
+                        EAI.Logger.Warn($"The component importer {importer.ComponentType.FullName} is not compatible with the prefab type {prefabBase.GetType().FullName} for the asset {data.FullAssetName}.");
                         continue;
                     }
                     importer.Process(data, componentJson, prefabBase);

@@ -27,7 +27,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             RenderedAreaJson json = componentJson.Make<RenderedAreaJson>();
             if (json is null)
             {
-                EAI.Logger.Error($"RenderedArea component JSON is null for prefab {prefab.name}.");
+                EAI.Logger.Error($"RenderedArea component JSON is null for prefab {data.FullAssetName}.");
                 return;
             }
             RenderedArea renderedArea = prefab.AddOrGetComponentOnMainThread<RenderedArea>();
