@@ -176,6 +176,10 @@ namespace ExtraAssetsImporter
 		{
 			Logger.Info(nameof(OnDispose));
 
+			// Nothing loaded: OnLoad threw, or the quit came before the import.
+			// A throw here escapes ModManager.InitializeMods, so the mods after EAI would not load.
+			if (EAIDatabaseManager.eaiDatabase == null) return;
+
 			// Each step runs even if the one before it fails.
 			try
 			{

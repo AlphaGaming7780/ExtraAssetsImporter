@@ -222,8 +222,8 @@ namespace ExtraAssetsImporter.Database
 
         internal static void CheckIfDatabaseNeedToBeRelocated()
         {
-            // Nothing loaded yet (e.g. OnDispose before Initialize): LoadDatabase runs this check itself when it does
-            // load, so loading and registering the database here would be wasted work at best.
+            // Nothing loaded yet: LoadDatabase runs this check itself when it does load, so loading
+            // and registering the database here would be wasted work at best.
             if (eaiDatabase == null) return;
 
             if(string.IsNullOrEmpty(EAI.m_Setting.SavedDatabasePath) || EAI.m_Setting.SavedDatabasePath == eaiDatabase.ActualDatabasePath) return;
@@ -271,8 +271,6 @@ namespace ExtraAssetsImporter.Database
         // user content and loads every cached prefab a second time.
         internal static void MoveLegacyDatabaseFolder()
         {
-            if (eaiDatabase == null) return;
-
             string legacyPath = LegacyDatabasePath;
 
             if (!IsLegacyDatabasePath(eaiDatabase.ActualDatabasePath)) return;
