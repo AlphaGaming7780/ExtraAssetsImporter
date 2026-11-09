@@ -440,6 +440,32 @@ namespace ExtraAssetsImporter.AssetImporter
             s_ChildCategories.Clear();
         }
 
+        // Reads a PNG's size from its header: the signature (8 bytes), the IHDR chunk's length and
+        // type (8 bytes), then the width and the height as big-endian ints.
+        // Returns false for a file it can't read or that isn't a PNG.
+        internal static bool TryReadPngSize(string path, out int width, out int height)
+        {
+            width = height = 0;
+            byte[] header = new byte[24];
+            try
+            {
+                using (FileStream stream = File.OpenRead(path))
+                {
+                    if (stream.Read(header, 0, header.Length) != header.Length) return false;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            if (header[1] != 'P' || header[2] != 'N' || header[3] != 'G') return false;
+
+            width = header[16] << 24 | header[17] << 16 | header[18] << 8 | header[19];
+            height = header[20] << 24 | header[21] << 16 | header[22] << 8 | header[23];
+            return true;
+        }
+
         // ProcessIcon only does something when the icon must be (re)generated: icon.png missing (made from
         // _BaseColorMap.png) or bigger than 128px. Reads the PNG header, so it can run off the main thread.
         private static bool IconNeedsProcessing(PrefabImportData data)
@@ -447,21 +473,7 @@ namespace ExtraAssetsImporter.AssetImporter
             string iconPath = Path.Combine(data.FolderPath, "icon.png");
             if (!File.Exists(iconPath)) return File.Exists(Path.Combine(data.FolderPath, "_BaseColorMap.png"));
 
-            try
-            {
-                // PNG signature (8 bytes), IHDR length + type (8 bytes), then width and height as big-endian ints.
-                byte[] header = new byte[24];
-                using (FileStream stream = File.OpenRead(iconPath))
-                    if (stream.Read(header, 0, header.Length) < header.Length) return true;
-
-                int width = header[16] << 24 | header[17] << 16 | header[18] << 8 | header[19];
-                int height = header[20] << 24 | header[21] << 16 | header[22] << 8 | header[23];
-                return width > 128 || height > 128;
-            }
-            catch (Exception)
-            {
-                return true;
-            }
+            return !TryReadPngSize(iconPath, out int width, out int height) || width > 128 || height > 128;
         }
 
         // Icon, UIObject and child category need the main thread: everything still missing is done in one round-trip.

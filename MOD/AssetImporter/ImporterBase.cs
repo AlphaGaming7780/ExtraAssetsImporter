@@ -23,8 +23,6 @@ namespace ExtraAssetsImporter.AssetImporter
         internal EAIDatabase eaiDatabase;
         public ILocalAssetDatabase dataBase;
         public bool savePrefabs;
-        // Assets imported at once by each importer (see Setting.GetMaxConcurrentAssets).
-        public int maxConcurrentAssets;
 
         public static ImporterSettings GetDefault()
         {
@@ -32,7 +30,6 @@ namespace ExtraAssetsImporter.AssetImporter
             result.eaiDatabase = EAIDatabaseManager.eaiDatabase;
             result.dataBase = EAIDatabaseManager.EAIAssetDatabase;
             result.savePrefabs = EAI.m_Setting.CanSavePrefabs;
-            result.maxConcurrentAssets = EAI.m_Setting.GetMaxConcurrentAssets(out _);
             return result;
         }
     }

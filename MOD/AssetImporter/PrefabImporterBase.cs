@@ -6,6 +6,7 @@ using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
@@ -75,8 +76,11 @@ namespace ExtraAssetsImporter.AssetImporter
             // so several are imported at once. NoBuffering hands out one asset at a time: import times vary a lot.
             PerformanceStats perf = Perf;
             // Each asset also imports its 3 textures in parallel (see
-            // TextureAssetImporterUtils.ImportSurfaceTextures).
-            ParallelOptions options = new() { MaxDegreeOfParallelism = Math.Max(1, importSettings.maxConcurrentAssets) };
+            // TextureAssetImporterUtils.ImportSurfaceTextures), and TextureImportSlots limits the
+            // imports of all the importers together, so one importer may fill every slot alone.
+            // Each asset runs on its own thread: it blocks on slots and on main-thread calls, and a
+            // blocked .NET pool thread would hold up the game's own pool work.
+            ParallelOptions options = new() { MaxDegreeOfParallelism = Math.Max(1, TextureImportSlots.Count), TaskScheduler = DedicatedThreadScheduler.Instance };
 
             // A rebuilt asset deletes its old cache folder, and another asset can import a shared
             // texture (a texture .json file) into that folder, so all deletions happen before any
@@ -435,6 +439,27 @@ namespace ExtraAssetsImporter.AssetImporter
             if (obsoleteIdentifiers.m_PrefabIdentifiers.Any(info => info.m_Name == identifier.m_Name && info.m_Type == identifier.m_Type)) return;
 
             obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(identifier).ToArray();
+        }
+
+        // Runs each task on a new background thread, outside the .NET thread pool.
+        private class DedicatedThreadScheduler : TaskScheduler
+        {
+            internal static readonly DedicatedThreadScheduler Instance = new();
+
+            protected override void QueueTask(Task task)
+            {
+                new Thread(() => TryExecuteTask(task)) { IsBackground = true, Name = "EAI import" }.Start();
+            }
+
+            protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
+            {
+                return TryExecuteTask(task);
+            }
+
+            protected override IEnumerable<Task> GetScheduledTasks()
+            {
+                return Enumerable.Empty<Task>();
+            }
         }
     }
     public struct PrefabImportData

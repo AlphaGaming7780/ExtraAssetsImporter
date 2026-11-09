@@ -4,6 +4,7 @@ using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.Helpers;
@@ -15,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Entities;
 using UnityEngine;
@@ -212,38 +214,23 @@ namespace ExtraAssetsImporter.OldImporters
                 string path = Path.Combine(folderPath, map);
                 if (!File.Exists(path)) continue;
 
-                byte[] header = new byte[24];
-
-                // An unreadable map adds nothing here, and its decode then fails the surface.
-                try
-                {
-                    using (FileStream stream = File.OpenRead(path))
-                    {
-                        if (stream.Read(header, 0, header.Length) != header.Length) continue;
-                    }
-                }
-                catch (IOException) { continue; }
-                catch (UnauthorizedAccessException) { continue; }
-
-                // Bytes 16 to 23 are the width and the height of the PNG's IHDR chunk, big-endian.
-                long width = ((long)header[16] << 24) | ((long)header[17] << 16) | ((long)header[18] << 8) | header[19];
-                long height = ((long)header[20] << 24) | ((long)header[21] << 16) | ((long)header[22] << 8) | header[23];
-                size += width * height * 4;
+                // An unreadable map adds nothing here.
+                if (ImportersUtils.TryReadPngSize(path, out int width, out int height)) size += (long)width * height * 4;
             }
 
             return size;
         }
 
         // Decoding a surface's PNGs is the slow part of a surface, and it touches no Unity object,
-        // so it runs on a worker thread while the importer's coroutine yields.
+        // so it runs on its own thread while the importer's coroutine yields.
         internal static Task<DecodedSurface> DecodeSurfaceAsync(string folderPath)
         {
-            return Task.Run(() => new DecodedSurface
+            return Task.Factory.StartNew(() => new DecodedSurface
             {
                 BaseColorMap = DecodePng(Path.Combine(folderPath, "_BaseColorMap.png")),
                 NormalMap = DecodePng(Path.Combine(folderPath, "_NormalMap.png")),
                 MaskMap = DecodePng(Path.Combine(folderPath, "_MaskMap.png"))
-            });
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         // Returns null for a missing file, a PNG that isn't 8 bits per channel or has fewer than
@@ -272,7 +259,7 @@ namespace ExtraAssetsImporter.OldImporters
                 importSettings.computeMips = false;
                 importSettings.compressBC = false;
 
-                texture = ((DefaultTextureImporter)ImporterCache.GetImporter(".png")).Import(importSettings, path);
+                texture = TextureImportSlots.Import((DefaultTextureImporter)ImporterCache.GetImporter(".png"), importSettings, path);
                 if (texture.info.channels >= 3) return texture;
 
                 texture.Dispose();
