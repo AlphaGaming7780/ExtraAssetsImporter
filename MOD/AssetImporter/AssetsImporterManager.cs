@@ -1,5 +1,6 @@
 ﻿using Colossal;
 using Colossal.AssetPipeline;
+using Colossal.AssetPipeline.Importers;
 using Colossal.IO;
 using Colossal.IO.AssetDatabase;
 using Colossal.IO.AssetDatabase.Internal;
@@ -286,6 +287,11 @@ namespace ExtraAssetsImporter.AssetImporter
             }
 
             s_PendingModPaths.Clear();
+
+            // The game's ImporterCache fills its importer list on first use without a lock, so a
+            // worker thread that reaches it while another fills it finds no PNG importer.
+            // Filling it here, on the main thread, keeps the importers' workers from racing on it.
+            ImporterCache.CacheSupportedExtensions();
 
             EAI.Logger.Info("Start loading custom stuff.");
 
