@@ -6,6 +6,7 @@ using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
+using ExtraLib.Debugger;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
@@ -78,6 +79,10 @@ namespace ExtraAssetsImporter.OldImporters
 
             NetLanesLoading = true;
             NetLanesLoaded = false;
+
+            // Measured explicitly, never made current on the main thread: see CreateCustomDecals.
+            PerformanceStats perf = new("Old net lanes importer");
+            int startFrame = Time.frameCount;
 
             // A pack can register its folder while this runs (deferred mod loading). That folder
             // waits for the next pass, which starts when this one ends.
@@ -160,7 +165,7 @@ namespace ExtraAssetsImporter.OldImporters
                             if (!EAIDatabaseManager.TryGetEAIAsset(fullNetLaneName, out asset) || asset.SourceAssetHash != EAIDatabaseManager.GetAssetHash(netLanesFolder))
                             {
                                 //renderPrefab = CreateRenderPrefab(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath);
-                                surfaceTask = DecalsImporter.CreateDecalSurfaceAsync(netLanesFolder, netLanesName, "CurvedDecal");
+                                surfaceTask = DecalsImporter.CreateDecalSurfaceAsync(netLanesFolder, netLanesName, perf, "CurvedDecal");
                                 asset = new(fullNetLaneName, EAIDatabaseManager.GetAssetHash(netLanesFolder), assetDataPath);
                             }
                             else
@@ -168,7 +173,8 @@ namespace ExtraAssetsImporter.OldImporters
                                 try
                                 {
 
-                                    renderPrefab = DecalsImporter.GetRenderPrefab(fullNetLaneName, netLanesName);
+                                    using (perf.Measure("Blocking.LoadCached"))
+                                        renderPrefab = DecalsImporter.GetRenderPrefab(fullNetLaneName, netLanesName);
 
                                 }
                                 catch (Exception e) { 
@@ -181,7 +187,7 @@ namespace ExtraAssetsImporter.OldImporters
                                 if (renderPrefab == null)
                                 {
                                     //EAI.Logger.Warn($"EAI failed to load the cached data for {fullNetLaneName}");
-                                    surfaceTask = DecalsImporter.CreateDecalSurfaceAsync(netLanesFolder, netLanesName, "CurvedDecal");
+                                    surfaceTask = DecalsImporter.CreateDecalSurfaceAsync(netLanesFolder, netLanesName, perf, "CurvedDecal");
                                     asset = new(fullNetLaneName, EAIDatabaseManager.GetAssetHash(netLanesFolder), assetDataPath);
                                 }
                             }
@@ -211,9 +217,15 @@ namespace ExtraAssetsImporter.OldImporters
                         {
                             try
                             {
-                                if (completedSurfaceTask != null) renderPrefab = DecalsImporter.CreateRenderPrefab(completedSurfaceTask.Result, netLanesName, fullNetLaneName, assetDataPath);
+                                if (completedSurfaceTask != null)
+                                {
+                                    using (perf.Measure("Blocking.CreateRenderPrefab"))
+                                        renderPrefab = DecalsImporter.CreateRenderPrefab(completedSurfaceTask.Result, netLanesName, fullNetLaneName, assetDataPath);
+                                }
 
-                                PrefabBase prefab = CreateCustomNetLane(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, assetCat, renderPrefab);
+                                PrefabBase prefab;
+                                using (perf.Measure("Blocking.CreatePrefab"))
+                                    prefab = CreateCustomNetLane(netLanesFolder, netLanesName, catName, modName, fullNetLaneName, assetDataPath, assetCat, renderPrefab);
 
                                 asset.PrefabID = prefab.GetPrefabID().ToString();
                                 asset.SourceModPath = sourceModPath;
@@ -222,6 +234,7 @@ namespace ExtraAssetsImporter.OldImporters
                                 if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullNetLaneName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullNetLaneName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullNetLaneName}]", netLanesName);
 
                                 EAIDatabaseManager.AddOrValidateAsset(asset);
+                                perf.Increment(completedSurfaceTask == null ? "Assets.Cached" : "Assets.Created");
                             }
                             catch (Exception e)
                             {
@@ -286,12 +299,16 @@ namespace ExtraAssetsImporter.OldImporters
 
             FolderToLoadNetLanes.RemoveAll(folders.Contains);
 
+            perf.Increment("Frames", Time.frameCount - startFrame);
+            EAI.Logger.Info(perf.BuildReport());
+
             NetLanesLoaded = true;
             NetLanesLoading = false;
 
             void NetLaneFailed(string netLanesFolder, string assetDataPath, Exception e)
             {
                 failedNetLanes++;
+                perf.Increment("Assets.Failed");
                 EAI.Logger.Error($"Failed to load the custom netLanes at {netLanesFolder} | ERROR : {e}");
                 ImportersUtils.TryDeleteDirectory(Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath));
             }

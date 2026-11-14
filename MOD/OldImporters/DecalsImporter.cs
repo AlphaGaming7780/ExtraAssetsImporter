@@ -10,6 +10,7 @@ using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
+using ExtraLib.Debugger;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
@@ -100,6 +101,12 @@ namespace ExtraAssetsImporter.OldImporters
             DecalsLoading = true;
             DecalsLoaded = false;
 
+            // The three old importers' coroutines share the main thread, so these stats are never
+            // made current there: the coroutine measures into them explicitly, and only the worker
+            // threads that import the textures make them current.
+            PerformanceStats perf = new("Old decals importer");
+            int startFrame = Time.frameCount;
+
             // A pack can register its folder while this runs (deferred mod loading). That folder
             // waits for the next pass, which starts when this one ends.
             List<string> folders = new(FolderToLoadDecals);
@@ -180,14 +187,15 @@ namespace ExtraAssetsImporter.OldImporters
                             if (!EAIDatabaseManager.TryGetEAIAsset(fullDecalName, out asset) || asset.SourceAssetHash != EAIDatabaseManager.GetAssetHash(decalsFolder))
                             {
                                 EAI.Logger.Info($"No cached data for {fullDecalName}, creating the cache.");
-                                surfaceTask = CreateDecalSurfaceAsync(decalsFolder, decalName);
+                                surfaceTask = CreateDecalSurfaceAsync(decalsFolder, decalName, perf);
                                 asset = new(fullDecalName, EAIDatabaseManager.GetAssetHash(decalsFolder), assetDataPath);
                             }
                             else
                             {
                                 try
                                 {
-                                    renderPrefab = GetRenderPrefab(fullDecalName, decalName);
+                                    using (perf.Measure("Blocking.LoadCached"))
+                                        renderPrefab = GetRenderPrefab(fullDecalName, decalName);
                                 }
                                 catch (Exception e)
                                 {
@@ -200,7 +208,7 @@ namespace ExtraAssetsImporter.OldImporters
                                 if (renderPrefab == null)
                                 {
                                     //EAI.Logger.Warn($"EAI failed to load the cached data for {fullDecalName}");
-                                    surfaceTask = CreateDecalSurfaceAsync(decalsFolder, decalName);
+                                    surfaceTask = CreateDecalSurfaceAsync(decalsFolder, decalName, perf);
                                     asset = new(fullDecalName, EAIDatabaseManager.GetAssetHash(decalsFolder), assetDataPath);
                                 }
                             }
@@ -230,9 +238,15 @@ namespace ExtraAssetsImporter.OldImporters
                         {
                             try
                             {
-                                if (completedSurfaceTask != null) renderPrefab = CreateRenderPrefab(completedSurfaceTask.Result, decalName, fullDecalName, assetDataPath);
+                                if (completedSurfaceTask != null)
+                                {
+                                    using (perf.Measure("Blocking.CreateRenderPrefab"))
+                                        renderPrefab = CreateRenderPrefab(completedSurfaceTask.Result, decalName, fullDecalName, assetDataPath);
+                                }
 
-                                PrefabBase prefab = CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
+                                PrefabBase prefab;
+                                using (perf.Measure("Blocking.CreatePrefab"))
+                                    prefab = CreateCustomDecal(decalsFolder, decalName, catName, modName, fullDecalName, assetDataPath, assetCat, renderPrefab);
 
                                 asset.PrefabID = prefab.GetPrefabID().ToString();
                                 asset.SourceModPath = sourceModPath;
@@ -241,6 +255,7 @@ namespace ExtraAssetsImporter.OldImporters
                                 if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullDecalName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullDecalName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullDecalName}]", decalName);
 
                                 EAIDatabaseManager.AddOrValidateAsset(asset);
+                                perf.Increment(completedSurfaceTask == null ? "Assets.Cached" : "Assets.Created");
                             }
                             catch (Exception e)
                             {
@@ -305,12 +320,16 @@ namespace ExtraAssetsImporter.OldImporters
 
             FolderToLoadDecals.RemoveAll(folders.Contains);
 
+            perf.Increment("Frames", Time.frameCount - startFrame);
+            EAI.Logger.Info(perf.BuildReport());
+
             DecalsLoaded = true;
             DecalsLoading = false;
 
             void DecalFailed(string decalsFolder, string assetDataPath, Exception e)
             {
                 failedDecals++;
+                perf.Increment("Assets.Failed");
                 EAI.Logger.Error($"Failed to load the custom decal at {decalsFolder} | ERROR : {e}");
                 ImportersUtils.TryDeleteDirectory(Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath));
             }
@@ -439,9 +458,15 @@ namespace ExtraAssetsImporter.OldImporters
         // Builds the decal's surface and imports its textures, the slow part of a decal. None of
         // this touches a Unity object, so it runs on its own thread while the importer's coroutine
         // yields, and waiting for a texture slot there holds no .NET pool thread.
-        internal static Task<Surface> CreateDecalSurfaceAsync(string folderPath, string decalName, string materialName = "DefaultDecal")
+        // perf is current on that thread, so TextureImportSlots records Texture.Import into it.
+        internal static Task<Surface> CreateDecalSurfaceAsync(string folderPath, string decalName, PerformanceStats perf, string materialName = "DefaultDecal")
         {
-            return Task.Factory.StartNew(() => CreateDecalSurface(folderPath, decalName, materialName), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            return Task.Factory.StartNew(() =>
+            {
+                using (perf.MakeCurrent())
+                using (perf.Measure("Asset.CreateSurface"))
+                    return CreateDecalSurface(folderPath, decalName, materialName);
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         private static Surface CreateDecalSurface(string folderPath, string decalName, string materialName)

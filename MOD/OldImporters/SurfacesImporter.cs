@@ -7,6 +7,7 @@ using ExtraAssetsImporter.AssetImporter;
 using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
+using ExtraLib.Debugger;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
@@ -69,6 +70,11 @@ namespace ExtraAssetsImporter.OldImporters
 
             SurfacesIsLoading = true;
             SurfacesIsLoaded = false;
+
+            // Measured explicitly, never made current on the main thread: see
+            // DecalsImporter.CreateCustomDecals.
+            PerformanceStats perf = new("Old surfaces importer");
+            int startFrame = Time.frameCount;
 
             // A pack can register its folder while this runs (deferred mod loading). That folder
             // waits for the next pass, which starts when this one ends.
@@ -145,13 +151,16 @@ namespace ExtraAssetsImporter.OldImporters
                                 FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
                                 string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
                                 string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
-                                CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat, decodeTask.Result);
+                                using (perf.Measure("Blocking.CreateSurface"))
+                                    CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat, decodeTask.Result);
                                 if (!csLocalisation.ContainsKey($"Assets.NAME[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullSurfaceName}]")) csLocalisation.Add($"Assets.NAME[{fullSurfaceName}]", surfaceName);
                                 if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullSurfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullSurfaceName}]", surfaceName);
+                                perf.Increment("Assets.Created");
                             }
                             catch (Exception e)
                             {
                                 failedSurfaces++;
+                                perf.Increment("Assets.Failed");
                                 EAI.Logger.Error($"Failed to load the custom surface at {surfaceFolder} | ERROR : {e}");
                             }
                             finally
@@ -166,7 +175,7 @@ namespace ExtraAssetsImporter.OldImporters
                         // Decoding the PNGs is the slow part: several run at once on worker
                         // threads, and each surface finishes on the main thread once a worker has
                         // decoded its textures.
-                        pending.Add((DecodeSurfaceAsync(surfaceFolder), finish));
+                        pending.Add((DecodeSurfaceAsync(surfaceFolder, perf), finish));
                         pendingBytes += decodedBytes;
                         while (pending.Count >= DecalsImporter.MaxPendingAssets || pendingBytes > MaxPendingBytes)
                         {
@@ -199,6 +208,9 @@ namespace ExtraAssetsImporter.OldImporters
             //LoadLocalization();
             FolderToLoadSurface.RemoveAll(folders.Contains);
 
+            perf.Increment("Frames", Time.frameCount - startFrame);
+            EAI.Logger.Info(perf.BuildReport());
+
             SurfacesIsLoaded = true;
             SurfacesIsLoading = false;
         }
@@ -222,14 +234,22 @@ namespace ExtraAssetsImporter.OldImporters
         }
 
         // Decoding a surface's PNGs is the slow part of a surface, and it touches no Unity object,
-        // so it runs on its own thread while the importer's coroutine yields.
-        internal static Task<DecodedSurface> DecodeSurfaceAsync(string folderPath)
+        // so it runs on its own thread while the importer's coroutine yields. perf is current on
+        // that thread, so TextureImportSlots records Texture.Import into it.
+        internal static Task<DecodedSurface> DecodeSurfaceAsync(string folderPath, PerformanceStats perf)
         {
-            return Task.Factory.StartNew(() => new DecodedSurface
+            return Task.Factory.StartNew(() =>
             {
-                BaseColorMap = DecodePng(Path.Combine(folderPath, "_BaseColorMap.png")),
-                NormalMap = DecodePng(Path.Combine(folderPath, "_NormalMap.png")),
-                MaskMap = DecodePng(Path.Combine(folderPath, "_MaskMap.png"))
+                using (perf.MakeCurrent())
+                using (perf.Measure("Asset.Decode"))
+                {
+                    return new DecodedSurface
+                    {
+                        BaseColorMap = DecodePng(Path.Combine(folderPath, "_BaseColorMap.png")),
+                        NormalMap = DecodePng(Path.Combine(folderPath, "_NormalMap.png")),
+                        MaskMap = DecodePng(Path.Combine(folderPath, "_MaskMap.png"))
+                    };
+                }
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
