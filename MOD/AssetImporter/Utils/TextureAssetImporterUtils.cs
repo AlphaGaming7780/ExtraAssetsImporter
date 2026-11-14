@@ -164,15 +164,23 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
         {
             var texture = TextureImportSlots.Import(defaultTextureImporter, importSettings, textureFilePath);
 
-            // TextureJson can save into another asset's folder, not created by PrefabImporterBase.
-            ImportersUtils.EnsureAssetDirectory(data.ImportSettings.dataBase, textureDataPath.subPath);
-            TextureAsset textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
-            using (PerformanceStats.MeasureCurrent("Texture.Save"))
-                textureAsset.Save();
-            textureAsset.Unload();
-            texture.Dispose();
+            // The texture's pixels are native memory that only Dispose frees, so a failed save
+            // must dispose it too.
+            try
+            {
+                // TextureJson can save into another asset's folder, not created by PrefabImporterBase.
+                ImportersUtils.EnsureAssetDirectory(data.ImportSettings.dataBase, textureDataPath.subPath);
+                TextureAsset textureAsset = data.ImportSettings.dataBase.AddAsset<TextureAsset, TextureImporter.ITexture>(textureDataPath, texture, Hash128.CreateGuid(fullAssetTextureName));
+                using (PerformanceStats.MeasureCurrent("Texture.Save"))
+                    textureAsset.Save();
+                textureAsset.Unload();
 
-            return textureAsset;
+                return textureAsset;
+            }
+            finally
+            {
+                texture.Dispose();
+            }
         }
 
         public static string GetFullAssetTextureName(PrefabImportData data, string textureName)

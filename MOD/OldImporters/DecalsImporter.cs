@@ -447,132 +447,155 @@ namespace ExtraAssetsImporter.OldImporters
         private static Surface CreateDecalSurface(string folderPath, string decalName, string materialName)
         {
             Surface decalSurface = new(decalName, materialName);
-            decalSurface.AddProperty("colossal_DecalLayerMask", 1);
 
-            string jsonDecalPath = Path.Combine(folderPath, "decal.json");
-            if (File.Exists(jsonDecalPath))
+            // Each imported texture is added to the surface at once, so disposing the surface frees
+            // the ones already imported when a later one fails.
+            try
             {
-                JSONDecalsMaterail jSONMaterail = Decoder.Decode(File.ReadAllText(jsonDecalPath)).Make<JSONDecalsMaterail>();
-                foreach (string key in jSONMaterail.Float.Keys)
+                decalSurface.AddProperty("colossal_DecalLayerMask", 1);
+
+                string jsonDecalPath = Path.Combine(folderPath, "decal.json");
+                if (File.Exists(jsonDecalPath))
                 {
-                    if (key == "UiPriority") continue;
-                    decalSurface.AddProperty(key, jSONMaterail.Float[key]);
+                    JSONDecalsMaterail jSONMaterail = Decoder.Decode(File.ReadAllText(jsonDecalPath)).Make<JSONDecalsMaterail>();
+                    foreach (string key in jSONMaterail.Float.Keys)
+                    {
+                        if (key == "UiPriority") continue;
+                        decalSurface.AddProperty(key, jSONMaterail.Float[key]);
+                    }
+                    foreach (string key in jSONMaterail.Vector.Keys) { decalSurface.AddProperty(key, jSONMaterail.Vector[key]); }
                 }
-                foreach (string key in jSONMaterail.Vector.Keys) { decalSurface.AddProperty(key, jSONMaterail.Vector[key]); }
-            }
 
 
-            DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
+                DefaultTextureImporter defaultTextureImporter = ImporterCache.GetImporter(".png") as DefaultTextureImporter;
 
-            ImportSettings importSettings = ImportSettings.GetDefault();
-            importSettings.compressBC = true;
-            importSettings.wrapMode = TextureWrapMode.Repeat;
-            TextureImporter.Texture textureImporterBaseColorMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, Path.Combine(folderPath, "_BaseColorMap.png"));
-            decalSurface.AddProperty("_BaseColorMap", textureImporterBaseColorMap);
-
-            string normalMapPath = Path.Combine(folderPath, "_NormalMap.png");
-            if (File.Exists(normalMapPath))
-            {
-                importSettings = ImportSettings.GetDefault();
-                importSettings.normalMap = true;
-                importSettings.alphaIsTransparency = false;
-                importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
+                ImportSettings importSettings = ImportSettings.GetDefault();
+                importSettings.compressBC = true;
                 importSettings.wrapMode = TextureWrapMode.Repeat;
-                TextureImporter.Texture textureImporterNormalMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, normalMapPath);
-                decalSurface.AddProperty("_NormalMap", textureImporterNormalMap);
-            }
+                TextureImporter.Texture textureImporterBaseColorMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, Path.Combine(folderPath, "_BaseColorMap.png"));
+                decalSurface.AddProperty("_BaseColorMap", textureImporterBaseColorMap);
 
-            string maskMapPath = Path.Combine(folderPath, "_MaskMap.png");
-            if (File.Exists(maskMapPath))
+                string normalMapPath = Path.Combine(folderPath, "_NormalMap.png");
+                if (File.Exists(normalMapPath))
+                {
+                    importSettings = ImportSettings.GetDefault();
+                    importSettings.normalMap = true;
+                    importSettings.alphaIsTransparency = false;
+                    importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
+                    importSettings.wrapMode = TextureWrapMode.Repeat;
+                    TextureImporter.Texture textureImporterNormalMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, normalMapPath);
+                    decalSurface.AddProperty("_NormalMap", textureImporterNormalMap);
+                }
+
+                string maskMapPath = Path.Combine(folderPath, "_MaskMap.png");
+                if (File.Exists(maskMapPath))
+                {
+                    importSettings = ImportSettings.GetDefault();
+                    importSettings.normalMap = false;
+                    importSettings.alphaIsTransparency = false;
+                    importSettings.wrapMode = TextureWrapMode.Repeat;
+                    TextureImporter.Texture textureImporterMaskMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, maskMapPath);
+                    decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
+                }
+
+                return decalSurface;
+            }
+            catch
             {
-                importSettings = ImportSettings.GetDefault();
-                importSettings.normalMap = false;
-                importSettings.alphaIsTransparency = false;
-                importSettings.wrapMode = TextureWrapMode.Repeat;
-                TextureImporter.Texture textureImporterMaskMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, maskMapPath);
-                decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
+                decalSurface.Dispose();
+                throw;
             }
-
-            return decalSurface;
         }
 
         internal static RenderPrefab CreateRenderPrefab(Surface decalSurface, string decalName, string fullDecalName, string assetDataPath)
         {
-            string fullAssetDataPath = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
-            if (Directory.Exists(fullAssetDataPath)) { Directory.Delete(fullAssetDataPath, true); }
-
-            AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(assetDataPath, $"{decalName}_SurfaceAsset", EscapeStrategy.None);
-            SurfaceAsset surfaceAsset = new()
+            // The surface holds the decal's imported textures, native memory that only Dispose frees,
+            // so a failure before the end must dispose it too.
+            bool surfaceDisposed = false;
+            try
             {
-                id = new Identifier(Guid.NewGuid()),
-                database = EAIDatabaseManager.EAIAssetDatabase
-            };
-            surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
-            surfaceAsset.SetData(decalSurface);
-            surfaceAsset.Save(force: false, saveTextures: true, vt: false);
+                string fullAssetDataPath = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
+                if (Directory.Exists(fullAssetDataPath)) { Directory.Delete(fullAssetDataPath, true); }
+
+                AssetDataPath surfaceAssetDataPath = AssetDataPath.Create(assetDataPath, $"{decalName}_SurfaceAsset", EscapeStrategy.None);
+                SurfaceAsset surfaceAsset = new()
+                {
+                    id = new Identifier(Guid.NewGuid()),
+                    database = EAIDatabaseManager.EAIAssetDatabase
+                };
+                surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
+                surfaceAsset.SetData(decalSurface);
+                surfaceAsset.Save(force: false, saveTextures: true, vt: false);
 
 
-            //VT Stuff
-            //VirtualTexturingConfig virtualTexturingConfig = EAI.textureStreamingSystem.virtualTexturingConfig; //(VirtualTexturingConfig)ScriptableObject.CreateInstance("VirtualTexturingConfig");
-            //Dictionary<Colossal.IO.AssetDatabase.TextureAsset, List<SurfaceAsset>> textureReferencesMap = [];
+                //VT Stuff
+                //VirtualTexturingConfig virtualTexturingConfig = EAI.textureStreamingSystem.virtualTexturingConfig; //(VirtualTexturingConfig)ScriptableObject.CreateInstance("VirtualTexturingConfig");
+                //Dictionary<Colossal.IO.AssetDatabase.TextureAsset, List<SurfaceAsset>> textureReferencesMap = [];
 
-            //foreach (Colossal.IO.AssetDatabase.TextureAsset asset in surfaceAsset.textures.Values)
-            //{
-            //	asset.Save();
-            //	textureReferencesMap.Add(asset, [surfaceAsset]);
-            //}
+                //foreach (Colossal.IO.AssetDatabase.TextureAsset asset in surfaceAsset.textures.Values)
+                //{
+                //	asset.Save();
+                //	textureReferencesMap.Add(asset, [surfaceAsset]);
+                //}
 
-            //surfaceAsset.Save(force: false, saveTextures: false, vt: true, virtualTexturingConfig: virtualTexturingConfig, textureReferencesMap: textureReferencesMap, tileSize: virtualTexturingConfig.tileSize, nbMidMipLevelsRequested: 0);
+                //surfaceAsset.Save(force: false, saveTextures: false, vt: true, virtualTexturingConfig: virtualTexturingConfig, textureReferencesMap: textureReferencesMap, tileSize: virtualTexturingConfig.tileSize, nbMidMipLevelsRequested: 0);
 
-            // END OF VT Stuff.
+                // END OF VT Stuff.
 
-            Vector4 MeshSize = decalSurface.GetVectorProperty("colossal_MeshSize");
-            Vector4 TextureArea = decalSurface.GetVectorProperty("colossal_TextureArea");
-            Mesh[] meshes = new[] { ConstructMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
+                Vector4 MeshSize = decalSurface.GetVectorProperty("colossal_MeshSize");
+                Vector4 TextureArea = decalSurface.GetVectorProperty("colossal_TextureArea");
+                Mesh[] meshes = new[] { ConstructMesh(MeshSize.x, MeshSize.y, MeshSize.z) };
 
-            AssetDataPath geometryAssetDataPath = AssetDataPath.Create(assetDataPath, "GeometryAsset", EscapeStrategy.None);
-            GeometryAsset geometryAsset = new()
-            {
-                id = new Identifier(Guid.NewGuid()),
-                database = EAIDatabaseManager.EAIAssetDatabase
-            };
-            geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
-            geometryAsset.SetData(meshes);
-            geometryAsset.Save(false);
+                AssetDataPath geometryAssetDataPath = AssetDataPath.Create(assetDataPath, "GeometryAsset", EscapeStrategy.None);
+                GeometryAsset geometryAsset = new()
+                {
+                    id = new Identifier(Guid.NewGuid()),
+                    database = EAIDatabaseManager.EAIAssetDatabase
+                };
+                geometryAsset.database.AddAsset<GeometryAsset>(geometryAssetDataPath, geometryAsset.id.guid);
+                geometryAsset.SetData(meshes);
+                geometryAsset.Save(false);
 
-            //RenderPrefab renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
-            PrefabID prefabID = new PrefabID(typeof(RenderPrefab).Name, $"{fullDecalName}_RenderPrefab");
+                //RenderPrefab renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
+                PrefabID prefabID = new PrefabID(typeof(RenderPrefab).Name, $"{fullDecalName}_RenderPrefab");
 
-            if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) || prefabBase is not RenderPrefab renderPrefab)
-            {
-                renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
+                if (!EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) || prefabBase is not RenderPrefab renderPrefab)
+                {
+                    renderPrefab = (RenderPrefab)ScriptableObject.CreateInstance("RenderPrefab");
+                }
+
+                renderPrefab.name = $"{fullDecalName}_RenderPrefab";
+                renderPrefab.geometryAsset = geometryAsset;//new AssetReference<GeometryAsset>(geometryAsset.guid);
+                renderPrefab.surfaceAssets = new[] { surfaceAsset };
+                renderPrefab.bounds = new(new(-MeshSize.x * 0.5f, -MeshSize.y * 0.5f, -MeshSize.z * 0.5f), new(MeshSize.x * 0.5f, MeshSize.y * 0.5f, MeshSize.z * 0.5f));
+                renderPrefab.meshCount = 1;
+                renderPrefab.vertexCount = geometryAsset.GetVertexCount(0);
+                renderPrefab.indexCount = 1;
+                renderPrefab.manualVTRequired = false;
+
+                DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
+                decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
+                decalProperties.m_LayerMask = (DecalLayers)decalSurface.GetFloatProperty("colossal_DecalLayerMask");
+                decalProperties.m_RendererPriority = (int)(decalSurface.HasProperty("_DrawOrder") ? decalSurface.GetFloatProperty("_DrawOrder") : 0);
+                decalProperties.m_EnableInfoviewColor = false;
+
+                AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(assetDataPath, $"{decalName}_RenderPrefab", EscapeStrategy.None);
+                PrefabAsset renderPrefabAsset = EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Colossal.Hash128.CreateGuid(renderPrefab.name)); // Colossal.Hash128.CreateGuid(fullDecalName)
+                renderPrefabAsset.Save();
+                //EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
+
+                decalSurface.Dispose();
+                surfaceDisposed = true;
+                geometryAsset.Unload();
+                surfaceAsset.Unload();
+
+                return renderPrefab;
             }
-
-            renderPrefab.name = $"{fullDecalName}_RenderPrefab";
-            renderPrefab.geometryAsset = geometryAsset;//new AssetReference<GeometryAsset>(geometryAsset.guid);
-            renderPrefab.surfaceAssets = new[] { surfaceAsset };
-            renderPrefab.bounds = new(new(-MeshSize.x * 0.5f, -MeshSize.y * 0.5f, -MeshSize.z * 0.5f), new(MeshSize.x * 0.5f, MeshSize.y * 0.5f, MeshSize.z * 0.5f));
-            renderPrefab.meshCount = 1;
-            renderPrefab.vertexCount = geometryAsset.GetVertexCount(0);
-            renderPrefab.indexCount = 1;
-            renderPrefab.manualVTRequired = false;
-
-            DecalProperties decalProperties = renderPrefab.AddOrGetComponent<DecalProperties>();
-            decalProperties.m_TextureArea = new(new(TextureArea.x, TextureArea.y), new(TextureArea.z, TextureArea.w));
-            decalProperties.m_LayerMask = (DecalLayers)decalSurface.GetFloatProperty("colossal_DecalLayerMask");
-            decalProperties.m_RendererPriority = (int)(decalSurface.HasProperty("_DrawOrder") ? decalSurface.GetFloatProperty("_DrawOrder") : 0);
-            decalProperties.m_EnableInfoviewColor = false;
-
-            AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(assetDataPath, $"{decalName}_RenderPrefab", EscapeStrategy.None);
-            PrefabAsset renderPrefabAsset = EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Colossal.Hash128.CreateGuid(renderPrefab.name)); // Colossal.Hash128.CreateGuid(fullDecalName)
-            renderPrefabAsset.Save();
-            //EAI.Logger.Info($"render prefab path: {renderPrefabAsset.path}\nrender prefab id: {renderPrefabAsset.id}");
-
-            decalSurface.Dispose();
-            geometryAsset.Unload();
-            surfaceAsset.Unload();
-
-            return renderPrefab;
+            catch
+            {
+                if (!surfaceDisposed) decalSurface.Dispose();
+                throw;
+            }
 
         }
 
