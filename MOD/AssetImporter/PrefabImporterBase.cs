@@ -5,6 +5,8 @@ using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
 using ExtraLib.ClassExtension;
@@ -19,6 +21,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -29,14 +32,10 @@ namespace ExtraAssetsImporter.AssetImporter
 {
     abstract class PrefabImporterBase : FolderImporter
     {
-        // static: DecalsImporterNew/SurfacesImporterNew/NetLanesDecalImporterNew are 3 separate instances
-        // (AssetsImporterManager.AddImporter<T> does `new T()` once per importer), each running its own
-        // LoadCustomAssetFolder on its own Task.Run thread. An instance field here would give each one its
-        // own lock — protecting nothing, since the race is precisely between those 3 threads. Has to be one
-        // lock shared by all of them.
-        private static readonly object PrefabSaveLock = new object();
         public const string PrefabJsonName = "Prefab.json";
+        private static readonly FieldInfo PrefabIndices = typeof(PrefabSystem).GetField("m_PrefabIndices", BindingFlags.NonPublic | BindingFlags.Instance);
         private UIAssetParentCategoryPrefab assetCat = null;
+        private string assetCatName = null;
 
         virtual public string CatName { get; } = null;
 
@@ -44,21 +43,18 @@ namespace ExtraAssetsImporter.AssetImporter
         {
             base.PreLoadCustomAssetFolder(importSettings);
             using PerformanceStats.Scope blocking = Perf.Measure("Blocking.ParentCategory");
-            assetCat = MainThreadHelper.RunOnMainThread(() =>
+            (assetCat, assetCatName) = MainThreadHelper.RunOnMainThread(() =>
             {
                 UIAssetParentCategoryPrefab category = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab(CatName ?? ImporterId);
                 ImportersUtils.EnsurePrefabHasAsset(category);
                 ImportersUtils.EnsurePrefabHasAsset(category.parentCategoryOrMenu);
-                return category;
+                return (category, category.name);
             }).Result;
         }
 
         protected override void LoadCustomAssetFolder(ImporterSettings importSettings, string importerFolder, string modName, NotificationUISystem.NotificationInfo notificationInfo)
         {
             string sourceModPath = Directory.GetParent(importerFolder)?.FullName;
-
-            if (string.Equals(sourceModPath, EAI.pathModsData, StringComparison.OrdinalIgnoreCase))
-                sourceModPath = null;
 
             List<(string catName, string assetFolder)> assetFolders = new();
             foreach (string catFolder in Directory.GetDirectories(importerFolder))
@@ -79,38 +75,84 @@ namespace ExtraAssetsImporter.AssetImporter
             // Assets are independent and mostly bound by texture imports (CPU) and main-thread round-trips (waiting),
             // so several are imported at once. NoBuffering hands out one asset at a time: import times vary a lot.
             PerformanceStats perf = Perf;
-            Parallel.ForEach(
-                Partitioner.Create(assetFolders, EnumerablePartitionerOptions.NoBuffering),
-                // Each asset also imports its 3 textures in parallel (see TextureAssetImporterUtils.ImportSurfaceTextures).
-                new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, importSettings.maxConcurrentAssets) },
-                asset =>
+            // Each asset also imports its 3 textures in parallel (see
+            // TextureAssetImporterUtils.ImportSurfaceTextures), and TextureImportSlots limits the
+            // imports of all the importers together, so one importer may fill every slot alone.
+            // Each asset runs on its own thread: it blocks on slots and on main-thread calls, and a
+            // blocked .NET pool thread would hold up the game's own pool work.
+            ParallelOptions options = new() { MaxDegreeOfParallelism = Math.Max(1, TextureImportSlots.Count), TaskScheduler = DedicatedThreadScheduler.Instance };
+
+            // A rebuilt asset deletes its old cache folder, and another asset can import a shared
+            // texture (a texture .json file) into that folder, so all deletions happen before any
+            // import starts.
+            PrefabImportData?[] prepared = new PrefabImportData?[assetFolders.Count];
+            Parallel.ForEach(Partitioner.Create(assetFolders, EnumerablePartitionerOptions.NoBuffering), options, (asset, _, i) =>
+            {
+                using (perf.MakeCurrent())
                 {
-                    using (perf.MakeCurrent())
+                    try
                     {
-                        try
-                        {
-                            ImportAsset(importSettings, asset.catName, asset.assetFolder, modName, sourceModPath, notificationInfo);
-                        }
-                        catch (Exception e)
-                        {
-                            ImportFailed(asset.assetFolder, Path.Combine(FolderName, modName, asset.catName, new DirectoryInfo(asset.assetFolder).Name), e);
-                        }
+                        prepared[i] = PrepareAsset(importSettings, asset.catName, asset.assetFolder, modName, sourceModPath);
                     }
-                });
+                    catch (Exception e)
+                    {
+                        ImportFailed(asset.assetFolder, Path.Combine(FolderName, modName, asset.catName, new DirectoryInfo(asset.assetFolder).Name), e);
+                    }
+                }
+            });
+
+            List<PrefabImportData> toImport = new();
+            List<PrefabImportData> lastToImport = new();
+            foreach (PrefabImportData? data in prepared)
+            {
+                if (data is PrefabImportData value) (LooksUpOtherNetLanes(value.PrefabJson) ? lastToImport : toImport).Add(value);
+            }
+
+            Parallel.ForEach(Partitioner.Create(toImport, EnumerablePartitionerOptions.NoBuffering), options, data =>
+            {
+                using (perf.MakeCurrent()) ImportEntry(data);
+            });
+
+            if (lastToImport.Count == 0) return;
+
+            // An asset that looks up another net lane by name imports last, in folder order, once
+            // the queued main-thread calls have added the others to the prefab system.
+            WaitPendingMainThreadTasks();
+            foreach (PrefabImportData data in lastToImport) ImportEntry(data);
+
+            void ImportEntry(PrefabImportData data)
+            {
+                try
+                {
+                    ImportPreparedAsset(data, notificationInfo);
+                }
+                catch (Exception e)
+                {
+                    ImportFailed(data.FolderPath, data.AssetDataPath, e);
+                }
+            }
         }
 
-        private void ImportAsset(ImporterSettings importSettings, string catName, string assetFolder, string modName, string sourceModPath, NotificationUISystem.NotificationInfo notificationInfo)
+        private static bool LooksUpOtherNetLanes(Variant prefabJson)
         {
-            using PerformanceStats.Scope assetScope = Perf.Measure("Asset.Total");
+            Variant components = prefabJson?.TryGet(nameof(PrefabJson.Components));
+            return components != null
+                && (components.TryGetValue(typeof(UtilityLane).FullName, out _) || components.TryGetValue(typeof(EnclosedArea).FullName, out _));
+        }
+
+        // Compares an asset with its cache entry, deletes its cache when it must be rebuilt, and
+        // returns what its import needs, or null for a skipped asset.
+        private PrefabImportData? PrepareAsset(ImporterSettings importSettings, string catName, string assetFolder, string modName, string sourceModPath)
+        {
+            using PerformanceStats.Scope prepareScope = Perf.Measure("Asset.Prepare");
 
             string assetName = new DirectoryInfo(assetFolder).Name;
-            UpdateNotificationOnMainThread(notificationInfo, $"Loading : {assetName}", (int)(ammoutOfAssetsloaded / (float)numberOfAssets * 100));
 
             if (assetName.StartsWith("."))
             {
                 Interlocked.Increment(ref skipedAsset);
                 Interlocked.Increment(ref ammoutOfAssetsloaded);
-                return;
+                return null;
             }
 
             string fullAssetName = $"{modName} {catName} {assetName} {AssetEndName}";
@@ -181,7 +223,7 @@ namespace ExtraAssetsImporter.AssetImporter
                     Directory.Delete(fullAssetDataPath, true);
             }
 
-            PrefabImportData importData = new(
+            return new PrefabImportData(
                 importSettings,
                 eaiAsset,
                 needToUpdateAsset,
@@ -192,9 +234,23 @@ namespace ExtraAssetsImporter.AssetImporter
                 fullAssetName,
                 assetDataPath,
                 prefabJson,
-                assetCat
+                assetCat,
+                assetCatName
             );
+        }
 
+        private void ImportPreparedAsset(PrefabImportData importData, NotificationUISystem.NotificationInfo notificationInfo)
+        {
+            using PerformanceStats.Scope assetScope = Perf.Measure("Asset.Total");
+
+            ImporterSettings importSettings = importData.ImportSettings;
+            EAIAsset eaiAsset = importData.EAIAsset;
+            string assetFolder = importData.FolderPath;
+            string assetName = importData.AssetName;
+            string fullAssetName = importData.FullAssetName;
+            string assetDataPath = importData.AssetDataPath;
+            string fullAssetDataPath = Path.Combine(importSettings.dataBase.rootPath, assetDataPath);
+            UpdateNotificationOnMainThread(notificationInfo, $"Loading : {assetName}", (int)(ammoutOfAssetsloaded / (float)numberOfAssets * 100));
 
             PrefabBase prefab;
             bool cachedPrefab = true;
@@ -232,8 +288,6 @@ namespace ExtraAssetsImporter.AssetImporter
                 {
                     PerformanceStats.Scope setupScope = Perf.Measure("Asset.Setup");
 
-                    prefab.name = importData.FullAssetName;
-
                     // Should see this prefab has a pre-editor prefab.
                     prefab.version = 0;
 
@@ -257,21 +311,24 @@ namespace ExtraAssetsImporter.AssetImporter
 
                     setupScope.Dispose();
 
+                    // Assets of different mods or categories can share a folder name, so a path in
+                    // the shared temporary folder takes the full name.
                     AssetDataPath prefabAssetPath = importSettings.savePrefabs
                         ? AssetDataPath.Create(importData.AssetDataPath, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None)
-                        : AssetDataPath.Create(EAI.kTempFolderName, ImportersUtils.GetPrefabFileName(importData), true, EscapeStrategy.None);
+                        : AssetDataPath.Create(EAI.kTempFolderName, $"{importData.FullAssetName}{PrefabAsset.kExtension}", true, EscapeStrategy.None);
 
                     PrefabAsset prefabAsset;
                     using (Perf.Measure("Asset.AddToDatabase"))
                         prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, prefab, Hash128.CreateGuid(importData.FullAssetName));
 
-                    eaiAsset.PrefabID = prefab.GetPrefabID().ToString();
-
-                    //MainThreadHelper.RunOnMainThread(() => prefabAsset.Save()).Wait();
-                    // Includes the wait on PrefabSaveLock (shared by the importers running in parallel).
-                    if (importSettings.savePrefabs)
-                        using (Perf.Measure("Asset.SavePrefab"))
-                            lock (PrefabSaveLock) prefabAsset.Save();
+                    // Saving serializes the prefab's name, and a prefab ID holds it: only the main
+                    // thread may read a Unity object's name.
+                    using (Perf.Measure("Blocking.SavePrefab"))
+                        eaiAsset.PrefabID = MainThreadHelper.RunOnMainThread(() =>
+                        {
+                            if (importSettings.savePrefabs) prefabAsset.Save();
+                            return prefab.GetPrefabID().ToString();
+                        }).Result;
 
                     using (Perf.Measure("Asset.BuildHashAfterSave"))
                         eaiAsset.BuildAssetHash = EAIDatabaseManager.GetBuildAssetHash(fullAssetDataPath);
@@ -283,7 +340,12 @@ namespace ExtraAssetsImporter.AssetImporter
                 using (Perf.Measure("Asset.SetupUIObject"))
                     ImportersUtils.SetupUIObject(this, importData, prefab);
 
-                TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(prefab)));
+                TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() =>
+                {
+                    if (EL.m_PrefabSystem.TryGetPrefab(prefab.GetPrefabID(), out PrefabBase registered) && registered == prefab) IndexObsoleteNames(prefab);
+
+                    EL.m_PrefabSystem.AddOrUpdatePrefab(prefab);
+                }));
 
                 Dictionary<string, string> localisation = new()
                 {
@@ -312,14 +374,13 @@ namespace ExtraAssetsImporter.AssetImporter
             Interlocked.Increment(ref failedAssets);
             Interlocked.Increment(ref ammoutOfAssetsloaded);
             EAI.Logger.Error($"Failed to load the custom asset at {assetFolder} | ERROR : {e}");
-            string pathToAssetInDatabase = Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath);
-            if (Directory.Exists(pathToAssetInDatabase)) Directory.Delete(pathToAssetInDatabase, true);
+            ImportersUtils.TryDeleteDirectory(Path.Combine(EAIAssetDatabaseDescriptor.kRootPath, assetDataPath));
         }
 
         protected virtual void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)
         {
 
-            EAINewImportersCompatibility compatibility = EAI.m_Setting.NewImportersCompatibilityDropDown;
+            EAINewImportersCompatibility compatibility = AssetsImporterManager.NewImportersCompatibility;
 
             if (compatibility == EAINewImportersCompatibility.None) return;
 
@@ -351,13 +412,60 @@ namespace ExtraAssetsImporter.AssetImporter
                 m_Type = prefabBase.GetType().Name
             };
 
-            obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(prefabIdentifierInfo).ToArray();
+            AddObsoleteIdentifier(obsoleteIdentifiers, prefabIdentifierInfo);
+        }
+
+        // The game indexes a prefab's old names only when it adds the prefab, and a prefab already
+        // in the prefab system, as at a reload, gets its old names later. This indexes them as
+        // AddPrefab does, so an old save finds the prefab. Removing the prefab and adding it again
+        // breaks the game's prefab setup while the pass runs.
+        private static void IndexObsoleteNames(PrefabBase prefab)
+        {
+            if (PrefabIndices == null || !prefab.TryGet(out ObsoleteIdentifiers names) || names.m_PrefabIdentifiers == null) return;
+
+            Dictionary<PrefabID, int> indices = (Dictionary<PrefabID, int>)PrefabIndices.GetValue(EL.m_PrefabSystem);
+            int index = EL.m_PrefabSystem.EntityManager.GetComponentData<PrefabData>(EL.m_PrefabSystem.GetEntity(prefab)).m_Index;
+
+            foreach (PrefabIdentifierInfo name in names.m_PrefabIdentifiers)
+            {
+                PrefabID id = name.GetPrefabID();
+                if (!indices.ContainsKey(id)) indices.Add(id, index);
+            }
+        }
+
+        // A reload sets up the live prefab again, which already holds the names of earlier passes.
+        protected static void AddObsoleteIdentifier(ObsoleteIdentifiers obsoleteIdentifiers, PrefabIdentifierInfo identifier)
+        {
+            if (obsoleteIdentifiers.m_PrefabIdentifiers.Any(info => info.m_Name == identifier.m_Name && info.m_Type == identifier.m_Type)) return;
+
+            obsoleteIdentifiers.m_PrefabIdentifiers = obsoleteIdentifiers.m_PrefabIdentifiers.Prepend(identifier).ToArray();
+        }
+
+        // Runs each task on a new background thread, outside the .NET thread pool.
+        private class DedicatedThreadScheduler : TaskScheduler
+        {
+            internal static readonly DedicatedThreadScheduler Instance = new();
+
+            protected override void QueueTask(Task task)
+            {
+                new Thread(() => TryExecuteTask(task)) { IsBackground = true, Name = "EAI import" }.Start();
+            }
+
+            protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
+            {
+                return TryExecuteTask(task);
+            }
+
+            protected override IEnumerable<Task> GetScheduledTasks()
+            {
+                return Enumerable.Empty<Task>();
+            }
         }
     }
     public struct PrefabImportData
     {
 
-        public PrefabImportData(ImporterSettings importSettings, EAIAsset eaiAsset, bool needToUpdateAsset, string folderPath, string assetName, string catName, string modName, string fullAssetName, string assetDataPath, Variant prefabJson, UIAssetParentCategoryPrefab assetCat)
+        public PrefabImportData(ImporterSettings importSettings, EAIAsset eaiAsset, bool needToUpdateAsset, string folderPath, string assetName, string catName, string modName, string fullAssetName, string assetDataPath, Variant prefabJson, UIAssetParentCategoryPrefab assetCat, string assetCatName)
         {
             this.ImportSettings = importSettings;
             this.EAIAsset = eaiAsset;
@@ -370,6 +478,7 @@ namespace ExtraAssetsImporter.AssetImporter
             this.AssetDataPath = assetDataPath;
             this.PrefabJson = prefabJson;
             this.AssetCat = assetCat;
+            this.AssetCatName = assetCatName;
         }
         public ImporterSettings ImportSettings { get; private set; }
         public EAIAsset EAIAsset { get; private set; }
@@ -382,6 +491,9 @@ namespace ExtraAssetsImporter.AssetImporter
         public string AssetDataPath { get; private set; }
         public Variant PrefabJson { get; private set; }
         public UIAssetParentCategoryPrefab AssetCat { get; private set; }
+        // A copy of the category's name, read on the main thread, the only one that may read a
+        // Unity object's name, for the importer threads.
+        public string AssetCatName { get; private set; }
     }
 
 }

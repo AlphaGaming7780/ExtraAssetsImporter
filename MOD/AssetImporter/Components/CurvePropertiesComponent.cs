@@ -22,7 +22,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             CurvePropertiesJson curvePropertiesJson = componentJson.Make<CurvePropertiesJson>();
             if (curvePropertiesJson is null)
             {
-                EAI.Logger.Error($"curveProperties component JSON is null for prefab {prefab.name}.");
+                EAI.Logger.Error($"curveProperties component JSON is null for prefab {data.FullAssetName}.");
                 return;
             }
             CurveProperties curveProperties = prefab.AddOrGetComponentOnMainThread<CurveProperties>();

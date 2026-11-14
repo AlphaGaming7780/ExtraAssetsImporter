@@ -5,6 +5,7 @@ using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.UI;
+using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
@@ -28,6 +29,10 @@ namespace ExtraAssetsImporter.AssetImporter
     {
         private static readonly object s_CreateDirectoryLock = new();
 
+        private static readonly object s_PendingLocalisationLock = new();
+        private static Dictionary<string, string> s_PendingLocalisation;
+        private static Task s_PendingLocalisationTask;
+
         /// <summary>
         /// Creates <paramref name="assetDataPath"/> in the database before anything is saved in it. Every asset Save
         /// goes through LongDirectory.CreateDirectory, which throws when another thread creates one of the missing
@@ -42,6 +47,19 @@ namespace ExtraAssetsImporter.AssetImporter
                 if (!LongDirectory.Exists(path)) LongDirectory.CreateDirectory(path);
         }
 
+        // Deletes a folder, or with recursive off only an empty one. A throw here would stop the
+        // importer, so a failure only warns.
+        internal static void TryDeleteDirectory(string path, bool recursive = true)
+        {
+            try
+            {
+                if (Directory.Exists(path)) Directory.Delete(path, recursive);
+            }
+            catch (Exception ex)
+            {
+                EAI.Logger.Warn($"Failed to delete {path}: {ex}");
+            }
+        }
 
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
@@ -49,12 +67,10 @@ namespace ExtraAssetsImporter.AssetImporter
             return renderPrefab;
         }
 
-        // Gives prefab an explicit .asset if it doesn't have one yet, so a later PrefabAsset.Save() elsewhere
-        // in the reference graph can't trigger PrefabReferenceResolver's auto-create fallback for it
-        // (prefabBase.asset ?? m_Database.AddAsset(...)) — that fallback runs inline on whatever background
-        // thread happens to Save() first, with no synchronization, so two importers racing to auto-create
-        // the SAME shared prefab (e.g. the UI category/menu chain, shared across every importer) can collide
-        // writing the same .cid file. Must be called from the main thread — same requirement as AddAsset.
+        // Gives prefab an explicit .asset if it doesn't have one yet, so a later PrefabAsset.Save()
+        // elsewhere in the reference graph can't trigger PrefabReferenceResolver's auto-create
+        // fallback for it (prefabBase.asset ?? m_Database.AddAsset(...)).
+        // Only the main thread may call it, as for AddAsset.
         public static void EnsurePrefabHasAsset(PrefabBase prefab)
         {
             if (prefab == null || prefab.asset != null) return;
@@ -105,6 +121,9 @@ namespace ExtraAssetsImporter.AssetImporter
                 T prefab = EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase prefabBase) && prefabBase is T existing
                     ? existing
                     : (T)ScriptableObject.CreateInstance(typeof(T));
+
+                // Only the main thread may set a Unity object's name.
+                prefab.name = prefabName;
 
                 foreach (Type component in components) prefab.AddOrGetComponent(component);
 
@@ -197,9 +216,10 @@ namespace ExtraAssetsImporter.AssetImporter
             return TryGetCachedPrefab(prefabID, importerSettings, assetDataPath, fileName, out prefab, addToPrefabSystem);
         }
 
-        // A single main-thread round-trip: the cached asset is loaded off-thread first, then the prefab system is
-        // checked and, if the prefab isn't there yet, the loaded instance is added in the same call (when
-        // addToPrefabSystem is set).
+        // A single main-thread round-trip checks the prefab system, then loads the cached asset
+        // and, if the prefab isn't there yet, adds the loaded instance in the same call (when
+        // addToPrefabSystem is set). Loading creates the prefab and its components, which are Unity
+        // objects.
         public static bool TryGetCachedPrefab(PrefabID prefabID, ImporterSettings importerSettings, string assetDataPath, string fileName, out PrefabBase prefab, bool addToPrefabSystem = true)
         {
             try
@@ -207,17 +227,21 @@ namespace ExtraAssetsImporter.AssetImporter
                 AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, fileName, true, EscapeStrategy.None);
                 if (!importerSettings.dataBase.TryGetOrAddAsset(prefabAssetPath, out PrefabAsset prefabAsset))
                 {
-                    EAI.Logger.Info($"No cached data for {prefabID}.");
+                    // Without saved prefabs, every asset misses.
+                    if (importerSettings.savePrefabs) EAI.Logger.Info($"No cached data for {prefabID}.");
                     return TryGetPrefab(prefabID, out prefab);
                 }
 
-                // Already loaded (e.g. database reload): reuse the instance without taking another reference on it.
-                PrefabBase loaded = prefabAsset.state == LoadState.Object ? prefabAsset.GetInstance<PrefabBase>() : prefabAsset.Load() as PrefabBase;
+                PrefabBase loaded = null;
 
                 using PerformanceStats.Scope blocking = PerformanceStats.MeasureCurrent("Blocking.CachedPrefab");
                 prefab = MainThreadHelper.RunOnMainThread(() =>
                 {
                     if (EL.m_PrefabSystem.TryGetPrefab(prefabID, out PrefabBase existing)) return existing;
+
+                    // Already loaded (e.g. database reload): reuse the instance without taking
+                    // another reference on it.
+                    loaded = prefabAsset.state == LoadState.Object ? prefabAsset.GetInstance<PrefabBase>() : prefabAsset.Load() as PrefabBase;
                     if (loaded == null) return null;
                     if (EL.m_PrefabSystem.TryGetPrefab(loaded.GetPrefabID(), out existing)) return existing;
 
@@ -273,7 +297,6 @@ namespace ExtraAssetsImporter.AssetImporter
 
             RenderPrefab renderPrefab = GetOrCreatePrefabInstance<RenderPrefab>(GetRenderPrefabName(data), components);
 
-            renderPrefab.name = GetRenderPrefabName(data);
             renderPrefab.geometryAsset = geometryAsset;
             renderPrefab.surfaceAssets = new[] { surfaceAsset };
             renderPrefab.bounds = new(new(-MeshSize.x * 0.5f, -MeshSize.y * 0.5f, -MeshSize.z * 0.5f), new(MeshSize.x * 0.5f, MeshSize.y * 0.5f, MeshSize.z * 0.5f));
@@ -287,22 +310,62 @@ namespace ExtraAssetsImporter.AssetImporter
             if(renderPrefabVariant != null) AssetsImporterManager.ProcessComponentImporters(data, renderPrefabVariant, renderPrefab);
 
             AssetDataPath renderPrefabAssetPath = AssetDataPath.Create(data.AssetDataPath, GetRenderPrefabFileName(data), true, EscapeStrategy.None);
-            PrefabAsset renderPrefabAsset = data.ImportSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Hash128.CreateGuid(renderPrefab.name));
-            renderPrefabAsset.Save(); // No UIObject on the render prefab — can't reach the shared UI chain, see PrefabImporterBase.PrefabSaveLock.
+            PrefabAsset renderPrefabAsset = data.ImportSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(renderPrefabAssetPath, renderPrefab, Hash128.CreateGuid(GetRenderPrefabName(data)));
 
-            geometryAsset.Unload();
-            surfaceAsset.Unload();
+            // Saving serializes the render prefab's name, and unloading destroys the meshes and the
+            // material: only the main thread may do either. A destroy from another thread corrupts
+            // the engine's list of pending destroys, and the game then hangs for good.
+            using (PerformanceStats.MeasureCurrent("Blocking.SaveRenderPrefab"))
+                MainThreadHelper.RunOnMainThread(() =>
+                {
+                    renderPrefabAsset.Save();
+                    geometryAsset.Unload();
+                    surfaceAsset.Unload();
+                }).Wait();
 
             return renderPrefab;
         }
 
+        /// <summary>
+        /// Adds default strings to the fallback locale.
+        /// The game refreshes every localized string for each source added to the active locale,
+        /// which costs far more than the strings themselves, so the strings of all the assets
+        /// imported before the main thread gets to them go in one source.
+        /// </summary>
         public static Task SetupLocalisationForPrefab(Dictionary<string, string> localisation)
         {
+            lock (s_PendingLocalisationLock)
+            {
+                bool isAddQueued = s_PendingLocalisation != null;
+                s_PendingLocalisation ??= new();
+
+                foreach (KeyValuePair<string, string> entry in localisation)
+                    s_PendingLocalisation[entry.Key] = entry.Value;
+
+                // Queued after the strings: on the main thread, RunOnMainThread runs it right away.
+                if (!isAddQueued)
+                    s_PendingLocalisationTask = MainThreadHelper.RunOnMainThread(AddPendingLocalisation);
+
+                return s_PendingLocalisationTask;
+            }
+        }
+
+        private static void AddPendingLocalisation()
+        {
+            Dictionary<string, string> localisation;
+
+            lock (s_PendingLocalisationLock)
+            {
+                localisation = s_PendingLocalisation;
+                s_PendingLocalisation = null;
+            }
+
+            // Sources added later win, and the packs' own strings come first.
+            foreach (string key in LocalizationImporter.PackFallbackKeys)
+                localisation.Remove(key);
+
             LocalizationManager localizationManager = GameManager.instance.localizationManager;
-
-            string localeID = localizationManager.fallbackLocaleId;
-
-            return MainThreadHelper.RunOnMainThread(() => localizationManager.AddSource(localeID, new MemorySource(localisation)));
+            localizationManager.AddSource(localizationManager.fallbackLocaleId, new MemorySource(localisation));
         }
 
         /// <summary>
@@ -377,6 +440,32 @@ namespace ExtraAssetsImporter.AssetImporter
             s_ChildCategories.Clear();
         }
 
+        // Reads a PNG's size from its header: the signature (8 bytes), the IHDR chunk's length and
+        // type (8 bytes), then the width and the height as big-endian ints.
+        // Returns false for a file it can't read or that isn't a PNG.
+        internal static bool TryReadPngSize(string path, out int width, out int height)
+        {
+            width = height = 0;
+            byte[] header = new byte[24];
+            try
+            {
+                using (FileStream stream = File.OpenRead(path))
+                {
+                    if (stream.Read(header, 0, header.Length) != header.Length) return false;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            if (header[1] != 'P' || header[2] != 'N' || header[3] != 'G') return false;
+
+            width = header[16] << 24 | header[17] << 16 | header[18] << 8 | header[19];
+            height = header[20] << 24 | header[21] << 16 | header[22] << 8 | header[23];
+            return true;
+        }
+
         // ProcessIcon only does something when the icon must be (re)generated: icon.png missing (made from
         // _BaseColorMap.png) or bigger than 128px. Reads the PNG header, so it can run off the main thread.
         private static bool IconNeedsProcessing(PrefabImportData data)
@@ -384,21 +473,7 @@ namespace ExtraAssetsImporter.AssetImporter
             string iconPath = Path.Combine(data.FolderPath, "icon.png");
             if (!File.Exists(iconPath)) return File.Exists(Path.Combine(data.FolderPath, "_BaseColorMap.png"));
 
-            try
-            {
-                // PNG signature (8 bytes), IHDR length + type (8 bytes), then width and height as big-endian ints.
-                byte[] header = new byte[24];
-                using (FileStream stream = File.OpenRead(iconPath))
-                    if (stream.Read(header, 0, header.Length) < header.Length) return true;
-
-                int width = header[16] << 24 | header[17] << 16 | header[18] << 8 | header[19];
-                int height = header[20] << 24 | header[21] << 16 | header[22] << 8 | header[23];
-                return width > 128 || height > 128;
-            }
-            catch (Exception)
-            {
-                return true;
-            }
+            return !TryReadPngSize(iconPath, out int width, out int height) || width > 128 || height > 128;
         }
 
         // Icon, UIObject and child category need the main thread: everything still missing is done in one round-trip.
@@ -408,8 +483,8 @@ namespace ExtraAssetsImporter.AssetImporter
 
             string catIconPath = Path.Combine(Directory.GetParent(data.FolderPath).FullName, "icon.svg");
             string catIcon = File.Exists(catIconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/icon.svg" : null;
-            string childCategoryName = $"{data.CatName} {data.AssetCat.name}";
-            string childCategoryKey = $"{data.AssetCat.name}|{childCategoryName}|{catIcon}";
+            string childCategoryName = $"{data.CatName} {data.AssetCatName}";
+            string childCategoryKey = $"{data.AssetCatName}|{childCategoryName}|{catIcon}";
 
             bool processIcon = IconNeedsProcessing(data);
             prefab.TryGetExactly(out UIObject prefabUI);

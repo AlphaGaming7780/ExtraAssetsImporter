@@ -1,9 +1,13 @@
-﻿using Colossal.IO.AssetDatabase;
+﻿using Colossal.AssetPipeline.Importers;
+using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
+using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
+using ExtraLib.Debugger;
 using ExtraLib.Helpers;
 using ExtraLib.Prefabs;
 using Game.Prefabs;
@@ -13,6 +17,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Unity.Entities;
 using UnityEngine;
 
@@ -33,6 +39,10 @@ namespace ExtraAssetsImporter.OldImporters
 
         private static bool SurfacesIsLoading = false;
         internal static bool SurfacesIsLoaded = false;
+
+        // Large maps fill memory before the importer reaches the count limit: a decoded 4K map
+        // takes 64 MB.
+        private const long MaxPendingBytes = 256L * 1024 * 1024;
 
         public static void AddCustomSurfacesFolder(string path)
         {
@@ -61,6 +71,15 @@ namespace ExtraAssetsImporter.OldImporters
             SurfacesIsLoading = true;
             SurfacesIsLoaded = false;
 
+            // Measured explicitly, never made current on the main thread: see
+            // DecalsImporter.CreateCustomDecals.
+            PerformanceStats perf = new("Old surfaces importer");
+            int startFrame = Time.frameCount;
+
+            // A pack can register its folder while this runs (deferred mod loading). That folder
+            // waits for the next pass, which starts when this one ends.
+            List<string> folders = new(FolderToLoadSurface);
+
             int numberOfSurfaces = 0;
             int ammoutOfSurfacesloaded = 0;
             int failedSurfaces = 0;
@@ -74,7 +93,7 @@ namespace ExtraAssetsImporter.OldImporters
                 progress: 0
             );
 
-            foreach (string folder in FolderToLoadSurface)
+            foreach (string folder in folders)
             {
                 if (!Directory.Exists(folder)) continue;
                 foreach (string catFolder in Directory.GetDirectories(folder))
@@ -82,15 +101,17 @@ namespace ExtraAssetsImporter.OldImporters
                         if (Directory.GetFiles(surfaceFolder).Length > 0)
                             numberOfSurfaces++;
                         else
-                            Directory.Delete(surfaceFolder, false);
+                            ImportersUtils.TryDeleteDirectory(surfaceFolder, recursive: false);
             }
 
 
             UIAssetParentCategoryPrefab assetCat = PrefabsHelper.GetOrCreateUIAssetParentCategoryPrefab("Surfaces");
 
             Dictionary<string, string> csLocalisation = new();
+            List<(Task<DecodedSurface> DecodeTask, Action<Task<DecodedSurface>> Finish)> pending = new();
+            long pendingBytes = 0;
 
-            foreach (string folder in FolderToLoadSurface)
+            foreach (string folder in folders)
             {
                 if (!Directory.Exists(folder)) continue;
                 foreach (string surfacesCat in Directory.GetDirectories(folder))
@@ -120,24 +141,55 @@ namespace ExtraAssetsImporter.OldImporters
                             continue;
                         }
 
-                        try
+                        long decodedBytes = DecodedSize(surfaceFolder);
+
+                        // The rest of the import, once a worker has decoded the surface's textures.
+                        Action<Task<DecodedSurface>> finish = decodeTask =>
                         {
-                            FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
-                            string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
-                            string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
-                            CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat);
-                            if (!csLocalisation.ContainsKey($"Assets.NAME[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullSurfaceName}]")) csLocalisation.Add($"Assets.NAME[{fullSurfaceName}]", surfaceName);
-                            if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullSurfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullSurfaceName}]", surfaceName);
-                        }
-                        catch (Exception e)
+                            try
+                            {
+                                FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
+                                string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
+                                string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
+                                using (perf.Measure("Blocking.CreateSurface"))
+                                    CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat, decodeTask.Result);
+                                if (!csLocalisation.ContainsKey($"Assets.NAME[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullSurfaceName}]")) csLocalisation.Add($"Assets.NAME[{fullSurfaceName}]", surfaceName);
+                                if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullSurfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullSurfaceName}]", surfaceName);
+                                perf.Increment("Assets.Created");
+                            }
+                            catch (Exception e)
+                            {
+                                failedSurfaces++;
+                                perf.Increment("Assets.Failed");
+                                EAI.Logger.Error($"Failed to load the custom surface at {surfaceFolder} | ERROR : {e}");
+                            }
+                            finally
+                            {
+                                if (decodeTask.Status == TaskStatus.RanToCompletion) decodeTask.Result.Dispose();
+                                pendingBytes -= decodedBytes;
+                            }
+
+                            ammoutOfSurfacesloaded++;
+                        };
+
+                        // Decoding the PNGs is the slow part: several run at once on worker
+                        // threads, and each surface finishes on the main thread once a worker has
+                        // decoded its textures.
+                        pending.Add((DecodeSurfaceAsync(surfaceFolder, perf), finish));
+                        pendingBytes += decodedBytes;
+                        while (pending.Count >= DecalsImporter.MaxPendingAssets || pendingBytes > MaxPendingBytes)
                         {
-                            failedSurfaces++;
-                            EAI.Logger.Error($"Failed to load the custom surface at {surfaceFolder} | ERROR : {e}");
+                            yield return null;
+                            DecalsImporter.FinishCompleted(pending);
                         }
-                        ammoutOfSurfacesloaded++;
-                        yield return null;
                     }
                 }
+            }
+
+            while (pending.Count > 0)
+            {
+                yield return null;
+                DecalsImporter.FinishCompleted(pending);
             }
 
             foreach (string localeID in GameManager.instance.localizationManager.GetSupportedLocales())
@@ -154,11 +206,115 @@ namespace ExtraAssetsImporter.OldImporters
             );
 
             //LoadLocalization();
+            FolderToLoadSurface.RemoveAll(folders.Contains);
+
+            perf.Increment("Frames", Time.frameCount - startFrame);
+            EAI.Logger.Info(perf.BuildReport());
+
             SurfacesIsLoaded = true;
             SurfacesIsLoading = false;
         }
 
-        private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, UIAssetParentCategoryPrefab assetCat)
+        // The memory a surface's PNGs take once decoded, read from their headers: the decoder gives
+        // 4 bytes per pixel.
+        private static long DecodedSize(string folderPath)
+        {
+            long size = 0;
+
+            foreach (string map in new[] { "_BaseColorMap.png", "_NormalMap.png", "_MaskMap.png" })
+            {
+                string path = Path.Combine(folderPath, map);
+                if (!File.Exists(path)) continue;
+
+                // An unreadable map adds nothing here.
+                if (ImportersUtils.TryReadPngSize(path, out int width, out int height)) size += (long)width * height * 4;
+            }
+
+            return size;
+        }
+
+        // Decoding a surface's PNGs is the slow part of a surface, and it touches no Unity object,
+        // so it runs on its own thread while the importer's coroutine yields. perf is current on
+        // that thread, so TextureImportSlots records Texture.Import into it.
+        internal static Task<DecodedSurface> DecodeSurfaceAsync(string folderPath, PerformanceStats perf)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                using (perf.MakeCurrent())
+                using (perf.Measure("Asset.Decode"))
+                {
+                    return new DecodedSurface
+                    {
+                        BaseColorMap = DecodePng(Path.Combine(folderPath, "_BaseColorMap.png")),
+                        NormalMap = DecodePng(Path.Combine(folderPath, "_NormalMap.png")),
+                        MaskMap = DecodePng(Path.Combine(folderPath, "_MaskMap.png"))
+                    };
+                }
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+        // Returns null for a missing file, a PNG that isn't 8 bits per channel or has fewer than
+        // three channels, or a failed decode: CreateTexture then loads that file with LoadImage on
+        // the main thread.
+        // LoadImage copies a gray PNG into each color channel, which no one- or two-channel texture
+        // format does.
+        internal static TextureImporter.Texture DecodePng(string path)
+        {
+            TextureImporter.Texture texture = null;
+
+            try
+            {
+                if (!File.Exists(path)) return null;
+
+                byte[] header = new byte[26];
+                using (FileStream stream = File.OpenRead(path))
+                {
+                    if (stream.Read(header, 0, header.Length) != header.Length) return null;
+                }
+
+                // Bytes 24 and 25 are the bit depth and the color type of the PNG's IHDR chunk.
+                if (header[1] != 'P' || header[2] != 'N' || header[3] != 'G' || header[24] != 8) return null;
+
+                DefaultTextureImporter.ImportSettings importSettings = DefaultTextureImporter.ImportSettings.GetDefault();
+                importSettings.computeMips = false;
+                importSettings.compressBC = false;
+
+                texture = TextureImportSlots.Import((DefaultTextureImporter)ImporterCache.GetImporter(".png"), importSettings, path);
+                if (texture.info.channels >= 3) return texture;
+
+                texture.Dispose();
+                return null;
+            }
+            catch (Exception e)
+            {
+                texture?.Dispose();
+                EAI.Logger.Warn($"Failed to decode {path} off the main thread, loading it on the main thread.\n{e}");
+                return null;
+            }
+        }
+
+        // Builds a texture with the pixels LoadImage gives for a PNG, in sRGB, with the mips Unity
+        // generates. The decoder's RGBA or RGB rows go in as they are.
+        // Only the GPU reads a surface's textures, so they keep no copy in RAM.
+        private static Texture2D CreateTexture(TextureImporter.Texture image, string path)
+        {
+            if (image == null)
+            {
+                Texture2D loaded = new(1, 1);
+                if (loaded.LoadImage(File.ReadAllBytes(path), markNonReadable: true)) return loaded;
+
+                UnityEngine.Object.Destroy(loaded);
+                return null;
+            }
+
+            TextureFormat format = image.info.channels == 4 ? TextureFormat.RGBA32 : TextureFormat.RGB24;
+            Texture2D texture = new(image.width, image.height, format, true);
+            texture.SetPixelData(image.GetRawMipData(0, 0), 0);
+            texture.Apply(updateMipmaps: true, makeNoLongerReadable: true);
+            return texture;
+        }
+
+        private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, UIAssetParentCategoryPrefab assetCat, DecodedSurface decoded)
         {
 
             string baseColorMapPath = Path.Combine(folderPath, "_BaseColorMap.png");
@@ -209,13 +365,10 @@ namespace ExtraAssetsImporter.OldImporters
 
             byte[] fileData;
 
-            fileData = File.ReadAllBytes(baseColorMapPath);
-            Texture2D texture2D_BaseColorMap = new(1, 1);
-            // markNonReadable: the textures are only used by the material, Unity can free their RAM copy once on the GPU.
-            if (!texture2D_BaseColorMap.LoadImage(fileData, true))
+            Texture2D texture2D_BaseColorMap = CreateTexture(decoded.BaseColorMap, baseColorMapPath);
+            if (texture2D_BaseColorMap == null)
             {
                 EAI.Logger.Error($"Failed to Load the BaseColorMap image for the {surfacePrefab.name} surface.");
-                UnityEngine.Object.Destroy(texture2D_BaseColorMap);
                 UnityEngine.Object.Destroy(newMaterial);
                 return;
             }
@@ -226,15 +379,13 @@ namespace ExtraAssetsImporter.OldImporters
             string normalMapPath = Path.Combine(folderPath, "_NormalMap.png");
             if (File.Exists(normalMapPath))
             {
-                fileData = File.ReadAllBytes(normalMapPath);
-                Texture2D texture2D_NormalMap = new(1, 1);
-                if (texture2D_NormalMap.LoadImage(fileData, true))
+                Texture2D texture2D_NormalMap = CreateTexture(decoded.NormalMap, normalMapPath);
+                if (texture2D_NormalMap != null)
                 {
                     newMaterial.SetTexture(ShaderPropertiesIDs.NormalMap, texture2D_NormalMap);
                 }
                 else
                 {
-                    UnityEngine.Object.Destroy(texture2D_NormalMap);
                     EAI.Logger.Warn($"Failed to load the NormalMap texture data for the {fullSurfaceName}");
                 }
             }
@@ -242,15 +393,13 @@ namespace ExtraAssetsImporter.OldImporters
             string maskMapPath = Path.Combine(folderPath, "_MaskMap.png");
             if (File.Exists(maskMapPath))
             {
-                fileData = File.ReadAllBytes(maskMapPath);
-                Texture2D texture2D_MaskMap = new(1, 1);
-                if (texture2D_MaskMap.LoadImage(fileData, true))
+                Texture2D texture2D_MaskMap = CreateTexture(decoded.MaskMap, maskMapPath);
+                if (texture2D_MaskMap != null)
                 {
                     newMaterial.SetTexture(ShaderPropertiesIDs.MaskMap, texture2D_MaskMap);
                 }
                 else
                 {
-                    UnityEngine.Object.Destroy(texture2D_MaskMap);
                     EAI.Logger.Warn($"Failed to load the MaskMap texture data for the {fullSurfaceName}");
                 }
             }
@@ -342,7 +491,7 @@ namespace ExtraAssetsImporter.OldImporters
 
         private static void VersionCompatiblity(JSONSurfacesMaterail jSONSurfacesMaterail, string catName, string surfaceName, string fullSurfaceName)
         {
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.LocalAsset)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.LocalAsset)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -351,7 +500,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.ELT2)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.ELT2)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -360,7 +509,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.ELT3)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.ELT3)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -369,7 +518,7 @@ namespace ExtraAssetsImporter.OldImporters
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
             }
-            if (EAI.m_Setting.OldImportersCompatibilityDropDown == EAIOldImportersCompatibility.PreEditor)
+            if (AssetsImporterManager.OldImportersCompatibility == EAIOldImportersCompatibility.PreEditor)
             {
                 PrefabIdentifierInfo prefabIdentifierInfo = new()
                 {
@@ -377,6 +526,21 @@ namespace ExtraAssetsImporter.OldImporters
                     m_Type = "SurfacePrefab"
                 };
                 jSONSurfacesMaterail.prefabIdentifierInfos.Insert(0, prefabIdentifierInfo);
+            }
+        }
+
+        // A surface's PNGs, decoded by the game into native memory that Dispose frees.
+        internal class DecodedSurface : IDisposable
+        {
+            public TextureImporter.Texture BaseColorMap;
+            public TextureImporter.Texture NormalMap;
+            public TextureImporter.Texture MaskMap;
+
+            public void Dispose()
+            {
+                BaseColorMap?.Dispose();
+                NormalMap?.Dispose();
+                MaskMap?.Dispose();
             }
         }
     }
