@@ -77,7 +77,7 @@ A huge thank you to [Toverux](https://github.com/toverux) for all the work on th
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/extraassetsimporter.1675642/" />
 	<!--Version of the mod-->
-	<ModVersion Value="1.8.0.0" />
+	<ModVersion Value="1.8.0.1" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.5.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -93,6 +93,7 @@ A huge thank you to [Toverux](https://github.com/toverux) for all the work on th
 
 ### Improvements
 - Much faster asset loading with the new importers: textures and assets are imported in parallel.
+- Faster asset loading with the old importers: their textures are imported in the background, and decals and NetLanes already in the database load about 3 times faster.
 - Reduced RAM usage when importing surfaces with the old importers.
 - Assets from disabled or removed mods are now unloaded without deleting their valid database entries.
 - Detailed import timings are now written in the log.
@@ -102,6 +103,7 @@ A huge thank you to [Toverux](https://github.com/toverux) for all the work on th
 - Fixed edited assets not always being detected and rebuilt.
 - Fixed the database relocation when its saved path was reset but the database still exists on disk.
 - Fixed the new importers settings being greyed out in the wrong state.
+- Fixed a memory leak when a texture or decal import fails.
 - Fixed various stability issues during import.
 	</ChangeLog>
 	<!--External link. supported types are discord, github, youtube, twitch, x, paypal, patreon-->
