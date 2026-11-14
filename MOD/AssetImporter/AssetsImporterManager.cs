@@ -9,6 +9,7 @@ using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.Database;
 using ExtraAssetsImporter.OldImporters;
 using ExtraLib;
@@ -50,8 +51,9 @@ namespace ExtraAssetsImporter.AssetImporter
 
         private static readonly ConcurrentDictionary<(Type baseType, Assembly assembly), List<Type>> s_DerivedTypesCache = new();
 
-        // 1 while a new-importers pass is queued or running. Set before Task.Run so a second ReloadDatabase
-        // click can't slip in between the button press and the importers flipping their own flags.
+        // 1 while a new-importers pass is queued or running. Set before the pass starts so a second
+        // ReloadDatabase click can't slip in between the button press and the importers flipping
+        // their own flags.
         private static int s_NewImportersPassRunning;
 
         private static bool s_ImportStarted;
@@ -293,6 +295,9 @@ namespace ExtraAssetsImporter.AssetImporter
             // Filling it here, on the main thread, keeps the importers' workers from racing on it.
             ImporterCache.CacheSupportedExtensions();
 
+            TextureImportSlots.SetCount(EAI.m_Setting.GetMaxConcurrentTextureImports(out string concurrencyReason));
+            EAI.Logger.Info($"Importing up to {TextureImportSlots.Count} textures at once ({concurrencyReason}).");
+
             EAI.Logger.Info("Start loading custom stuff.");
 
             if (runOldImporters)
@@ -329,9 +334,10 @@ namespace ExtraAssetsImporter.AssetImporter
             }
         }
 
+        // The pass waits for its importers to end, so it runs on its own thread, off the .NET pool.
         public static Task LoadCustomAssetsAsync(ImporterSettings importerSettings)
         {
-            return Task.Run(() => LoadCustomAssetsAsync_Impl(importerSettings));
+            return Task.Factory.StartNew(() => LoadCustomAssetsAsync_Impl(importerSettings), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         private static void LoadCustomAssetsAsync_Impl(ImporterSettings importerSettings)
@@ -351,9 +357,6 @@ namespace ExtraAssetsImporter.AssetImporter
             using (passStats.Measure("Pass.CreateLocalAssetPack"))
                 CreateEAILocalAssetPackPrefab();
 
-            EAI.m_Setting.GetMaxConcurrentAssets(out string concurrencyReason);
-            EAI.Logger.Info($"Importing up to {importerSettings.maxConcurrentAssets} assets at once per importer ({concurrencyReason}).");
-
             EAI.Logger.Info("Starting the loading of pre importers.");
 
             PerformanceCounter preImportersPerformanceCounter = new();
@@ -369,8 +372,11 @@ namespace ExtraAssetsImporter.AssetImporter
 
             PerformanceCounter importersPerformanceCounter = new();
 
+            // Each importer gets its own thread too: Parallel.ForEach runs its first worker on the
+            // thread that calls it (TaskReplicator in the game's mscorlib), and an asset blocks on
+            // texture slots and main-thread calls.
             var tasks = s_Importers.Values
-                .Select(importer => Task.Run(() => importer.LoadCustomAssets(importerSettings, passStats)))
+                .Select(importer => Task.Factory.StartNew(() => importer.LoadCustomAssets(importerSettings, passStats), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default))
                 .ToArray();
 
             Task.WaitAll(tasks);

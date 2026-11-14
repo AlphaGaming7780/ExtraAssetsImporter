@@ -5,6 +5,7 @@ using Colossal.Json;
 using Colossal.Localization;
 using Colossal.PSI.Common;
 using ExtraAssetsImporter.AssetImporter;
+using ExtraAssetsImporter.AssetImporter.Utils;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
@@ -18,6 +19,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Mathematics;
 using UnityEngine;
@@ -43,9 +45,17 @@ namespace ExtraAssetsImporter.OldImporters
         // cached assets don't take a frame each.
         internal const int FrameBudgetMs = 10;
 
-        // How many assets of one old importer import their textures at once, the same limit as the
-        // new importers. Each holds its textures in memory until the main thread finishes it.
-        internal static int MaxPendingAssets => EAI.m_Setting.GetMaxConcurrentAssets(out _);
+        // The three old importers' coroutines finish their assets in the same frames, so they share
+        // this much of a frame. Each call finishes at least one asset, so no importer stalls.
+        private const double FinishBudgetMs = 5;
+        private static int FinishFrame = -1;
+        private static double FinishSpentMs;
+
+        // How many assets of one old importer import their textures at once. Each keeps its
+        // textures in memory until the main thread finishes it, so the count stays low: at least
+        // four where the slots allow, as fewer leave texture slots idle on a small CPU, and never
+        // more than the slots.
+        internal static int MaxPendingAssets => Math.Min(TextureImportSlots.Count, Math.Max(4, TextureImportSlots.Count / 3));
 
         //private static readonly List<string> validName = ["_BaseColorMap.png", "_NormalMap.png", "_MaskMap.png"];
 
@@ -391,12 +401,23 @@ namespace ExtraAssetsImporter.OldImporters
             return decalPrefab;
         }
 
-        // Finishes, on the main thread, each pending asset whose textures are ready.
+        // Finishes, on the main thread, the pending assets whose textures are ready, until the
+        // frame's budget is spent.
         internal static void FinishCompleted<T>(List<(Task<T> Work, Action<Task<T>> Finish)> pending)
         {
+            if (Time.frameCount != FinishFrame)
+            {
+                FinishFrame = Time.frameCount;
+                FinishSpentMs = 0;
+            }
+
+            bool finishedOne = false;
             for (int i = pending.Count - 1; i >= 0; i--)
             {
                 if (!pending[i].Work.IsCompleted) continue;
+                if (finishedOne && FinishSpentMs >= FinishBudgetMs) return;
+
+                System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
 
                 // A failure here must not stop the importer's coroutine: the coroutine would never
                 // mark the importer loaded, and the pass waits for that.
@@ -409,16 +430,18 @@ namespace ExtraAssetsImporter.OldImporters
                     EAI.Logger.Error($"Failed to finish an import.\n{e}");
                 }
 
+                FinishSpentMs += timer.Elapsed.TotalMilliseconds;
+                finishedOne = true;
                 pending.RemoveAt(i);
             }
         }
 
         // Builds the decal's surface and imports its textures, the slow part of a decal. None of
-        // this touches a Unity object, so it runs on a worker thread while the importer's coroutine
-        // yields.
+        // this touches a Unity object, so it runs on its own thread while the importer's coroutine
+        // yields, and waiting for a texture slot there holds no .NET pool thread.
         internal static Task<Surface> CreateDecalSurfaceAsync(string folderPath, string decalName, string materialName = "DefaultDecal")
         {
-            return Task.Run(() => CreateDecalSurface(folderPath, decalName, materialName));
+            return Task.Factory.StartNew(() => CreateDecalSurface(folderPath, decalName, materialName), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         private static Surface CreateDecalSurface(string folderPath, string decalName, string materialName)
@@ -444,7 +467,7 @@ namespace ExtraAssetsImporter.OldImporters
             ImportSettings importSettings = ImportSettings.GetDefault();
             importSettings.compressBC = true;
             importSettings.wrapMode = TextureWrapMode.Repeat;
-            TextureImporter.Texture textureImporterBaseColorMap = defaultTextureImporter.Import(importSettings, Path.Combine(folderPath, "_BaseColorMap.png"));
+            TextureImporter.Texture textureImporterBaseColorMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, Path.Combine(folderPath, "_BaseColorMap.png"));
             decalSurface.AddProperty("_BaseColorMap", textureImporterBaseColorMap);
 
             string normalMapPath = Path.Combine(folderPath, "_NormalMap.png");
@@ -455,7 +478,7 @@ namespace ExtraAssetsImporter.OldImporters
                 importSettings.alphaIsTransparency = false;
                 importSettings.overrideCompressionFormat = Colossal.AssetPipeline.Native.NativeTextures.BlockCompressionFormat.BC7;
                 importSettings.wrapMode = TextureWrapMode.Repeat;
-                TextureImporter.Texture textureImporterNormalMap = defaultTextureImporter.Import(importSettings, normalMapPath);
+                TextureImporter.Texture textureImporterNormalMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, normalMapPath);
                 decalSurface.AddProperty("_NormalMap", textureImporterNormalMap);
             }
 
@@ -466,7 +489,7 @@ namespace ExtraAssetsImporter.OldImporters
                 importSettings.normalMap = false;
                 importSettings.alphaIsTransparency = false;
                 importSettings.wrapMode = TextureWrapMode.Repeat;
-                TextureImporter.Texture textureImporterMaskMap = defaultTextureImporter.Import(importSettings, maskMapPath);
+                TextureImporter.Texture textureImporterMaskMap = TextureImportSlots.Import(defaultTextureImporter, importSettings, maskMapPath);
                 decalSurface.AddProperty("_MaskMap", textureImporterMaskMap);
             }
 
