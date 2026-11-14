@@ -61,6 +61,7 @@ namespace ExtraAssetsImporter.AssetImporter
         protected int ammoutOfAssetsloaded;
         protected int failedAssets;
         protected int skipedAsset;
+        private int failedFolders;
         
         public virtual bool AddCustomAssetsFolder(string path)
         {
@@ -112,6 +113,40 @@ namespace ExtraAssetsImporter.AssetImporter
             AssetsLoading = true;
             AssetsLoaded = false;
 
+            // The pass waits for every importer, and an importer still loading skips the next pass,
+            // so a failure still marks this importer done. It flags the pass without throwing, so
+            // the other importers and the database save still run.
+            try
+            {
+                LoadCustomAssetFolders(importSettings);
+            }
+            catch (Exception e)
+            {
+                AssetsImporterManager.MarkImportFailed();
+                EAI.Logger.Error($"The {ImporterId} importer failed.\n{e}");
+
+                // An update still queued would show the notification again once removed.
+                WaitPendingMainThreadTasks();
+
+                EL.m_NotificationUISystem.RemoveNotificationOnMainThread(
+                    identifier: NotificationId,
+                    delay: 5f,
+                    text: "Failed, see the log.",
+                    progressState: ProgressState.Failed
+                ).Wait();
+            }
+            finally
+            {
+                AssetsLoaded = true;
+                AssetsLoading = false;
+                Reset();
+            }
+        }
+
+        private string NotificationId => $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}";
+
+        private void LoadCustomAssetFolders(ImporterSettings importSettings)
+        {
             EAI.Logger.Info($"The {ImporterId} importer starts loading its custom assets.");
 
             PerformanceCounter performanceCounter = new();
@@ -120,12 +155,13 @@ namespace ExtraAssetsImporter.AssetImporter
             ammoutOfAssetsloaded = 0;
             failedAssets = 0;
             skipedAsset = 0;
+            failedFolders = 0;
 
             // NotificationUISystem uses a plain Dictionary/List, so it must only be touched on the main thread.
             NotificationUISystem.NotificationInfo notificationInfo;
             using (Perf.Measure("Blocking.Notification"))
                 notificationInfo = EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(
-                $"{nameof(ExtraAssetsImporter)}.{nameof(LoadCustomAssets)}.{ImporterId}",
+                NotificationId,
                 title: $"EAI - Importing {ImporterId}.",
                 progressState: ProgressState.Indeterminate,
                 thumbnail: $"{Icons.COUIBaseLocation}/Icons/NotificationInfo/{ImporterId}.svg",
@@ -141,13 +177,7 @@ namespace ExtraAssetsImporter.AssetImporter
                         if (Directory.GetFiles(assetsFolder).Length > 0)
                             numberOfAssets++;
                         else
-                        {
-                            try
-                            {
-                                Directory.Delete(assetsFolder, false);
-                            }
-                            catch (Exception ex) { EAI.Logger.Warn(ex); }
-                        }
+                            ImportersUtils.TryDeleteDirectory(assetsFolder, recursive: false);
             }
 
             using (Perf.Measure("Importer.PreLoad"))
@@ -173,8 +203,21 @@ namespace ExtraAssetsImporter.AssetImporter
 
                 string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(importerFolder).Parent.Name.Split('_')[0];
 
-                using (Perf.Measure("Importer.LoadFolder"))
-                    LoadCustomAssetFolder(importSettings, importerFolder, modName, notificationInfo);
+                // One folder failing, on a malformed file for example, leaves the others loading.
+                // A failed folder stays off the scanned list, so its assets keep their cache.
+                try
+                {
+                    using (Perf.Measure("Importer.LoadFolder"))
+                        LoadCustomAssetFolder(importSettings, importerFolder, modName, notificationInfo);
+
+                    importSettings.eaiDatabase.AddScannedFolder(GetScannedFolder(importerFolder));
+                }
+                catch (Exception e)
+                {
+                    failedFolders++;
+
+                    EAI.Logger.Error($"The {ImporterId} importer failed to load {importerFolder}.\n{e}");
+                }
             }
 
             using (Perf.Measure("Importer.AfterLoad"))
@@ -185,21 +228,18 @@ namespace ExtraAssetsImporter.AssetImporter
 
             TimeSpan elapsed = performanceCounter.result;
             double msPerAsset = numberOfAssets > 0 ? elapsed.TotalMilliseconds / numberOfAssets : 0;
+            string failedFoldersText = failedFolders > 0 ? $", failed folders: {failedFolders}" : "";
 
             using (Perf.Measure("Blocking.Notification"))
             EL.m_NotificationUISystem.RemoveNotificationOnMainThread(
                 identifier: notificationInfo.id,
                 delay: 5f,
-                text: $"Complete, {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped. Took {elapsed.TotalSeconds:F2}s ({msPerAsset:F1}ms/asset).",
+                text: $"Complete, {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped{failedFoldersText}. Took {elapsed.TotalSeconds:F2}s ({msPerAsset:F1}ms/asset).",
                 progressState: ProgressState.Complete,
                 progress: 100
             ).Wait();
 
-            EAI.Logger.Info($"The {ImporterId} importer finished loading all its assets. {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped. Took {elapsed.TotalSeconds:F2}s ({msPerAsset:F1}ms/asset).");
-
-            AssetsLoaded = true;
-            AssetsLoading = false;
-            Reset();
+            EAI.Logger.Info($"The {ImporterId} importer finished loading all its assets. {numberOfAssets - failedAssets - skipedAsset} Loaded, {failedAssets} failed, {skipedAsset} skipped{failedFoldersText}. Took {elapsed.TotalSeconds:F2}s ({msPerAsset:F1}ms/asset).");
         }
 
         public virtual void Reset()
@@ -221,7 +261,7 @@ namespace ExtraAssetsImporter.AssetImporter
             TrackMainThreadTask(EL.m_NotificationUISystem.AddOrUpdateNotificationOnMainThread(notificationInfo.id, text: text, progressState: ProgressState.Progressing, progress: progress));
         }
 
-        private void WaitPendingMainThreadTasks()
+        protected void WaitPendingMainThreadTasks()
         {
             while (_PendingMainThreadTasks.TryDequeue(out Task task))
             {
@@ -234,6 +274,13 @@ namespace ExtraAssetsImporter.AssetImporter
                     EAI.Logger.Error($"The {ImporterId} importer had a main thread task fail: {e.Flatten().InnerException}");
                 }
             }
+        }
+
+        // The folder an asset of this importer names: its SourceModPath joined with the first
+        // segment of its AssetPath.
+        protected virtual string GetScannedFolder(string importerFolder)
+        {
+            return importerFolder;
         }
 
         protected virtual void PreLoadCustomAssetFolder(ImporterSettings importSettings) { }

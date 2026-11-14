@@ -26,6 +26,7 @@ namespace ExtraAssetsImporter.Database
         internal static readonly string defaultDatabasePath = Path.GetFullPath(Path.Combine(EAI.pathModsData, databaseFolderName));
         public static EAIDatabase eaiDatabase;
         public static AssetDatabase<EAIAssetDatabaseDescriptor> EAIAssetDatabase => AssetDatabase<EAIAssetDatabaseDescriptor>.instance;
+        private static string LegacyDatabasePath => Path.GetFullPath(Path.Combine(EAI.pathModsData, "Database"));
 
         // True when the database lives in a folder named ".Database" (the default layout, also used by relocation).
         internal static bool IsDatabaseInDatabaseFolder
@@ -163,8 +164,9 @@ namespace ExtraAssetsImporter.Database
 
         // Unregisters (from PrefabSystem) and unloads (from the asset database) every known asset whose
         // source mod's path isn't in activeModPaths, without touching anything generated on disk — for
-        // mods present but disabled in the current playset (contrast with EAIDatabase.ClearNotLoadedAssetsFromFiles,
-        // which deletes for a mod that's genuinely gone). Re-enabling a mod needs no separate "re-add" path:
+        // mods present but disabled in the current playset (contrast with
+        // EAIDatabase.ClearNotImportedAssets, which deletes for a mod that's genuinely gone).
+        // Re-enabling a mod needs no separate "re-add" path:
         // a normal AddAssetFolder + import pass finds the mod's cached prefabs again via
         // ImportersUtils.TryGetCachedPrefab instead of rebuilding them.
         //
@@ -220,15 +222,16 @@ namespace ExtraAssetsImporter.Database
 
         internal static void CheckIfDatabaseNeedToBeRelocated()
         {
-            // Nothing loaded yet (e.g. OnDispose before Initialize): LoadDatabase runs this check itself when it does
-            // load, so loading and registering the database here would be wasted work at best.
+            // Nothing loaded yet: LoadDatabase runs this check itself when it does load, so loading
+            // and registering the database here would be wasted work at best.
             if (eaiDatabase == null) return;
 
             if(string.IsNullOrEmpty(EAI.m_Setting.SavedDatabasePath) || EAI.m_Setting.SavedDatabasePath == eaiDatabase.ActualDatabasePath) return;
 
+            // The settings file syncs between computers, so this path can come from another one.
             if(!Directory.Exists(EAI.m_Setting.SavedDatabasePath))
             {
-                EAI.Logger.Error($"The selected directory for database relocation doesn't exist: {EAI.m_Setting.SavedDatabasePath}");
+                EAI.Logger.Warn($"The selected directory for database relocation doesn't exist on this computer, keeping the database where it is: {EAI.m_Setting.SavedDatabasePath}");
                 return;
             }
 
@@ -242,6 +245,54 @@ namespace ExtraAssetsImporter.Database
                     EAI.m_Setting.Apply();
                 }
             }
+        }
+
+        // Every mod of the playset has loaded, the deferred ones included, so every pack had its
+        // chance to register its folder.
+        internal static bool IsPlaysetLoaded()
+        {
+            return AssetDatabase<ParadoxMods>.instance?.isCached == true;
+        }
+
+        internal static string ComparablePath(string path)
+        {
+            return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        // EAI.pathModsData mixes '/' and '\': Path.Combine adds '\' to EnvPath.kUserDataPath,
+        // Unity's persistentDataPath, which uses '/'. A legacy path saved from it does too, so
+        // only normalized paths can match.
+        private static bool IsLegacyDatabasePath(string path)
+        {
+            return !string.IsNullOrEmpty(path) && string.Equals(ComparablePath(path), LegacyDatabasePath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Before 1.7.4 the database folder was "Database". The game scans that folder at boot as
+        // user content and loads every cached prefab a second time.
+        internal static void MoveLegacyDatabaseFolder()
+        {
+            string legacyPath = LegacyDatabasePath;
+
+            if (!IsLegacyDatabasePath(eaiDatabase.ActualDatabasePath)) return;
+
+            if (!RelocateAssetDatabase(defaultDatabasePath)) return;
+
+            EAI.Logger.Info($"Moved the database from {legacyPath} to {defaultDatabasePath}.");
+
+            if (IsLegacyDatabasePath(EAI.m_Setting.SavedDatabasePath))
+            {
+                EAI.m_Setting.SavedDatabasePath = defaultDatabasePath;
+                EAI.m_Setting.Apply();
+            }
+        }
+
+        // At quit, the game saves the settings before the mods dispose, so this quit doesn't save
+        // the change the move makes to the setting. Once the legacy folder is gone, the next load
+        // makes the change again, and that session's quit saves it.
+        internal static void ForgetMovedLegacyDatabasePath()
+        {
+            if (IsLegacyDatabasePath(EAI.m_Setting.SavedDatabasePath) && !Directory.Exists(LegacyDatabasePath))
+                EAI.m_Setting.SavedDatabasePath = defaultDatabasePath;
         }
 
         public static bool RelocateAssetDatabase(string newDirectory)
@@ -302,10 +353,22 @@ namespace ExtraAssetsImporter.Database
 
         public EAIDatabase() {}
 
+        // Databases saved before version 4 name this key DataBaseVersion. Reading it lets the
+        // version check reset them.
+        [DecodeAlias("DataBaseVersion")]
         public int DatabaseVersion = EAIDatabaseManager.DatabaseVersion;
+        // Databases saved before version 4 name this key ActualDataBasePath. Reading it keeps their
+        // location, which the reset, the legacy folder move, and the relocation start from.
+        [DecodeAlias("ActualDataBasePath")]
         public string ActualDatabasePath = EAIDatabaseManager.defaultDatabasePath;
         public Dictionary<string, EAIAsset> AssetsDatabase = new Dictionary<string, EAIAsset>();
         private readonly Dictionary<string, EAIAsset> _ValidateAssetsDatabase = new Dictionary<string, EAIAsset>();
+        // The assets an import validated this session, which ClearNotImportedAssets keeps.
+        private readonly HashSet<string> _ImportedAssetIDs = new HashSet<string>();
+        // The importer folders an import went through this session, or found missing, as
+        // ComparablePath gives them.
+        private readonly HashSet<string> _ScannedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private DateTime _LastProgressSave = DateTime.UtcNow;
         internal string _DatabasePath = null;
 
         private readonly object _lock = new object();
@@ -315,15 +378,11 @@ namespace ExtraAssetsImporter.Database
         {
             lock (_lock)
             {
-                if (!EAI.m_Setting.DeleteNotLoadedAssets)
-                {
-                    foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase.ToList()) _ValidateAssetsDatabase[entry.Key] = entry.Value;
-                    AssetsDatabase.Clear();
-                }
-                else
-                {
-                    ClearNotLoadedAssetsFromFiles(importerSettings);
-                }
+                // A pass may not see every pack: a late one imports only the new folders, and the
+                // first one runs before the packs of deferred mods register. The assets it didn't
+                // see stay, and ClearNotImportedAssets deletes at quit those whose source is gone.
+                foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase) _ValidateAssetsDatabase[entry.Key] = entry.Value;
+                AssetsDatabase.Clear();
 
                 // Copy, never alias: if both fields pointed at the same dictionary, the next pass (ReloadDatabase)
                 // would see freshly validated assets as "not loaded" and the AssetsDatabase.Clear() above would wipe both.
@@ -338,118 +397,78 @@ namespace ExtraAssetsImporter.Database
             lock (_lock)
             {
                 DatabaseVersion = EAIDatabaseManager.DatabaseVersion;
-                EAI.Logger.Info($"Saving the database at {_DatabasePath}, saving {AssetsDatabase.Count} assets.");
+                EAI.Logger.Info($"Saving the database at {_DatabasePath}, saving {_ValidateAssetsDatabase.Count + AssetsDatabase.Count} assets.");
                 string directoryPath = Path.GetDirectoryName(_DatabasePath);
                 if (!Directory.Exists(directoryPath)) Directory.CreateDirectory(directoryPath);
-                File.WriteAllText(_DatabasePath, Encoder.Encode(this, EncodeOptions.None));
+                Write();
             }
         }
 
 
-        private void ClearNotLoadedAssetsFromFiles(ImporterSettings importerSettings)
+        // Deletes the cache of each asset no import saw this session whose source is gone, as
+        // IsRemoved decides. Runs when the game quits, after the packs of deferred mods had their
+        // own pass.
+        internal void ClearNotImportedAssets()
         {
             lock (_lock)
             {
-                if (EAI.m_Setting.DeleteNotLoadedAssets == false)
+                if (!EAI.m_Setting.DeleteNotLoadedAssets) return;
+
+                List<EAIAsset> notImported = AssetsDatabase.Values.Where(asset => !_ImportedAssetIDs.Contains(asset.AssetID) && IsRemoved(asset)).ToList();
+
+                if (notImported.Count == 0) return;
+
+                foreach (EAIAsset asset in notImported)
                 {
-                    EAI.Logger.Info("Skipping clearing not loaded assets from files because the setting is disabled.");
-                    return;
-                }
-                List<EAIAsset> tempAssets = new(AssetsDatabase.Values);
-                EAI.Logger.Info($"Going to remove unused asset from database, number of asset : {AssetsDatabase.Count}");
-                foreach (EAIAsset asset in tempAssets)
-                {
+                    AssetsDatabase.Remove(asset.AssetID);
+
                     if (asset.AssetPath == null) continue;
 
-                    // The source mod is still installed but wasn't re-registered this session (most likely
-                    // disabled in the playset, since a disabled mod's OnLoad never runs). Leave the generated
-                    // asset and its database entry untouched so it comes back instantly if re-enabled, instead
-                    // of treating it the same as a genuinely uninstalled mod. The trailing sweep below already
-                    // carries anything left in AssetsDatabase forward into _ValidateAssetsDatabase.
-                    if (!string.IsNullOrEmpty(asset.SourceModPath) && Directory.Exists(asset.SourceModPath))
-                        continue;
-
-                    string path = Path.Combine(importerSettings.dataBase.rootPath, asset.AssetPath);
-                    if (Directory.Exists(path))
-                    {
-                        if (!AssetsDatabase.Remove(asset.AssetID))
-                        {
-                            EAI.Logger.Warn($"Failed to remove an unloaded asset at path {path} from the database.");
-                            continue;
-                        }
-
-                        // Making sure that if a prefab is their and loaded in the prefab system, it is removed from it.
-                        SearchFilter<PrefabAsset> searchFilter = SearchFilter<PrefabAsset>.ByCondition(a => {
-                            try
-                            {
-                                if (a is null)
-                                {
-                                    EAI.Logger.Warn($"Found a null prefab asset when trying to remove unused assets from database.");
-                                    return false;
-                                }
-
-                                if (a.subPath is null)
-                                {
-                                    EAI.Logger.Warn($"Found a prefab asset with a null subpath when trying to remove unused assets from database.{a}");
-                                    return false;
-                                }
-                                string pathA = a.subPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-                                string pathB = Path.DirectorySeparatorChar + asset.AssetPath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-                                return pathA.Contains(pathB) && !ActualDatabasePath.Contains(pathA);
-                            }
-                            catch (Exception ex)
-                            {
-                                EAI.Logger.Warn($"Exception when trying to compare prefab asset paths when removing unused assets from database. Exception : {ex}");
-                                return false;
-                            }
-                        });
-
-                        // Materialized: DeleteAsset below changes the databases being enumerated.
-                        List<PrefabAsset> prefabAssets = AssetDatabase.user.GetAssets<PrefabAsset>(searchFilter)
-                            .Concat(importerSettings.dataBase.GetAssets<PrefabAsset>(searchFilter))
-                            .ToList();
-
-                        // SaveValidateDatabase runs at the end of the import Task: loading the prefab (ScriptableObject
-                        // deserialization) and touching the PrefabSystem must happen on the main thread.
-                        MainThreadHelper.RunOnMainThread(() =>
-                        {
-                            foreach (PrefabAsset prefabAsset in prefabAssets)
-                            {
-                                EAI.Logger.Info($"Removing prefab asset {prefabAsset.name} at {prefabAsset.subPath} from prefab system and unloading it.");
-
-                                try
-                                {
-                                    PrefabBase prefabBase = prefabAsset.Load<PrefabBase>();
-
-                                    if (prefabBase != null && EL.m_PrefabSystem.TryGetPrefab(prefabBase.GetPrefabID(), out PrefabBase existingPrefab))
-                                    {
-                                        if (!EL.m_PrefabSystem.RemovePrefab(existingPrefab))
-                                            EAI.Logger.Warn($"Failed to remove prefab {prefabAsset.name} from prefab system.");
-                                    }
-                                    else
-                                    {
-                                        EAI.Logger.Info($"Prefab {prefabAsset.name} was not in the prefab system.");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    EAI.Logger.Warn($"Failed to load prefab asset {prefabAsset.name} before removing it: {ex}");
-                                }
-
-                                // Always drop it from the asset database: its folder is deleted right after, so keeping
-                                // the entry would leave an asset pointing to a file that no longer exists.
-                                prefabAsset.Unload();
-                                prefabAsset.database.DeleteAsset(prefabAsset);
-                            }
-                        }).Wait();
-
-                        Directory.Delete(path, true);
-                    }
-                    else EAI.Logger.Warn($"Trying to delete an unloaded asset at path {path}, but this path doesn't exist.");
+                    string path = Path.Combine(ActualDatabasePath, asset.AssetPath);
+                    if (Directory.Exists(path)) DeleteAssetFolder(ActualDatabasePath, path);
                 }
-                EAI.Logger.Info($"Removed unused asset from database, number of asset in database now : {AssetsDatabase.Count}.");
-                foreach (KeyValuePair<string, EAIAsset> entry in AssetsDatabase.ToList()) _ValidateAssetsDatabase[entry.Key] = entry.Value;
-                AssetsDatabase.Clear();
+
+                EAI.Logger.Info($"Removed {notImported.Count} assets no import of this session saw from the database.");
+                SaveDatabase();
+            }
+        }
+
+        // An asset no import saw is gone when its mod is, or when its importer folder is missing or
+        // an import went through it without it.
+        // A mod disabled in the playset keeps its folder, and a disabled importer skips it, so
+        // their assets keep their cache and come back without a rebuild.
+        private bool IsRemoved(EAIAsset asset)
+        {
+            if (string.IsNullOrEmpty(asset.SourceModPath) || !Directory.Exists(asset.SourceModPath)) return true;
+            if (string.IsNullOrEmpty(asset.AssetPath)) return false;
+
+            // An asset's path starts with the name of its importer folder.
+            string importerFolder = Path.Combine(asset.SourceModPath, asset.AssetPath.Split('\\', '/')[0]);
+            return _ScannedFolders.Contains(EAIDatabaseManager.ComparablePath(importerFolder));
+        }
+
+        // Records an importer folder an import went through without a throw, or one its mod lacks,
+        // so that the quit cleanup deletes the assets the folder no longer holds.
+        internal void AddScannedFolder(string folder)
+        {
+            lock (_lock)
+            {
+                _ScannedFolders.Add(EAIDatabaseManager.ComparablePath(folder));
+            }
+        }
+
+        // Deletes an asset's folder, then its pack and category folders once they are empty.
+        private static void DeleteAssetFolder(string rootPath, string path)
+        {
+            Directory.Delete(path, true);
+
+            string root = EAIDatabaseManager.ComparablePath(rootPath);
+            DirectoryInfo parent = new DirectoryInfo(path).Parent;
+
+            while (parent != null && parent.FullName.Length > root.Length && parent.FullName.StartsWith(root, StringComparison.OrdinalIgnoreCase) && !parent.EnumerateFileSystemInfos().Any())
+            {
+                parent.Delete();
+                parent = parent.Parent;
             }
         }
 
@@ -465,7 +484,48 @@ namespace ExtraAssetsImporter.Database
                 }
 
                 _ValidateAssetsDatabase[asset.AssetID] = asset;
+                _ImportedAssetIDs.Add(asset.AssetID);
+
+                if (DateTime.UtcNow - _LastProgressSave > TimeSpan.FromSeconds(30)) SaveProgress();
             }
+        }
+
+        // Saves what the import validated so far plus what it hasn't reached yet, so a session cut
+        // short by a crash or a quit during the import keeps the assets already built.
+        // A failed write only warns: the import already built the asset that triggered it, and the
+        // save at the end of the pass tries again.
+        private void SaveProgress()
+        {
+            _LastProgressSave = DateTime.UtcNow;
+
+            try
+            {
+                Write();
+            }
+            catch (Exception e)
+            {
+                EAI.Logger.Warn($"Failed to save the database's progress: {e}");
+            }
+        }
+
+        // Saves the assets the running import validated along with the others, through a temporary
+        // file, so a crash mid-write leaves the previous file intact.
+        private void Write()
+        {
+            Dictionary<string, EAIAsset> assets = new(AssetsDatabase);
+            foreach (KeyValuePair<string, EAIAsset> entry in _ValidateAssetsDatabase) assets[entry.Key] = entry.Value;
+
+            EAIDatabase snapshot = new()
+            {
+                ActualDatabasePath = ActualDatabasePath,
+                AssetsDatabase = assets
+            };
+
+            string tempPath = $"{_DatabasePath}.tmp";
+            File.WriteAllText(tempPath, Encoder.Encode(snapshot, EncodeOptions.None));
+
+            if (File.Exists(_DatabasePath)) File.Replace(tempPath, _DatabasePath, null);
+            else File.Move(tempPath, _DatabasePath);
         }
 
         internal EAIAsset GetEAIAsset(string AssetID)
@@ -500,7 +560,12 @@ namespace ExtraAssetsImporter.Database
                 _ValidateAssetsDatabase.Clear();
                 AssetsDatabase.Clear();
                 SaveDatabase();
-                Directory.Delete(ActualDatabasePath, true);
+
+                // A database saved before version 4 can point at a folder the player picked or at
+                // the legacy Database folder, so EAI deletes only a folder named .Database.
+                if (!EAIDatabaseManager.IsDatabaseInDatabaseFolder)
+                    EAI.Logger.Warn($"Keeping the files at {ActualDatabasePath}: EAI deletes only a folder named {EAIDatabaseManager.databaseFolderName}.");
+                else if (Directory.Exists(ActualDatabasePath)) Directory.Delete(ActualDatabasePath, true);
             }
         }
 

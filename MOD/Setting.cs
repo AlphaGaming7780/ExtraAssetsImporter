@@ -49,11 +49,12 @@ namespace ExtraAssetsImporter
         public bool DisableCondition_SavePrefabs => DisableCondition_UseNewImporters || !EAIDatabaseManager.IsDatabaseInDatabaseFolder;
         internal bool CanSavePrefabs => SavePrefabs && !DisableCondition_SavePrefabs;
 
-        // 0 = Auto, see GetMaxConcurrentAssets.
+        // 0 = Auto, see GetMaxConcurrentAssets. The old importers follow it too.
         [SettingsUISection(kMainSection, kNewImportersGroup)]
         [SettingsUIDropdown(typeof(Setting), nameof(GetMaxConcurrentAssetsValues))]
-        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_UseNewImporters))]
+        [SettingsUIDisableByCondition(typeof(Setting), nameof(DisableCondition_MaxConcurrentAssets))]
         public int MaxConcurrentAssets { get; set; } = 0;
+        public bool DisableCondition_MaxConcurrentAssets => !UseNewImporters && !UseOldImporters;
 
         public const int kMaxConcurrentAssetsLimit = 8;
 
@@ -161,10 +162,11 @@ namespace ExtraAssetsImporter
             NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
         }
 
-        internal void ResetCompatibility()
+        // A pick that differs from the held value stays for a later pass to take.
+        internal void ResetCompatibility(EAIOldImportersCompatibility appliedOld, EAINewImportersCompatibility appliedNew)
         {
-            OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
-            NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
+            if (OldImportersCompatibilityDropDown == appliedOld) OldImportersCompatibilityDropDown = EAIOldImportersCompatibility.None;
+            if (NewImportersCompatibilityDropDown == appliedNew) NewImportersCompatibilityDropDown = EAINewImportersCompatibility.None;
             Apply();
         }
     }

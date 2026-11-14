@@ -2,6 +2,8 @@
 using Colossal.IO.AssetDatabase;
 using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
+using ExtraLib.Debugger;
+using ExtraLib.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,7 +52,11 @@ namespace ExtraAssetsImporter.AssetImporter.Utils
             };
 
             surfaceAsset.database.AddAsset<SurfaceAsset>(surfaceAssetDataPath, surfaceAsset.id.guid);
-            surfaceAsset.SetData(surface);
+
+            // SetData finds the template material by its name, and only the main thread may read a
+            // Unity object's name.
+            using (PerformanceStats.MeasureCurrent("Blocking.SurfaceSetData"))
+                MainThreadHelper.RunOnMainThread(() => surfaceAsset.SetData(surface)).Wait();
 
             if (importTextures)
             {

@@ -43,6 +43,12 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return assetPackJson;
         }
 
+        // A pack's AssetPath starts with ImporterId, and its mod's folder holds AssetPack.json.
+        protected override string GetScannedFolder(string importerFolder)
+        {
+            return Path.Combine(Path.GetDirectoryName(importerFolder), ImporterId);
+        }
+
         protected override void PreLoadCustomAssetFolder(ImporterSettings importSettings)
         {
             // A pack whose mod was removed since the last pass must not be handed out anymore.
@@ -87,10 +93,11 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
                 needToUpdateAsset = eaiAsset.SourceAssetHash != sourceAssetFolderHash || eaiAsset.AssetPath != assetDataPath;
                 eaiAsset.SourceAssetHash = sourceAssetFolderHash;
                 eaiAsset.AssetPath = assetDataPath;
+                eaiAsset.SourceModPath = sourceFolder;
             }
             else
             {
-                eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath);
+                eaiAsset = new(fullAssetName, sourceAssetFolderHash, assetDataPath, sourceModPath: sourceFolder);
                 needToUpdateAsset = true;
             }
 
@@ -98,8 +105,13 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             if (!needToUpdateAsset && ImportersUtils.TryGetCachedPrefab(importSettings, assetDataPath, fullAssetName, prefabFileName, out AssetPackPrefab cachedAssetPackPrefab))
             {
-                eaiAsset.PrefabID = cachedAssetPackPrefab.GetPrefabID().ToString();
+                // A prefab ID holds the prefab's name, which only the main thread may read.
+                eaiAsset.PrefabID = MainThreadHelper.RunOnMainThread(() => cachedAssetPackPrefab.GetPrefabID().ToString()).Result;
                 s_AssetPacks[modName] = cachedAssetPackPrefab;
+
+                // The game's locale keeps no string from one session to the next.
+                AddLocalisation(fullAssetName, LoadJSON(folder));
+
                 importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
                 ammoutOfAssetsloaded++;
                 return;
@@ -108,24 +120,36 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             AssetPackJson assetPackJson = LoadJSON(folder);
 
             AssetPackPrefab assetPackPrefab = ImportersUtils.GetOrCreatePrefabInstance<AssetPackPrefab>(fullAssetName, typeof(UIObject));
-            assetPackPrefab.name = fullAssetName;
 
             UIObject assetPackUI = assetPackPrefab.AddOrGetComponentOnMainThread<UIObject>();
 
             string svgIconPath = Path.Combine(sourceFolder, $"{modName}.svg");
 
-            assetPackUI.m_Icon = File.Exists(svgIconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
-
-
             AssetDataPath prefabAssetPath = AssetDataPath.Create(assetDataPath, prefabFileName, true, EscapeStrategy.None);
             PrefabAsset prefabAsset = importSettings.dataBase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, assetPackPrefab, Colossal.Hash128.CreateGuid(fullAssetName));
 
-            eaiAsset.PrefabID = assetPackPrefab.GetPrefabID().ToString();
-
-            if(importSettings.savePrefabs) prefabAsset.Save();
+            // The default icon, the save, and the prefab ID read the prefab's name, which only the
+            // main thread may read.
+            eaiAsset.PrefabID = MainThreadHelper.RunOnMainThread(() =>
+            {
+                assetPackUI.m_Icon = File.Exists(svgIconPath) ? $"{Icons.COUIBaseLocation}/{modName}.svg" : Icons.GetIcon(assetPackPrefab);
+                if (importSettings.savePrefabs) prefabAsset.Save();
+                return assetPackPrefab.GetPrefabID().ToString();
+            }).Result;
 
             TrackMainThreadTask(MainThreadHelper.RunOnMainThread(() => EL.m_PrefabSystem.AddOrUpdatePrefab(assetPackPrefab)));
             s_AssetPacks[modName] = assetPackPrefab;
+
+            AddLocalisation(fullAssetName, assetPackJson);
+
+            importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
+            ammoutOfAssetsloaded++;
+        }
+
+        private void AddLocalisation(string fullAssetName, AssetPackJson assetPackJson)
+        {
+            // The game drops the whole batched source over one null, other assets' names with it.
+            if (assetPackJson.PackName == null) return;
 
             Dictionary<string, string> localisation = new()
             {
@@ -134,9 +158,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             };
 
             TrackMainThreadTask(ImportersUtils.SetupLocalisationForPrefab(localisation));
-
-            importSettings.eaiDatabase.AddOrValidateAsset(eaiAsset);
-            ammoutOfAssetsloaded++;
         }
 
         public override void ExportTemplate(string path)

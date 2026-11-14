@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using ExtraAssetsImporter.Database;
+using System.IO;
 
 namespace ExtraAssetsImporter.AssetImporter
 {
@@ -11,7 +12,15 @@ namespace ExtraAssetsImporter.AssetImporter
             if(string.IsNullOrEmpty(FolderName)) FolderName = ImporterId;
 
             string folder = Path.Combine(path, FolderName);
-            if (!Directory.Exists(folder)) return false;
+
+            // A mod without this folder no longer holds any of this importer's assets, so the quit
+            // cleanup deletes their cache.
+            if (!Directory.Exists(folder))
+            {
+                EAIDatabaseManager.eaiDatabase.AddScannedFolder(GetScannedFolder(folder));
+                return false;
+            }
+
             return base.AddCustomAssetsFolder(folder);
         }
 

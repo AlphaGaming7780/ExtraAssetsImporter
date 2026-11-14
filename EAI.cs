@@ -97,6 +97,7 @@ namespace ExtraAssetsImporter
                 m_Setting = new Setting(this);
                 m_Setting.RegisterInOptionsUI();
                 AssetDatabase.global.LoadSettings(nameof(ExtraAssetsImporter), m_Setting, new Setting(this));
+                EAIDatabaseManager.ForgetMovedLegacyDatabasePath();
 
                 // MOVE DATABASE OUT OF THE GAME FOLDER
                 oldModsPath = Path.Combine(EnvPath.kContentPath, "Mods");
@@ -128,6 +129,7 @@ namespace ExtraAssetsImporter
                 string pathToDataCustomSurfaces = Path.Combine(pathModsData, "CustomSurfaces");
                 string pathToDataCustomNetLanes = Path.Combine(pathModsData, "CustomNetLanes");
 
+                // Localization first: the asset packs' default names check its PackFallbackKeys.
                 AssetsImporterManager.AddImporter<LocalizationImporter>();
                 AssetsImporterManager.AddImporter<AssetPackImporter>();
 
@@ -173,7 +175,35 @@ namespace ExtraAssetsImporter
 		public void OnDispose()
 		{
 			Logger.Info(nameof(OnDispose));
-			EAIDatabaseManager.CheckIfDatabaseNeedToBeRelocated();
+
+			// Nothing loaded: OnLoad threw, or the quit came before the import.
+			// A throw here escapes ModManager.InitializeMods, so the mods after EAI would not load.
+			if (EAIDatabaseManager.eaiDatabase == null) return;
+
+			// Each step runs even if the one before it fails.
+			try
+			{
+				if (AssetsImporterManager.IsImportFinished && !AssetsImporterManager.HasImportFailed && EAIDatabaseManager.IsPlaysetLoaded()) EAIDatabaseManager.eaiDatabase.ClearNotImportedAssets();
+			}
+			catch (Exception e)
+			{
+				Logger.Error($"Failed to remove the assets no import saw from the database.\n{e}");
+			}
+
+			// A running pass writes into the database folder, so the folder must not move under it.
+			if (!AssetsImporterManager.IsImporting)
+			{
+				try
+				{
+					EAIDatabaseManager.MoveLegacyDatabaseFolder();
+					EAIDatabaseManager.CheckIfDatabaseNeedToBeRelocated();
+				}
+				catch (Exception e)
+				{
+					Logger.Error($"Failed to move the database.\n{e}");
+				}
+			}
+
             ClearData();
 		}
 

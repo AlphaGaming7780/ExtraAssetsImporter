@@ -32,7 +32,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             EnclosedAreaJson json = componentJson.Make<EnclosedAreaJson>();
             if (json is null)
             {
-                EAI.Logger.Error($"EnclosedArea component JSON is null for prefab {prefab.name}.");
+                EAI.Logger.Error($"EnclosedArea component JSON is null for prefab {data.FullAssetName}.");
                 return;
             }
             EnclosedArea enclosedArea = prefab.AddOrGetComponentOnMainThread<EnclosedArea>();
