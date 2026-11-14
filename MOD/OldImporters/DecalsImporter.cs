@@ -194,6 +194,7 @@ namespace ExtraAssetsImporter.OldImporters
                             {
                                 try
                                 {
+                                    using (perf.MakeCurrent())
                                     using (perf.Measure("Blocking.LoadCached"))
                                         renderPrefab = GetRenderPrefab(fullDecalName, decalName);
                                 }
@@ -369,32 +370,7 @@ namespace ExtraAssetsImporter.OldImporters
             }
 
             string iconPath = Path.Combine(folderPath, "icon.png");
-            string baseColorMapPath = Path.Combine(folderPath, "_BaseColorMap.png");
-            Texture2D texture2D_Icon = new(1, 1);
-            if (File.Exists(iconPath))
-            {
-                byte[] fileData = File.ReadAllBytes(iconPath);
-
-                if (texture2D_Icon.LoadImage(fileData))
-                {
-                    if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
-                    {
-                        TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
-                    }
-                }
-            }
-            else if (File.Exists(baseColorMapPath))
-            {
-                byte[] fileData = File.ReadAllBytes(baseColorMapPath);
-                if (texture2D_Icon.LoadImage(fileData))
-                {
-                    if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
-                    {
-                        TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
-                    }
-                }
-            }
-            UnityEngine.Object.Destroy(texture2D_Icon);
+            ProcessIcon(folderPath);
 
             StaticObjectPrefab placeholder = ScriptableObject.CreateInstance<StaticObjectPrefab>();
             placeholder.name = $"{fullDecalName}_Placeholder";
@@ -418,6 +394,26 @@ namespace ExtraAssetsImporter.OldImporters
             EL.m_PrefabSystem.AddPrefab(decalPrefab);
 
             return decalPrefab;
+        }
+
+        // Writes a 128px icon.png from icon.png or, without one, from _BaseColorMap.png, when that
+        // image is bigger. Reads the PNG's size from its header first: decoding it on the main
+        // thread only to find it small enough cost several ms per asset on every launch.
+        internal static void ProcessIcon(string folderPath)
+        {
+            string iconPath = Path.Combine(folderPath, "icon.png");
+            string sourcePath = File.Exists(iconPath) ? iconPath : Path.Combine(folderPath, "_BaseColorMap.png");
+            if (!File.Exists(sourcePath)) return;
+
+            // A PNG whose header can't be read is decoded, as before.
+            if (ImportersUtils.TryReadPngSize(sourcePath, out int width, out int height) && width <= 128 && height <= 128) return;
+
+            Texture2D texture2D_Icon = new(1, 1);
+            if (texture2D_Icon.LoadImage(File.ReadAllBytes(sourcePath)) && (texture2D_Icon.width > 128 || texture2D_Icon.height > 128))
+            {
+                TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
+            }
+            UnityEngine.Object.Destroy(texture2D_Icon);
         }
 
         // Finishes, on the main thread, the pending assets whose textures are ready, until the
@@ -764,14 +760,29 @@ namespace ExtraAssetsImporter.OldImporters
                 return renderPrefab;
             }
 
+            // Each step is measured on its own (in the caller's current stats) to see what makes a
+            // cached asset slow to load.
             try
             {
-                if (EAIDatabaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) &&
-                    EAIDatabaseManager.EAIAssetDatabase.TryLoadPrefab<RenderPrefab>( AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true, EscapeStrategy.None), 
-                    out renderPrefab))
+                PrefabAsset prefabAsset = null;
+                bool found;
+                using (PerformanceStats.MeasureCurrent("Cached.GetAsset"))
+                    found = EAIDatabaseManager.TryGetEAIAsset(fullAssetName, out EAIAsset asset) &&
+                        EAIDatabaseManager.EAIAssetDatabase.TryGetOrAddAsset(AssetDataPath.Create(asset.AssetPath, $"{assetName}_RenderPrefab{PrefabAsset.kExtension}", true, EscapeStrategy.None), out prefabAsset);
+
+                renderPrefab = null;
+                if (found)
                 {
-                    EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");
-                    EL.m_PrefabSystem.AddPrefab(renderPrefab);
+                    using (PerformanceStats.MeasureCurrent("Cached.Load"))
+                        renderPrefab = prefabAsset.Load<RenderPrefab>();
+                }
+
+                if (renderPrefab != null)
+                {
+                    using (PerformanceStats.MeasureCurrent("Cached.Log"))
+                        EAI.Logger.Info($"Cached data for {fullAssetName}, loading the cache.");
+                    using (PerformanceStats.MeasureCurrent("Cached.AddPrefab"))
+                        EL.m_PrefabSystem.AddPrefab(renderPrefab);
                     return renderPrefab;
                 }
 

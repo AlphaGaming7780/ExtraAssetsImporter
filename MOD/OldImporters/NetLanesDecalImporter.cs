@@ -173,6 +173,7 @@ namespace ExtraAssetsImporter.OldImporters
                                 try
                                 {
 
+                                    using (perf.MakeCurrent())
                                     using (perf.Measure("Blocking.LoadCached"))
                                         renderPrefab = DecalsImporter.GetRenderPrefab(fullNetLaneName, netLanesName);
 
@@ -338,32 +339,7 @@ namespace ExtraAssetsImporter.OldImporters
             }
 
             string iconPath = Path.Combine(folderPath, "icon.png");
-            string baseColorMapPath = Path.Combine(folderPath, "_BaseColorMap.png");
-            Texture2D texture2D_Icon = new(1, 1);
-            if (File.Exists(iconPath))
-            {
-                byte[] fileData = File.ReadAllBytes(iconPath);
-
-                if (texture2D_Icon.LoadImage(fileData))
-                {
-                    if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
-                    {
-                        TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
-                    }
-                }
-            }
-            else if (File.Exists(baseColorMapPath))
-            {
-                byte[] fileData = File.ReadAllBytes(baseColorMapPath);
-                if (texture2D_Icon.LoadImage(fileData))
-                {
-                    if (texture2D_Icon.width > 128 || texture2D_Icon.height > 128)
-                    {
-                        TextureHelper.ResizeTexture(ref texture2D_Icon, 128, iconPath);
-                    }
-                }
-            }
-            UnityEngine.Object.Destroy(texture2D_Icon);
+            DecalsImporter.ProcessIcon(folderPath);
 
             if (jsonNetLane.curveProperties != null)
             {
