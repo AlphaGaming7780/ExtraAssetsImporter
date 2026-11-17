@@ -6,6 +6,7 @@ using Colossal.Json;
 using Colossal.Localization;
 using Colossal.UI;
 using ExtraAssetsImporter.AssetImporter.Importers;
+using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.ClassExtension;
 using ExtraAssetsImporter.Database;
 using ExtraLib;
@@ -60,6 +61,8 @@ namespace ExtraAssetsImporter.AssetImporter
                 EAI.Logger.Warn($"Failed to delete {path}: {ex}");
             }
         }
+
+        public const string RenderPrefabJsonName = "RenderPrefab.json";
 
         public static RenderPrefab GetRenderPrefab(PrefabImportData data)
         {
@@ -277,7 +280,7 @@ namespace ExtraAssetsImporter.AssetImporter
             EAI.Logger.Info($"Creating RenderPrefab for {data.FullAssetName}.");
             surfaceAsset.Save(false);
 
-            string pathToRenderPrefabJson = Path.Combine(data.FolderPath, "RenderPrefab.json");
+            string pathToRenderPrefabJson = Path.Combine(data.FolderPath, RenderPrefabJsonName);
             Variant renderPrefabVariant = File.Exists(pathToRenderPrefabJson) ? LoadJson(pathToRenderPrefabJson) : null;
 
             Vector4 MeshSize = surfaceAsset.vectors["colossal_MeshSize"];
@@ -380,6 +383,39 @@ namespace ExtraAssetsImporter.AssetImporter
             return prefab != null;
         }
 
+        private static readonly System.Reflection.FieldInfo s_PrefabsField =
+            typeof(PrefabSystem).GetField("m_Prefabs", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        /// <summary>
+        /// Looks up a prefab referenced from a JSON. The game registers most prefabs with a hash (their asset guid),
+        /// which creators don't know, so when the JSON gives no m_Hash this falls back to the first prefab
+        /// with the same type and name.
+        /// </summary>
+        public static bool TryGetPrefab(PrefabIDJson prefabIDJson, out PrefabBase prefab)
+        {
+            prefab = null;
+            if (prefabIDJson == null || string.IsNullOrEmpty(prefabIDJson.m_Type) || string.IsNullOrEmpty(prefabIDJson.m_Name))
+                return false;
+
+            if (TryGetPrefab((PrefabID)prefabIDJson, out prefab))
+                return true;
+            if (!string.IsNullOrEmpty(prefabIDJson.m_Hash) || s_PrefabsField == null)
+                return false;
+
+            using (PerformanceStats.MeasureCurrent("Blocking.TryGetPrefab"))
+                prefab = MainThreadHelper.RunOnMainThread(() =>
+                {
+                    if (s_PrefabsField.GetValue(EL.m_PrefabSystem) is not List<PrefabBase> prefabs) return null;
+                    foreach (PrefabBase candidate in prefabs)
+                    {
+                        if (candidate != null && candidate.name == prefabIDJson.m_Name && candidate.GetType().Name == prefabIDJson.m_Type)
+                            return candidate;
+                    }
+                    return null;
+                }).Result;
+            return prefab != null;
+        }
+
         public static string GetRenderPrefabName(PrefabImportData data)
         {
             return $"{data.FullAssetName}_RenderPrefab";
@@ -392,7 +428,7 @@ namespace ExtraAssetsImporter.AssetImporter
 
         public static T LoadJson<T>(string path) where T : class
         {
-            return LoadJson(path).Make<T>();
+            return LoadJson(path).MakeInvariant<T>();
         }
 
         public static Variant LoadJson(string path)
@@ -526,9 +562,16 @@ namespace ExtraAssetsImporter.AssetImporter
                 if (!success) return;
             }
 
-            prefabUI.m_IsDebugObject = false;
-            prefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/{data.AssetName}/icon.png" : Icons.DecalPlaceholder;
-            prefabUI.m_Group = categoryPrefab;
+            // Fields set in the UIObject component of Prefab.json win (UIObjectComponent applied them already).
+            if (!UIObjectJsonHas(data, "m_IsDebugObject")) prefabUI.m_IsDebugObject = false;
+            if (!UIObjectJsonHas(data, "m_Icon") || string.IsNullOrEmpty(prefabUI.m_Icon)) prefabUI.m_Icon = File.Exists(iconPath) ? $"{Icons.COUIBaseLocation}/{importer.FolderName}/{data.CatName}/{data.AssetName}/icon.png" : Icons.DecalPlaceholder;
+            if (!UIObjectJsonHas(data, "m_Group") || prefabUI.m_Group == null) prefabUI.m_Group = categoryPrefab;
+        }
+
+        private static bool UIObjectJsonHas(PrefabImportData data, string field)
+        {
+            Variant uiObjectJson = data.PrefabJson?.TryGet("Components")?.TryGet(typeof(UIObject).FullName);
+            return uiObjectJson != null && uiObjectJson.TryGetValue(field, out Variant value) && value != null;
         }
 
         public static Task<Mesh> CreateBoxMeshAsyncOnMainThread(Vector3 size)

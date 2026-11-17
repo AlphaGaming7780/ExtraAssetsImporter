@@ -46,7 +46,9 @@ namespace ExtraAssetsImporter.AssetImporter.JSONs
 
         public static implicit operator PrefabID(PrefabIDJson prefabIDJson)
         {
-            return new PrefabID(prefabIDJson.m_Type, prefabIDJson.m_Name, Hash128.Parse(prefabIDJson.m_Hash));
+            // m_Hash is optional in the JSONs: Hash128.Parse throws on null.
+            Hash128 hash = string.IsNullOrEmpty(prefabIDJson.m_Hash) ? default : Hash128.Parse(prefabIDJson.m_Hash);
+            return new PrefabID(prefabIDJson.m_Type, prefabIDJson.m_Name, hash);
         }
     }
 }

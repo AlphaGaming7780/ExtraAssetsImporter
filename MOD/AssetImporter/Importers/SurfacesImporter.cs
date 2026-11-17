@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using ExtraAssetsImporter.ClassExtension;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Components;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Prefabs;
@@ -27,7 +28,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             if (data.PrefabJson != null)
             {
-                AreaPrefabJson areaPrefabJson = data.PrefabJson.Make<AreaPrefabJson>();
+                AreaPrefabJson areaPrefabJson = data.PrefabJson.MakeInvariant<AreaPrefabJson>();
                 areaPrefabJson.Process(surfacePrefab);
             }
 

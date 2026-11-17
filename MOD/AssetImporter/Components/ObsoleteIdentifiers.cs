@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using ExtraAssetsImporter.ClassExtension;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using Game.Prefabs;
@@ -28,7 +29,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
 
         public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
-            ObsoleteIdentifiersJson obsoleteIdentifiersJson = componentJson.Make<ObsoleteIdentifiersJson>();
+            ObsoleteIdentifiersJson obsoleteIdentifiersJson = componentJson.MakeInvariant<ObsoleteIdentifiersJson>();
             if (obsoleteIdentifiersJson is null)
             {
                 EAI.Logger.Error($"ObsoleteIdentifiers component JSON is null for prefab {data.FullAssetName}.");

@@ -38,7 +38,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             AssetPackJson assetPackJson = new();
             if (File.Exists(path))
             {
-                assetPackJson = Decoder.Decode(File.ReadAllText(path)).Make<AssetPackJson>();
+                assetPackJson = Decoder.Decode(File.ReadAllText(path)).MakeInvariant<AssetPackJson>();
             }
             return assetPackJson;
         }

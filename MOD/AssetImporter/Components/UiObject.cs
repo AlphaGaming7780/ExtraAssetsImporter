@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using ExtraAssetsImporter.ClassExtension;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using Game.Prefabs;
@@ -22,7 +23,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
 
         public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
-            UIObjectJson uiObjectJson = componentJson.Make<UIObjectJson>();
+            UIObjectJson uiObjectJson = componentJson.MakeInvariant<UIObjectJson>();
             if (uiObjectJson is null)
             {
                 EAI.Logger.Error($"UIObject component JSON is null for prefab {data.FullAssetName}.");
@@ -32,6 +33,15 @@ namespace ExtraAssetsImporter.AssetImporter.Components
             uiObject.m_Priority = uiObjectJson.m_Priority;
             uiObject.m_IsDebugObject = uiObjectJson.m_IsDebugObject;
             uiObject.m_Icon = uiObjectJson.m_Icon ?? uiObject.m_Icon;
+
+            // On the asset prefab, ImportersUtils.SetupUIObject runs after this and only sets the fields the JSON leaves out.
+            if (uiObjectJson.m_Group != null)
+            {
+                if (ImportersUtils.TryGetPrefab(uiObjectJson.m_Group, out PrefabBase groupPrefab) && groupPrefab is UIGroupPrefab group)
+                    uiObject.m_Group = group;
+                else
+                    EAI.Logger.Warn($"Failed to get the UIGroupPrefab for m_Group with the name of {uiObjectJson.m_Group.m_Name} for the {data.FullAssetName} asset. The asset stays in its EAI category.");
+            }
         }
     }
 }

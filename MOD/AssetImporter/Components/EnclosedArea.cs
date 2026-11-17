@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using ExtraAssetsImporter.ClassExtension;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using ExtraLib;
@@ -29,13 +30,14 @@ namespace ExtraAssetsImporter.AssetImporter.Components
 
         public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
-            EnclosedAreaJson json = componentJson.Make<EnclosedAreaJson>();
+            EnclosedAreaJson json = componentJson.MakeInvariant<EnclosedAreaJson>();
             if (json is null)
             {
                 EAI.Logger.Error($"EnclosedArea component JSON is null for prefab {data.FullAssetName}.");
                 return;
             }
             EnclosedArea enclosedArea = prefab.AddOrGetComponentOnMainThread<EnclosedArea>();
+            enclosedArea.m_CounterClockWise = json.m_CounterClockWise;
             if (json.m_BorderLaneType != null)
             {
                 if(ImportersUtils.TryGetPrefab(json.m_BorderLaneType, out PrefabBase prefab1) && prefab1 is NetLanePrefab localConnectionLane)

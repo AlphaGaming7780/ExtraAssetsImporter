@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using ExtraAssetsImporter.ClassExtension;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.Importers;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
@@ -24,7 +25,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
 
         public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
-            RenderedAreaJson json = componentJson.Make<RenderedAreaJson>();
+            RenderedAreaJson json = componentJson.MakeInvariant<RenderedAreaJson>();
             if (json is null)
             {
                 EAI.Logger.Error($"RenderedArea component JSON is null for prefab {data.FullAssetName}.");

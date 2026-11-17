@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using ExtraAssetsImporter.ClassExtension;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using Game.Prefabs;
@@ -10,7 +11,9 @@ namespace ExtraAssetsImporter.AssetImporter.Components
     {
         public override Type ComponentType => typeof(CurveProperties);
 
-        public override Type PrefabType => typeof(NetLanePrefab);
+        // The game reads CurveProperties on the mesh (RenderPrefab), see MeshSystem and ManagedBatchSystem:
+        // it goes in RenderPrefab.json, like the old importer that added it to the render prefab.
+        public override Type PrefabType => typeof(RenderPrefab);
 
         public override ComponentJson GetDefaultJson()
         {
@@ -19,7 +22,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
 
         public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
-            CurvePropertiesJson curvePropertiesJson = componentJson.Make<CurvePropertiesJson>();
+            CurvePropertiesJson curvePropertiesJson = componentJson.MakeInvariant<CurvePropertiesJson>();
             if (curvePropertiesJson is null)
             {
                 EAI.Logger.Error($"curveProperties component JSON is null for prefab {data.FullAssetName}.");

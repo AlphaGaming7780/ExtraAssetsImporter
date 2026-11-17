@@ -1,4 +1,5 @@
-﻿using Colossal.Json;
+﻿using ExtraAssetsImporter.ClassExtension;
+using Colossal.Json;
 using ExtraAssetsImporter.AssetImporter.JSONs;
 using ExtraAssetsImporter.AssetImporter.JSONs.Components;
 using ExtraLib;
@@ -25,7 +26,7 @@ namespace ExtraAssetsImporter.AssetImporter.Components
 
         public override void Process(PrefabImportData data, Variant componentJson, PrefabBase prefab)
         {
-            UtilityLaneJson utilityLaneJson = componentJson.Make<UtilityLaneJson>();
+            UtilityLaneJson utilityLaneJson = componentJson.MakeInvariant<UtilityLaneJson>();
             if (utilityLaneJson is null)
             {
                 EAI.Logger.Error($"UtilityLane component JSON is null for prefab {data.FullAssetName}.");

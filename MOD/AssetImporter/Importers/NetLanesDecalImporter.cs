@@ -27,7 +27,7 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
 
             if(data.PrefabJson != null)
             {
-                NetLanePrefabJson netLanePrefabJson = data.PrefabJson.Make<NetLanePrefabJson>();
+                NetLanePrefabJson netLanePrefabJson = data.PrefabJson.MakeInvariant<NetLanePrefabJson>();
                 netLanePrefabJson.Process(netLanesPrefab);
             }
 
@@ -45,24 +45,6 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             return netLanesPrefab;
         }
 
-        protected override void VersionCompatiblity(PrefabBase prefabBase, PrefabImportData data)
-        {
-            base.VersionCompatiblity(prefabBase, data);
-
-            ObsoleteIdentifiers obsoleteIdentifiers = prefabBase.AddOrGetComponentOnMainThread<ObsoleteIdentifiers>();
-
-            obsoleteIdentifiers.m_PrefabIdentifiers ??= new PrefabIdentifierInfo[0];
-
-            PrefabIdentifierInfo prefabIdentifierInfo = new()
-            {
-                m_Name = $"{data.ModName} {data.CatName} {data.AssetName} NetLane",
-                m_Type = prefabBase.GetType().Name
-            };
-
-            AddObsoleteIdentifier(obsoleteIdentifiers, prefabIdentifierInfo);
-
-        }
-
         public override void ExportTemplate(string path)
         {
             path = Path.Combine(path, FolderName);
@@ -75,6 +57,15 @@ namespace ExtraAssetsImporter.AssetImporter.Importers
             }
 
             File.WriteAllText(Path.Combine(path, PrefabJsonName), Encoder.Encode(netLanePrefabJson, EncodeOptions.None));
+
+            // Components of the render prefab (the mesh), such as CurveProperties.
+            RenderPrefabJson renderPrefabJson = new();
+            foreach (ComponentImporter component in AssetsImporterManager.GetComponentImportersForPrefab<RenderPrefab>())
+            {
+                renderPrefabJson.Components.Add(component.ComponentType.FullName, component.GetDefaultJson());
+            }
+
+            File.WriteAllText(Path.Combine(path, ImportersUtils.RenderPrefabJsonName), Encoder.Encode(renderPrefabJson, EncodeOptions.None));
             SurfaceAssetImporterUtils.ExportTemplateMaterialJson(k_DefaultMaterialName, path);
         }
     }
