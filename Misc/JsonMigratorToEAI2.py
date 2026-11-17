@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations  # 'Json | None' annotations on Python 3.8 / 3.9
+
 import argparse
+import traceback
 import json
 import os
 import shutil
@@ -162,165 +165,360 @@ def set_in(d: Json, path: List[str], value: Any) -> None:
 
 # --------------------------- Migrator Registry --------------------------- #
 
-class Migrator:
-    def __init__(self, prefab_template: Json, material_template: Json):
-        self.prefab_template = prefab_template
-        self.material_template = material_template
+# JSON files read by each old importer, per asset folder.
+OLD_JSON_FILES = {
+    "surfaces": ("surface.json",),
+    "decals": ("decal.json",),
+    "netlanes": ("netLane.json", "decal.json"),
+}
 
-    def migrate(self, old: Json) -> Tuple[Json, Json]:
-        """Return (prefab_override, material_override)."""
+# Material keys the new decals / net lanes importers set themselves when Material.json doesn't have them.
+# Their default can differ from the exported template, so they are always kept.
+PROTECTED_MATERIAL_KEYS = {
+    "decals": {"colossal_DecalLayerMask", "colossal_TextureArea", "colossal_MeshSize"},
+    "netlanes": {"colossal_DecalLayerMask", "colossal_TextureArea", "colossal_MeshSize"},
+}
+
+# Components written by the migrator. Their default values are read from the templates exported by EAI
+# ("Export default JSONs"), never written here.
+UI_OBJECT = "Game.Prefabs.UIObject"
+OBSOLETE_IDENTIFIERS = "Game.Prefabs.ObsoleteIdentifiers"
+RENDERED_AREA = "Game.Prefabs.RenderedArea"
+UTILITY_LANE = "Game.Prefabs.UtilityLane"
+CURVE_PROPERTIES = "Game.Prefabs.CurveProperties"
+
+# Templates needed per asset type: file -> components that must be in it.
+REQUIRED_TEMPLATES = {
+    "surfaces": {"Prefab.json": (UI_OBJECT, OBSOLETE_IDENTIFIERS, RENDERED_AREA)},
+    "decals": {"Prefab.json": (UI_OBJECT, OBSOLETE_IDENTIFIERS), "Material.json": ()},
+    "netlanes": {
+        "Prefab.json": (UI_OBJECT, OBSOLETE_IDENTIFIERS, UTILITY_LANE),
+        "Material.json": (),
+        "RenderPrefab.json": (CURVE_PROPERTIES,),
+    },
+}
+
+# Surfaces: the shader properties the new importer maps to the RenderedArea component
+# (SurfacesImporterNew.ProcessMaterialJSON).
+SURFACE_FLOAT_TO_RENDERED_AREA = {
+    "_DrawOrder": "m_RendererPriority",
+    "colossal_DecalLayerMask": "m_DecalLayerMask",
+    "_Metallic": "m_Metallic",
+    "_Smoothness": "m_Smoothness",
+    "_NormalOpacity": "m_NormalOpacity",
+    "_MetallicOpacity": "m_MetallicOpacity",
+    "_NormalAlphaSource": "m_NormalAlphaSource",
+    "_MetallicAlphaSource": "m_MetallicAlphaSource",
+    "colossal_UVScale": "m_UVScale",
+    "colossal_EdgeNormal": "m_EdgeNormal",
+}
+
+SURFACE_VECTOR_TO_RENDERED_AREA = {
+    "_BaseColor": "m_BaseColor",
+    "colossal_EdgeFadeRange": "m_EdgeFadeRange",
+    "colossal_EdgeNormalRange": "m_EdgeNormalRange",
+    "colossal_EdgeNoise": "m_EdgeNoise",
+}
+
+DECAL_LAYERS = (("Terrain", 1), ("Roads", 2), ("Buildings", 4), ("Vehicles", 8), ("Creatures", 16), ("Other", 32))
+
+
+def decal_layers_to_json(mask: int) -> Any:
+    """DecalLayers flags as written by EAI's templates ("Terrain", "Terrain, Roads"...). Unknown bits: the number."""
+    names = [name for name, bit in DECAL_LAYERS if mask & bit]
+    known = sum(bit for _, bit in DECAL_LAYERS)
+    if not names or mask & ~known:
+        return mask
+    return ", ".join(names)
+
+
+def _is_default(value: Any, default: Any) -> bool:
+    """True if value equals the template's default (vectors per component, enum strings ignoring spaces and case)."""
+    if isinstance(value, dict) and isinstance(default, dict):
+        return all(_approx_equal(value.get(k), default.get(k), 1e-6) for k in set(value) | set(default))
+    if isinstance(value, str) and isinstance(default, str):
+        return value.replace(" ", "").lower() == default.replace(" ", "").lower()
+    return _approx_equal(value, default, 1e-6)
+
+
+def _fmt_number(x: Any) -> str:
+    return str(int(x)) if _is_number(x) and float(x).is_integer() else str(x)
+
+
+class AssetContext:
+    def __init__(self, mod_name: str, cat_name: str, asset_name: str):
+        self.mod_name = mod_name
+        self.cat_name = cat_name
+        self.asset_name = asset_name
+
+
+def find_key(d: Json, key: str) -> str | None:
+    """Return the key of d matching key, case-insensitively (Colossal's JSON decoder ignores case)."""
+    if not isinstance(d, dict):
+        return None
+    for k in d.keys():
+        if k.lower() == key.lower():
+            return k
+    return None
+
+
+def get_ci(d: Json, key: str, default: Any = None) -> Any:
+    k = find_key(d, key)
+    return d[k] if k is not None else default
+
+
+class Migrator:
+    fmt = ""
+
+    def __init__(self, templates: Dict[str, Json]):
+        # Templates exported by EAI, by file name (Prefab.json, Material.json, RenderPrefab.json).
+        self.templates = templates
+        self.material_template = templates.get("Material.json")
+
+    # --- Template helpers --- #
+
+    def defaults(self, file: str, component: str) -> Json:
+        """Default JSON of a component, from the exported template."""
+        values = get_ci(get_ci(self.templates.get(file) or {}, "Components") or {}, component)
+        if not isinstance(values, dict):
+            raise RuntimeError(f"the {file} template has no {component} component")
+        return values
+
+    @staticmethod
+    def strip_defaults(values: Json, defaults: Json, always: Tuple[str, ...] = ()) -> Tuple[Json, List[str]]:
+        """
+        Keep the values that differ from the defaults (and the keys in always), with the template's spelling.
+        Return them and the keys the template doesn't know (not written).
+        """
+        out: Json = {}
+        unknown: List[str] = []
+        for k, v in values.items():
+            dk = find_key(defaults, k)
+            if dk is None:
+                unknown.append(k)
+            elif v is not None and (dk in always or not _is_default(v, defaults[dk])):
+                out[dk] = v
+        return out, unknown
+
+    @staticmethod
+    def report_unknown(ctx: AssetContext, block: str, keys: List[str]) -> None:
+        if keys:
+            print(f"[INFO] {ctx.cat_name}/{ctx.asset_name}: not in EAI's template, skipped: "
+                  f"{', '.join(block + '.' + k for k in keys)}")
+
+    # --- Prefab.json helpers --- #
+
+    @staticmethod
+    def old_priority(old: Json | None, read_float: bool) -> Any:
+        """UiPriority of an old JSON. Like the old importers, a UiPriority in Float wins."""
+        if not old:
+            return None
+        priority = get_ci(old, "UiPriority")
+        if read_float:
+            float_priority = get_ci(get_ci(old, "Float") or {}, "UiPriority")
+            if float_priority is not None:
+                priority = float_priority
+        return int(priority) if _is_number(priority) else priority
+
+    def obsolete_identifiers(self, old: Json | None) -> List[Json]:
+        # Fields of one identifier, from the template (m_Name, m_Type, m_Hash).
+        template_ids = get_ci(self.defaults("Prefab.json", OBSOLETE_IDENTIFIERS), "PrefabIdentifiers") or []
+        fields = template_ids[0] if template_ids and isinstance(template_ids[0], dict) else {}
+        out: List[Json] = []
+        for info in (get_ci(old, "prefabIdentifierInfos") or []) if old else []:
+            if not isinstance(info, dict):
+                continue
+            entry = {find_key(fields, k): v for k, v in info.items() if find_key(fields, k) and v is not None}
+            if "m_Name" in entry and "m_Type" in entry:
+                out.append(entry)
+        return out
+
+    @staticmethod
+    def add_identifier(identifiers: List[Json], name: str, type_name: str) -> None:
+        if not any(i.get("m_Name") == name and i.get("m_Type") == type_name for i in identifiers):
+            identifiers.append({"m_Name": name, "m_Type": type_name})
+
+    def build_prefab(self, priority: Any, identifiers: List[Json], extra_components: Json | None = None, extra_fields: Json | None = None) -> Json:
+        components: Json = {}
+        if priority is not None:
+            # Kept even when empty: with the component, EAI uses its default priority, not the game's.
+            components[UI_OBJECT], _ = self.strip_defaults({"m_Priority": priority}, self.defaults("Prefab.json", UI_OBJECT))
+        if identifiers:
+            components[OBSOLETE_IDENTIFIERS] = {"PrefabIdentifiers": identifiers}
+        if extra_components:
+            components.update(extra_components)
+
+        prefab: Json = {}
+        if components:
+            prefab["Components"] = components
+        if extra_fields:
+            prefab.update(extra_fields)
+        return prefab
+
+    # --- Material.json helpers --- #
+
+    def build_material(self, old: Json | None) -> Json:
+        """Copy Float / Vector of the old JSON. Values equal to the template are dropped, except protected keys."""
+        if not old:
+            return {}
+
+        candidate: Json = {}
+        for block in ("Float", "Vector"):
+            values = get_ci(old, block)
+            if isinstance(values, dict) and values:
+                candidate[block] = {k: v for k, v in values.items() if k != "UiPriority"}
+
+        if not self.material_template:
+            raise RuntimeError("the Material.json template is required")
+        out = {}
+        protected = PROTECTED_MATERIAL_KEYS.get(self.fmt, set())
+        for block, values in candidate.items():
+            template_block = self.material_template.get(block) or {}
+            kept: Json = {}
+            for k, v in values.items():
+                if k in protected or k not in template_block:
+                    # Protected, or unknown to the template (the template can be outdated): keep it.
+                    kept[k] = v
+                    continue
+                t = template_block[k]
+                differs = diff_overrides(v, t) != {} if isinstance(v, dict) and isinstance(t, dict) else not _approx_equal(v, t)
+                if differs:
+                    kept[k] = v
+            if kept:
+                out[block] = kept
+
+        return {k: v for k, v in out.items() if v}
+
+    def migrate(self, old_jsons: Dict[str, Json], ctx: AssetContext) -> Tuple[Json, Json, Json]:
+        """
+        Return (Prefab.json, Material.json, RenderPrefab.json) for one asset; an empty dict means no file.
+        old_jsons maps lower-case file names to their content.
+        """
         raise NotImplementedError
 
 
 class SurfacesMigrator(Migrator):
     """
-    Maps old DefaultSurface-like JSON to the new split format.
+    The new surfaces have no material: everything goes in the RenderedArea component of Prefab.json.
+    (Material.json is abandoned for surfaces, so the migrator doesn't write one.)
     """
-    def migrate(self, old: Json) -> Tuple[Json, Json]:
-        # ----- Build Prefab override (start empty; only write if differs) -----
-        prefab_override: Json = {}
+    fmt = "surfaces"
 
-        # Map UI Priority -> Game.Prefabs.UIObject.m_Priority
-        old_priority = old.get("UiPriority", None)
-        if old_priority is None and "Float" in old:
-            old_priority = old["Float"].get("UiPriority", None)
+    def is_default(self, field: str, value: Any) -> bool:
+        """True if value is the template's default for this RenderedArea field (only non-default values are written)."""
+        return _is_default(value, get_ci(self.rendered_area_defaults, field))
 
-        if old_priority is not None:
-            # Find default priority in template (if present)
-            default_priority = get_in(
-                self.prefab_template,
-                ["Components", "Game.Prefabs.UIObject", "m_Priority"],
-                default=-1
-            )
-            if not _approx_equal(old_priority, default_priority):
-                set_in(
-                    prefab_override,
-                    ["Components", "Game.Prefabs.UIObject", "m_Priority"],
-                    old_priority
-                )
+    def migrate(self, old_jsons: Dict[str, Json], ctx: AssetContext) -> Tuple[Json, Json, Json]:
+        self.rendered_area_defaults = self.defaults("Prefab.json", RENDERED_AREA)
+        old = old_jsons.get("surface.json")
 
-        old_Roundness = old.get("m_Roundness", None)
-        if old_Roundness is None and "Float" in old:
-            old_Roundness = old["Float"].get("m_Roundness", None)
+        # The RenderedArea component is always written: with it, the new importer gives the surface
+        # the same default draw order per category as the old importer (Ground -100, Grass -99...).
+        rendered_area: Json = {}
+        roundness = get_ci(old, "m_Roundness") if old else None
+        if _is_number(roundness) and not self.is_default("m_Roundness", roundness):
+            rendered_area["m_Roundness"] = roundness
 
-        if old_Roundness is not None:
-            default_Roundness = get_in(
-                self.prefab_template,
-                ["Components", "Game.Prefabs.RenderedArea", "Roundness"],
-                default=0.5
-            )
-            if not _approx_equal(old_Roundness, default_Roundness):
-                set_in(
-                    prefab_override,
-                    ["Components", "Game.Prefabs.RenderedArea", "Roundness"],
-                    old_Roundness
-                )
+        floats = (get_ci(old, "Float") or {}) if old else {}
+        vectors = (get_ci(old, "Vector") or {}) if old else {}
+        ignored: List[str] = []
 
-        # You can add more surface-specific mappings here if needed, e.g.:
-        # - mapping old["prefabIdentifierInfos"] to
-        #   Components.Game.Prefabs.ObsoleteIdentifiers.PrefabIdentifiers
-        # - mapping colors if present in the old file, etc.
+        for key, value in floats.items():
+            if key == "UiPriority":
+                continue
+            field = SURFACE_FLOAT_TO_RENDERED_AREA.get(key)
+            if field is None or not _is_number(value):
+                ignored.append(key)
+                continue
+            if field == "m_RendererPriority":
+                if int(value) == 0:
+                    print(f"[WARN] {ctx.cat_name}/{ctx.asset_name}: _DrawOrder 0 can't be kept, the new importer "
+                          f"uses the category's default draw order instead.")
+                    continue
+                rendered_area[field] = int(value)
+            elif field == "m_DecalLayerMask":
+                layers = decal_layers_to_json(int(value))
+                if not self.is_default(field, layers):
+                    rendered_area[field] = layers
+            elif not self.is_default(field, value):
+                rendered_area[field] = value
 
-        # ----- Build Material candidate from old values -----
-        material_candidate: Json = {}
+        for key, value in vectors.items():
+            field = SURFACE_VECTOR_TO_RENDERED_AREA.get(key)
+            if field is None or not isinstance(value, dict):
+                ignored.append(key)
+                continue
+            if field == "m_BaseColor":
+                color = [value.get(c, 1) for c in ("x", "y", "z", "w")]
+                rgba = "RGBA({})".format(", ".join(_fmt_number(c) for c in color))
+                if not self.is_default(field, rgba):
+                    rendered_area[field] = rgba
+            else:
+                xy = {"x": value.get("x", 0), "y": value.get("y", 0)}
+                if not self.is_default(field, xy):
+                    rendered_area[field] = xy
 
-        # MaterialName / ShaderName are left to template defaults unless provided
-        for top_key in ("MaterialName", "ShaderName"):
-            if top_key in old:
-                material_candidate[top_key] = old[top_key]
+        if ignored:
+            print(f"[INFO] {ctx.cat_name}/{ctx.asset_name}: not used by the new surfaces, skipped: {', '.join(ignored)}")
 
-        # Copy Float / Vector from old if present
-        for block in ("Float", "Vector"):
-            if block in old and isinstance(old[block], dict):
-                material_candidate.setdefault(block, {})
-                for k, v in old[block].items():
-                    # Directly carry values; diff will drop those equal to template
-                    material_candidate[block][k] = v
-
-        # Compute minimal overrides vs templates
-        prefab_override = diff_overrides(prefab_override, self.prefab_template, tol=0.0)
-        material_override = diff_overrides(material_candidate, self.material_template, tol=0.0)
-
-        # Ensure we don't emit empty top-level objects (write {} if nothing differs)
-        if not prefab_override:
-            prefab_override = {}
-        if not material_override:
-            material_override = {}
-
-        return prefab_override, material_override
+        prefab = self.build_prefab(
+            self.old_priority(old, read_float=True),
+            self.obsolete_identifiers(old),
+            {RENDERED_AREA: rendered_area},
+        )
+        return prefab, {}, {}
 
 
 class DecalsMigrator(Migrator):
-    """
-    Placeholder migrator for Decals. Fill in mapping rules as needed.
-    """
-    def migrate(self, old: Json) -> Tuple[Json, Json]:
-        # Strategy: mirror Surfaces if the old Decal JSON uses Float/Vector too.
-        prefab_override: Json = {}
-        material_candidate: Json = {}
-        # Example: if "UiPriority" exists, map it like Surfaces.
-        old_priority = old.get("UiPriority", None)
-        if old_priority is None and "Float" in old:
-            old_priority = old["Float"].get("UiPriority", None)
+    fmt = "decals"
 
-        if old_priority is not None:
-            default_priority = get_in(
-                self.prefab_template,
-                ["Components", "Game.Prefabs.UIObject", "m_Priority"],
-                default=-1
-            )
-            if not _approx_equal(old_priority, default_priority):
-                set_in(
-                    prefab_override,
-                    ["Components", "Game.Prefabs.UIObject", "m_Priority"],
-                    old_priority
-                )
-
-        # Carry over Float/Vector if exist
-        for block in ("Float", "Vector"):
-            if block in old and isinstance(old[block], dict):
-                material_candidate.setdefault(block, {})
-                material_candidate[block].update(old[block])
-
-        prefab_override = diff_overrides(prefab_override, self.prefab_template, tol=0.0)
-        material_override = diff_overrides(material_candidate, self.material_template, tol=0.0)
-        return prefab_override or {}, material_override or {}
+    def migrate(self, old_jsons: Dict[str, Json], ctx: AssetContext) -> Tuple[Json, Json, Json]:
+        old = old_jsons.get("decal.json")
+        prefab = self.build_prefab(self.old_priority(old, read_float=True), self.obsolete_identifiers(old))
+        return prefab, self.build_material(old), {}
 
 
 class NetLanesMigrator(Migrator):
-    """
-    Placeholder migrator for NetLanes. Fill in mapping rules as needed.
-    """
-    def migrate(self, old: Json) -> Tuple[Json, Json]:
-        prefab_override: Json = {}
-        material_candidate: Json = {}
+    fmt = "netlanes"
 
-        # Example mapping (adjust once you know the old NetLane JSON structure):
-        # - If there's a "Priority" field, map to UIObject.m_Priority
-        for guess_key in ("UiPriority", "Priority"):
-            if guess_key in old:
-                default_priority = get_in(
-                    self.prefab_template,
-                    ["Components", "Game.Prefabs.UIObject", "m_Priority"],
-                    default=-1
-                )
-                if not _approx_equal(old[guess_key], default_priority):
-                    set_in(
-                        prefab_override,
-                        ["Components", "Game.Prefabs.UIObject", "m_Priority"],
-                        old[guess_key]
-                    )
-                break
+    def migrate(self, old_jsons: Dict[str, Json], ctx: AssetContext) -> Tuple[Json, Json, Json]:
+        old = old_jsons.get("netlane.json")  # prefab settings
+        old_material = old_jsons.get("decal.json")  # material, read like the old decals importer
 
-        # Carry over Float/Vector if present
-        for block in ("Float", "Vector"):
-            if block in old and isinstance(old[block], dict):
-                material_candidate.setdefault(block, {})
-                material_candidate[block].update(old[block])
+        identifiers = self.obsolete_identifiers(old)
+        # The old importer named net lanes "<Mod> <Category> <Name> NetLane"; the new one uses "NetLaneDecal".
+        # Keep the old name so existing saves find the new net lane.
+        self.add_identifier(
+            identifiers,
+            f"{ctx.mod_name} {ctx.cat_name} {ctx.asset_name} NetLane",
+            "NetLaneGeometryPrefab",
+        )
 
-        prefab_override = diff_overrides(prefab_override, self.prefab_template, tol=0.0)
-        material_override = diff_overrides(material_candidate, self.material_template, tol=0.0)
-        return prefab_override or {}, material_override or {}
+        # The game reads CurveProperties on the mesh (render prefab): it goes in RenderPrefab.json,
+        # like the old importer that added it to the render prefab.
+        render_prefab: Json = {}
+        curve = get_ci(old, "curveProperties") if old else None
+        if isinstance(curve, dict):
+            values, unknown = self.strip_defaults(curve, self.defaults("RenderPrefab.json", CURVE_PROPERTIES))
+            render_prefab = {"Components": {CURVE_PROPERTIES: values}}
+            self.report_unknown(ctx, "curveProperties", unknown)
+
+        components: Json = {}
+
+        utility = get_ci(old, "utilityLane") if old else None
+        if isinstance(utility, dict):
+            # UtilityType is always written: its default (WaterPipe) is not obvious.
+            values, unknown = self.strip_defaults(utility, self.defaults("Prefab.json", UTILITY_LANE), always=("UtilityType",))
+            components[UTILITY_LANE] = values
+            self.report_unknown(ctx, "utilityLane", unknown)
+
+        fields: Json = {}
+        pathfind = get_ci(old, "PathfindPrefab") if old else None
+        if pathfind:
+            fields["m_PathfindPrefab"] = pathfind
+
+        prefab = self.build_prefab(self.old_priority(old, read_float=False), identifiers, components, fields)
+        return prefab, self.build_material(old_material), render_prefab
 
 
 MIGRATORS = {
@@ -332,40 +530,43 @@ MIGRATORS = {
 
 # ------------------------------- CLI Logic ------------------------------- #
 
-def load_templates(prefab_path: str, material_path: str) -> Tuple[Json, Json]:
+def load_template(path: str | None) -> Json | None:
+    if not path or not os.path.isfile(path):
+        return None
     try:
-        prefab_template = read_json(prefab_path)
-        material_template = read_json(material_path)
+        return read_json(path)
     except Exception as e:
-        print(f"[ERROR] Failed to read templates: {e}", file=sys.stderr)
-        raise
-    return prefab_template, material_template
+        print(f"[WARN] Failed to read template {path}: {e}")
+        return None
 
 
-def migrate_file(fmt: str, input_path: str, out_dir: str, prefab_tmpl: str, material_tmpl: str) -> Tuple [ str | None, str | None] :
-    prefab_template, material_template = load_templates(prefab_tmpl, material_tmpl)
+def old_mod_name(in_dir: str) -> str:
+    """Mod name like the old importers: first .dll next to the old folder, else that folder's name; part before the first '_'."""
+    parent = os.path.dirname(os.path.abspath(in_dir))
+    dlls = sorted(f for f in os.listdir(parent) if f.lower().endswith(".dll") and os.path.isfile(os.path.join(parent, f)))
+    name = os.path.splitext(dlls[0])[0] if dlls else os.path.basename(parent)
+    return name.split("_")[0]
 
-    migrator_cls = MIGRATORS.get(fmt.lower())
-    if not migrator_cls:
-        raise ValueError(f"Unsupported format: {fmt}. Supported: {', '.join(MIGRATORS.keys())}")
-    migrator = migrator_cls(prefab_template=prefab_template, material_template=material_template)
 
-    old_json = read_json(input_path)
-    prefab_over, material_over = migrator.migrate(old_json)
+def migrate_asset(fmt: str, asset_dir: str, out_dir: str, ctx: AssetContext, templates: Dict[str, Json]) -> None:
+    migrator = MIGRATORS[fmt](templates)
 
-    out_prefab = os.path.join(out_dir, "Prefab.json")
-    out_material = os.path.join(out_dir, "Material.json")
+    old_jsons: Dict[str, Json] = {}
+    for f in os.listdir(asset_dir):
+        if f.lower() in (n.lower() for n in OLD_JSON_FILES[fmt]):
+            old_jsons[f.lower()] = read_json(os.path.join(asset_dir, f))
 
-    isPrefabNone = (prefab_over == None or prefab_over == {})
-    isMaterialNone = (material_over == None or material_over == {})
+    prefab, material, render_prefab = migrator.migrate(old_jsons, ctx)
 
-    if(not isPrefabNone): 
-        write_json(out_prefab, prefab_over)
-    if(not isMaterialNone): 
-        write_json(out_material, material_over)
+    written = []
+    for name, content in (("Prefab.json", prefab), ("Material.json", material), ("RenderPrefab.json", render_prefab)):
+        if content:
+            write_json(os.path.join(out_dir, name), content)
+            written.append(name)
 
-    return out_prefab if not isPrefabNone else None, out_material if not isMaterialNone else None
-              
+    print(f"[OK] {asset_dir} -> {', '.join(written) if written else 'no JSON needed'}")
+
+
 def process_normalmap(src_path: str, dst_path: str):
     """Detect and process NormalMap: invert R channel in linear space like GIMP."""
     try:
@@ -441,10 +642,11 @@ def hash_image_file(path: str) -> str:
         # img_rgba = img.convert("RGBA")
         # return hashlib.sha1(img_rgba.tobytes()).hexdigest()
 
-def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, precomputed_hash: str | None = None):
+def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, importer_folder: str, precomputed_hash: str | None = None):
     """
     If identical texture already seen, remove dst_path (if any) and write JSON redirect
-    with path pointing to the asset folder (relative to pack_root, prefixed by pack folder name).
+    with path pointing to the asset folder (relative to pack_root, prefixed by the importer folder name,
+    e.g. Decals\\Graffiti\\CRIME: the new importers read it relative to the mod's root).
     Otherwise copy the texture and register it.
     """
     name = os.path.basename(src_path).lower()
@@ -490,9 +692,9 @@ def handle_texture_sharing(src_path: str, dst_path: str, pack_root: str, precomp
         asset_dir = os.path.dirname(dst_path)
         rel = os.path.relpath(asset_dir, start=pack_root).replace("/", "\\")
         if rel == ".":
-            asset_ref = os.path.basename(pack_root)
+            asset_ref = importer_folder
         else:
-            asset_ref = os.path.join(os.path.basename(pack_root), rel).replace("/", "\\")
+            asset_ref = os.path.join(importer_folder, rel).replace("/", "\\")
 
         SEEN_TEXTURES[key][h] = asset_ref
         # debug
@@ -541,7 +743,12 @@ def QuantizeImageTo8Bit(img : Image.Image) -> Image.Image:
     if args.force_8bit_method == "PIL":
         return img.quantize(256)  # Ensure 8-bit per channel
     elif args.force_8bit_method == "libimagequant":
-        import imagequant
+        try:
+            import imagequant
+        except ImportError:
+            print("[WARN] The 'imagequant' package is not installed (pip install imagequant). Using Pillow's quantization instead.")
+            args.force_8bit_method = "PIL"
+            return img.quantize(256)
         return imagequant.quantize_pil_image(
             img,
             max_colors=256,
@@ -549,50 +756,93 @@ def QuantizeImageTo8Bit(img : Image.Image) -> Image.Image:
     else:
         raise ValueError(f"Unknown 8-bit conversion method: {args.force_8bit_method}")
 
-def copy_sibling_files(src_dir: str, dst_dir: str, fmt: str, pack_root: str):
+def process_surface_maskmap(src_path: str, dst_path: str) -> str | None:
+    """
+    The old surfaces importer loaded _MaskMap.png as an sRGB texture: the game read its RGB channels
+    converted from sRGB to linear. The new importer loads it as linear data. Convert RGB from sRGB to
+    linear so the surface looks the same (alpha is not affected by sRGB).
+    """
+    try:
+        with Image.open(src_path) as src:
+            has_alpha = src.mode in ("RGBA", "LA") or src.has_transparency_data
+            img = src.convert("RGBA" if has_alpha else "RGB")
+        arr = np.array(img).astype(np.float32) / 255.0
+        rgb = arr[:, :, :3]
+        arr[:, :, :3] = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+        img = Image.fromarray(np.clip(np.round(arr * 255.0), 0, 255).astype(np.uint8))
+
+        if args.force_8bit and TEXTURE_NAMES["_maskmap"] in args.force_8bit_types:
+            img = QuantizeImageTo8Bit(img)
+
+        img.save(dst_path)
+        print(f"[INFO] MaskMap converted from sRGB to linear: {src_path}")
+        return hash_image(img)
+    except Exception as e:
+        print(f"[WARN] Failed converting mask map {src_path}: {e}")
+        return None
+
+
+def copy_sibling_files(src_dir: str, dst_dir: str, fmt: str, pack_root: str, importer_folder: str, skip_names: Tuple[str, ...] = ()):
+    skip = {n.lower() for n in skip_names}
     for f in os.listdir(src_dir):
         spath = os.path.join(src_dir, f)
         dpath = os.path.join(dst_dir, f)
-        if not os.path.isfile(spath) or f.lower().endswith(".json"):
+        if not os.path.isfile(spath) or f.lower() in skip:
             continue
         os.makedirs(dst_dir, exist_ok=True)
+        flower = f.lower()
 
         # NormalMap processing (returns hash of the saved file)
-        if fmt == "surfaces" and TEXTURE_NAMES["_normalmap"].lower() in f.lower():
+        if fmt == "surfaces" and TEXTURE_NAMES["_normalmap"].lower() in flower:
             h = process_normalmap(spath, dpath)
-            handle_texture_sharing(dpath, dpath, pack_root, precomputed_hash=h)
+            handle_texture_sharing(dpath, dpath, pack_root, importer_folder, precomputed_hash=h)
+        elif fmt == "surfaces" and args.surface_maskmap_linear and TEXTURE_NAMES["_maskmap"].lower() in flower:
+            h = process_surface_maskmap(spath, dpath)
+            if h is None:
+                handle_texture_sharing(spath, dpath, pack_root, importer_folder, precomputed_hash=None)
+            else:
+                handle_texture_sharing(dpath, dpath, pack_root, importer_folder, precomputed_hash=h)
         else:
-            # non-normalmap: just let handler compute hash & copy
-            handle_texture_sharing(spath, dpath, pack_root, precomputed_hash=None)
+            # other files: let the handler compute the hash & copy
+            handle_texture_sharing(spath, dpath, pack_root, importer_folder, precomputed_hash=None)
 
 
-def migrate_directory(fmt: str, in_dir: str, out_dir: str, prefab_tmpl: str, material_tmpl: str, fail_fast: bool=False):
-    """Recursively migrate all *.json files in in_dir, keeping subdirectory structure."""
-    for root, _, files in os.walk(in_dir):
+def migrate_directory(fmt: str, in_dir: str, out_dir: str, templates: Dict[str, Json], mod_name: str, fail_fast: bool = False) -> int:
+    """
+    Migrate an old importer folder (<in_dir>/<Category>/<Asset>) to a new one, keeping the folder structure.
+    Each asset folder gets a Prefab.json / Material.json / RenderPrefab.json built from its old JSON files.
+    Return the number of assets that failed.
+    """
+    errors = 0
+    importer_folder = DIRS[fmt][1]
+    print(f"[INFO] {in_dir} -> {out_dir} (mod name: {mod_name})")
+
+    for root, _, _ in os.walk(in_dir):
         rel = os.path.relpath(root, in_dir)
         opath = os.path.join(out_dir, rel)
-        for f in files:
-            if not f.lower().endswith(".json"):
-                continue
-            ipath = os.path.join(root, f)
-            os.makedirs(opath, exist_ok=True)
-            try:
-                out_prefab, out_material = migrate_file(fmt, ipath, opath, prefab_tmpl, material_tmpl)
+        depth = 0 if rel == "." else len(rel.split(os.sep))
 
-                if(out_prefab == None or out_prefab == {}):
-                    print(f"[OK] {ipath} -> Material: {out_material}")
-                elif(out_material == None or out_material == {}):
-                    print(f"[OK] {ipath} -> Prefab: {out_prefab}")
-                elif( ( out_material == None or out_material == {} ) and ( out_prefab == None or out_prefab == {} ) ):
-                    print(f"[OK] {ipath} -> No changes needed.")    
-                else:
-                    print(f"[OK] {ipath} -> Prefab: {out_prefab}, Material: {out_material}")
-            except Exception as e:
-                print(f"[ERROR] {ipath}: {e}", file=sys.stderr)
-                if fail_fast:
-                    raise
+        skip: Tuple[str, ...] = ()
+        if depth == 2:
+            cat_name = os.path.basename(os.path.dirname(root))
+            asset_name = os.path.basename(root)
+            if cat_name.startswith(".") or asset_name.startswith("."):
+                print(f"[INFO] Skipped (name starts with '.'): {root}")
+            else:
+                os.makedirs(opath, exist_ok=True)
+                try:
+                    migrate_asset(fmt, root, opath, AssetContext(mod_name, cat_name, asset_name), templates)
+                except Exception as e:
+                    errors += 1
+                    print(f"[ERROR] {root}: {e}", file=sys.stderr)
+                    if fail_fast:
+                        raise
+            skip = OLD_JSON_FILES[fmt]
 
-        copy_sibling_files(root, opath, fmt, out_dir)
+        copy_sibling_files(root, opath, fmt, out_dir, importer_folder, skip)
+
+    return errors
+
 
 def find_template_path(fmt: str, filename: str) -> str:
     """Search for template file case-insensitive in _DefaultJson first, then fallback path."""
@@ -606,7 +856,7 @@ def find_template_path(fmt: str, filename: str) -> str:
                     if f.lower() == filename.lower():
                         return os.path.join(root, f)
     # fallback guessed path
-    return os.path.join(base_dirs[-1], fmt.capitalize(), filename)
+    return os.path.join(base_dirs[-1], fmt, filename)
 
 def exit(code: int):
     try:
@@ -662,11 +912,55 @@ def main(argv=None):
         help="Method to use for 8-bit conversion. 'PIL' uses Pillow's built-in quantization, 'libimagequant' uses the imagequant library for better quality. (default: libimagequant)"
     )
 
+    parser.add_argument(
+        "--mod-name",
+        help="Mod name used in the old prefab names (to keep the old net lane names). "
+             "Default: like EAI, the first .dll next to the old folders, else that folder's name (part before the first '_')."
+    )
+
+    parser.add_argument(
+        "--surface-maskmap-linear",
+        action="store_true",
+        help="Convert the RGB channels of the surfaces' _MaskMap from sRGB to linear. The old surfaces importer "
+             "loaded the mask map as sRGB, the new one as linear: this keeps the look of the old surfaces."
+    )
+
     global args
     args = parser.parse_args(argv)
 
+    def run(fmt: str, in_dir: str, out_dir: str) -> int:
+        """Migrate one old importer folder. Return the number of assets that failed."""
+        # The templates are required: the default values come from them, only the values that differ are written.
+        templates: Dict[str, Json] = {}
+        missing: List[str] = []
+        for file, components in REQUIRED_TEMPLATES[fmt].items():
+            path = find_template_path(DIRS[fmt][1], file)
+            template = load_template(path)
+            if not isinstance(template, dict) or not template:
+                missing.append(path)
+                continue
+            for component in components:
+                if not isinstance(get_ci(get_ci(template, "Components") or {}, component), dict):
+                    missing.append(f"{component} in {path}")
+            templates[file] = template
+        if missing:
+            raise RuntimeError(
+                f"Missing {fmt} templates: {'; '.join(missing)}. "
+                f"Click 'Export default JSONs' in EAI's settings (with the latest EAI), then run the script again.")
+
+        os.makedirs(out_dir, exist_ok=True)
+        mod_name = args.mod_name or old_mod_name(in_dir)
+        return migrate_directory(fmt, in_dir, out_dir, templates, mod_name, args.fail_fast)
+
+    def finish(errors: int) -> None:
+        if errors:
+            print(f"[WARN] {errors} error(s): some assets were NOT migrated (see the [ERROR] lines). "
+                  f"Fix them and run the script again. Don't remove the old Custom* folders yet.")
+            exit(2)
+        print("[INFO] Done. Check the new folders, then remove the old Custom* folders so the old and new assets are not loaded together.")
+
     # ------------------- Default auto-discovery mode ------------------- #
-    if not ( args.format or args.input_dir or args.output_dir):
+    if not (args.format or args.input_dir or args.output_dir):
         found = []
         for fmt, (ind, outd) in DIRS.items():
             if os.path.isdir(ind) and os.listdir(ind):
@@ -679,60 +973,35 @@ def main(argv=None):
 
         errors = 0
         for fmt, ind, outd in found:
-            os.makedirs(outd, exist_ok=True)
-
-            prefab_tmpl = find_template_path(outd, "Prefab.json")
-            material_tmpl = find_template_path(outd, "Material.json")
-
-            if not os.path.isfile(prefab_tmpl) or not os.path.isfile(material_tmpl):
-                print(f"[ERROR] Missing template(s) for {fmt}: {prefab_tmpl}, {material_tmpl}", file=sys.stderr)
-                errors += 1
-                continue
-
             try:
-                migrate_directory(fmt, ind, outd, prefab_tmpl, material_tmpl, args.fail_fast)
+                errors += run(fmt, ind, outd)
             except Exception as e:
                 errors += 1
                 print(f"[ERROR] {ind}: {e}", file=sys.stderr)
                 if args.fail_fast:
                     exit(1)
-        if errors:
-            exit(2)
+
+        finish(errors)
         return
 
     # ------------------- Explicit mode ------------------- #
     if not args.format:
-        parser.error("--format is required when using --output_dir or --input-dir.")
+        parser.error("--format is required when using --output-dir or --input-dir.")
 
-    ( in_dir , out_dir ) = DIRS[args.format]
-    os.makedirs(out_dir, exist_ok=True)
-
-    prefab_tmpl = find_template_path(out_dir, "Prefab.json")
-    material_tmpl = find_template_path(out_dir, "Material.json")
-
-    if not os.path.isfile(prefab_tmpl) or not os.path.isfile(material_tmpl):
-        print(f"[ERROR] Missing template file(s) : {prefab_tmpl}, {material_tmpl}", file=sys.stderr)
-        exit(1)
-
+    (in_dir, out_dir) = DIRS[args.format]
     try:
-        migrate_directory(
-            fmt=args.format,
-            in_dir= args.input_dir or in_dir,
-            out_dir= args.output_dir or out_dir,
-            prefab_tmpl = prefab_tmpl,
-            material_tmpl = material_tmpl,
-            fail_fast=args.fail_fast
-        )
+        errors = run(args.format, args.input_dir or in_dir, args.output_dir or out_dir)
     except Exception as e:
-        print(f"[ERROR] {args.input_dir}: {e}", file=sys.stderr)
+        print(f"[ERROR] {args.input_dir or in_dir}: {e}", file=sys.stderr)
         exit(1)
+    finish(errors)
 
 if __name__ == "__main__":
     try:
         main()
-    except Exception as err:
-        print(f"{err}")
-        raise
-
-    finally:
-        exit(0)
+    except SystemExit:
+        raise  # exit() already asked to press Enter; keep its exit code
+    except Exception:
+        traceback.print_exc()
+        exit(1)
+    exit(0)
