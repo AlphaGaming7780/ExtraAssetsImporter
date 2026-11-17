@@ -462,7 +462,7 @@ namespace ExtraAssetsImporter.AssetImporter
             };
             File.WriteAllText(Path.Combine(path, "TextureSharing.json"), Encoder.Encode(textureJson, EncodeOptions.None));
 
-//#if DEBUG
+#if DEBUG
             Settings settings = Settings.GetDefault("TEST_SETTING");
             File.WriteAllText(Path.Combine(path, "settings.json"), Encoder.Encode(settings, EncodeOptions.None));
 
@@ -499,7 +499,7 @@ namespace ExtraAssetsImporter.AssetImporter
                 File.WriteAllText(Path.Combine(matPath, $"{material.m_Material.name}.json"), Encoder.Encode(properties, EncodeOptions.None));
 
             }
-//#endif
+#endif
         }
 
         private static List<Type> GetOrCacheDerivedTypes(Type baseType)
