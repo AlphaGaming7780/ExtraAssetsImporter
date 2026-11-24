@@ -151,8 +151,20 @@ namespace ExtraAssetsImporter.OldImporters
                                 FileInfo[] fileInfos = new DirectoryInfo(folder).Parent.GetFiles("*.dll");
                                 string modName = fileInfos.Length > 0 ? Path.GetFileNameWithoutExtension(fileInfos[0].Name).Split('_')[0] : new DirectoryInfo(folder).Parent.Name.Split('_')[0];
                                 string fullSurfaceName = $"{modName} {catName} {surfaceName} Surface";
+                                SurfacePrefab surfacePrefab;
                                 using (perf.Measure("Blocking.CreateSurface"))
-                                    CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat, decodeTask.Result);
+                                    surfacePrefab = CreateCustomSurface(surfaceFolder, surfaceName, catName, modName, fullSurfaceName, assetCat, decodeTask.Result);
+
+                                // Old surfaces have no cache, but their entry gives the PrefabID that
+                                // moving the asset to the game's editor needs. The path is never
+                                // created in the database: the cleanup and the new importer only
+                                // delete it when it exists, and they need it to be set.
+                                if (surfacePrefab != null)
+                                {
+                                    EAIAsset asset = new(fullSurfaceName, EAIDatabaseManager.GetAssetHash(surfaceFolder), Path.Combine("CustomSurfaces", modName, catName, surfaceName),
+                                        prefabID: surfacePrefab.GetPrefabID().ToString(), sourceModPath: new DirectoryInfo(folder).Parent.FullName);
+                                    EAIDatabaseManager.AddOrValidateAsset(asset);
+                                }
                                 if (!csLocalisation.ContainsKey($"Assets.NAME[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.NAME[{fullSurfaceName}]")) csLocalisation.Add($"Assets.NAME[{fullSurfaceName}]", surfaceName);
                                 if (!csLocalisation.ContainsKey($"Assets.DESCRIPTION[{fullSurfaceName}]") && !GameManager.instance.localizationManager.activeDictionary.ContainsID($"Assets.DESCRIPTION[{fullSurfaceName}]")) csLocalisation.Add($"Assets.DESCRIPTION[{fullSurfaceName}]", surfaceName);
                                 perf.Increment("Assets.Created");
@@ -206,6 +218,11 @@ namespace ExtraAssetsImporter.OldImporters
             );
 
             //LoadLocalization();
+
+            // The coroutine went through every folder, so the quit cleanup removes the entries of the
+            // surfaces they no longer hold.
+            foreach (string folder in folders) EAIDatabaseManager.eaiDatabase.AddScannedFolder(folder);
+
             FolderToLoadSurface.RemoveAll(folders.Contains);
 
             perf.Increment("Frames", Time.frameCount - startFrame);
@@ -314,12 +331,12 @@ namespace ExtraAssetsImporter.OldImporters
             return texture;
         }
 
-        private static void CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, UIAssetParentCategoryPrefab assetCat, DecodedSurface decoded)
+        private static SurfacePrefab CreateCustomSurface(string folderPath, string surfaceName, string catName, string modName, string fullSurfaceName, UIAssetParentCategoryPrefab assetCat, DecodedSurface decoded)
         {
 
             string baseColorMapPath = Path.Combine(folderPath, "_BaseColorMap.png");
 
-            if (!File.Exists(baseColorMapPath)) { EAI.Logger.Error($"No _BaseColorMap.png file for the {new DirectoryInfo(folderPath).Name} surface in {catName} category in {modName}."); return; }
+            if (!File.Exists(baseColorMapPath)) { EAI.Logger.Error($"No _BaseColorMap.png file for the {new DirectoryInfo(folderPath).Name} surface in {catName} category in {modName}."); return null; }
 
             SurfacePrefab surfacePrefab = ScriptableObject.CreateInstance<SurfacePrefab>();
             surfacePrefab.name = fullSurfaceName;
@@ -370,7 +387,7 @@ namespace ExtraAssetsImporter.OldImporters
             {
                 EAI.Logger.Error($"Failed to Load the BaseColorMap image for the {surfacePrefab.name} surface.");
                 UnityEngine.Object.Destroy(newMaterial);
-                return;
+                return null;
             }
 
             newMaterial.SetTexture(ShaderPropertiesIDs.BaseColorMap, texture2D_BaseColorMap);
@@ -456,6 +473,8 @@ namespace ExtraAssetsImporter.OldImporters
             EAIDatabaseManager.EAIAssetDatabase.AddAsset<PrefabAsset, ScriptableObject>(prefabAssetPath, surfacePrefab, forceGuid: Colossal.Hash128.CreateGuid(fullSurfaceName));
 
             EL.m_PrefabSystem.AddPrefab(surfacePrefab);
+
+            return surfacePrefab;
         }
 
         internal static int GetRendererPriorityByCat(string cat)
